@@ -241,12 +241,14 @@ function guessGitHubVendorInfo($authorName, $username): array
     return [$response->name ?? $authorName, $response->login ?? $username];
 }
 
-$gitName = run('git config user.name');
+// $gitName = run('git config user.name');
+$gitName = 'Claudio Campos';
 $authorName = ask('Author name', $gitName);
 
-$gitEmail = run('git config user.email');
+// $gitEmail = run('git config user.email');
+$gitEmail = 'contato@sigasmar.com.br';
 $authorEmail = ask('Author email', $gitEmail);
-$authorUsername = ask('Author username', guessGitHubUsername());
+$authorUsername = ask('Author username', "callcocam");
 
 $guessGitHubVendorInfo = guessGitHubVendorInfo($authorName, $authorUsername);
 
@@ -254,7 +256,8 @@ $vendorName = ask('Vendor name', $guessGitHubVendorInfo[0]);
 $vendorUsername = ask('Vendor username', $guessGitHubVendorInfo[1] ?? slugify($vendorName));
 $vendorSlug = slugify($vendorUsername);
 
-$vendorNamespace = str_replace('-', '', ucwords($vendorName));
+// $vendorNamespace = str_replace('-', '', ucwords($vendorName));
+$vendorNamespace = "Callcocam";
 $vendorNamespace = ask('Vendor namespace', $vendorNamespace);
 
 $currentDirectory = getcwd();
