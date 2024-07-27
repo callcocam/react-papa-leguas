@@ -230,8 +230,13 @@ function guessGitHubUsername(): string
 function guessGitHubVendorInfo($authorName, $username): array
 {
     $remoteUrl = shell_exec('git config remote.origin.url');
-    $remoteUrlParts = explode('/', str_replace(':', '/', trim($remoteUrl)));
-
+    if (! $remoteUrl) {
+        $remoteUrl = "";
+    }
+    $remoteUrlParts = explode('/', str_replace(':', '/', trim($remoteUrl))); 
+    if (count($remoteUrlParts) < 2) {
+        return [$authorName, $username];
+    }
     $response = getGitHubApiEndpoint("orgs/{$remoteUrlParts[1]}");
 
     if ($response === null) {
