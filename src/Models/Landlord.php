@@ -15,6 +15,7 @@ use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Notifications\Notifiable;
 
 class Landlord extends Model implements Authenticatable, AuthorizableContract, CanResetPasswordContract
@@ -24,6 +25,7 @@ class Landlord extends Model implements Authenticatable, AuthorizableContract, C
     use Authorizable;
     use CanResetPassword;
     use Notifiable;
+    use HasUlids;
 
     /**
      * The table associated with the model.
