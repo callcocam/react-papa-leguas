@@ -3,7 +3,13 @@
 /**
  * Created by Claudio Campos.
  * User: callcocam@gmail.com, contato@sigasmart.com.br
- * https://www.sigasmart.com.br
+    public function register(): void
+    {
+        parent::register();
+
+        // Register service providers first
+        $this->registerServiceProviders();
+    }s://www.sigasmart.com.br
  */
 
 namespace Callcocam\ReactPapaLeguas;
@@ -99,7 +105,7 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
         parent::register();
 
         // Register service providers first
-        $this->registerServiceProviders();
+        $this->registerServiceProviders(); // Temporariamente comentado para debug
     }
 
     public function packageBooted(): void

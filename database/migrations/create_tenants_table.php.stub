@@ -38,7 +38,9 @@ return new class extends Migration
         });
 
         Schema::table('users', function (Blueprint $table) {
-              $table->ulid('tenant_id')->nullable()->after('id');
+            if (!Schema::hasColumn('users', 'tenant_id')) {
+                $table->ulid('tenant_id')->nullable()->after('id');
+            }
         });
     }
 
