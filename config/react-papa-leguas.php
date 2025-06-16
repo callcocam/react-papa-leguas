@@ -124,4 +124,17 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Models Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the models used by the React Papa Leguas package.
+    |
+    */
+    'models' => [
+        'role' => \Callcocam\ReactPapaLeguas\Shinobi\Models\Role::class,
+        'permission' => \Callcocam\ReactPapaLeguas\Shinobi\Models\Permission::class,
+    ],
+
 ];

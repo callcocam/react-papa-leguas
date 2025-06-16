@@ -48,8 +48,8 @@ return [
     */
     'cache' => [
         'enabled' => true,
-        'key' => 'shinobi.permissions',
-        'duration' => 60 * 24, // 24 hours in minutes
+        'tag' => 'shinobi.permissions',
+        'length' => 60 * 24, // 24 hours in minutes
     ],
 
     /*

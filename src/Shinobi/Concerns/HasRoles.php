@@ -23,7 +23,7 @@ trait HasRoles
      */
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(config('papa-leguas.models.role', ModelsRole::class))->withTimestamps();
+        return $this->belongsToMany(config('react-papa-leguas.models.role', ModelsRole::class))->withTimestamps();
     }
 
     /**
@@ -170,6 +170,6 @@ trait HasRoles
      */
     protected function getRoleModel(): Role
     {
-        return app()->make(config('papa-leguas.models.role', ModelsRole::class));
+        return app()->make(config('react-papa-leguas.models.role', ModelsRole::class));
     }
 }

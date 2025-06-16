@@ -1,6 +1,91 @@
 # Landlord Multi-Tenant System
 
-Sistema de multi-tenancy que permite isolamento de dados por tenant, com bypass automático para usuários landlord (administradores).
+Sistema de multi-tenancy que permite isolamento de dados por tenant, com bypass automático para usuários landlord (ad## Configuração
+
+### Arquivo: `config/tenant.php`
+
+```php
+return [
+    'models' => [
+        'tenant' => \Callcocam\ReactPapaLeguas\Models\Tenant::class,
+    ],
+    
+    'tenant' => [
+        'column' => 'tenant_id',
+        'auto_scope' => true,
+        'strict_mode' => true,
+    ],
+    
+    // Colunas padrão usadas para scoping quando não especificadas no modelo
+    'default_tenant_columns' => ['tenant_id'],
+    
+    'domain' => [
+        'enabled' => true,
+        'subdomain_enabled' => true,
+        'cache_ttl' => 3600,
+    ],
+];
+```
+
+### Arquivo: `config/react-papa-leguas.php`
+
+```php
+return [
+    'landlord' => [
+        'model' => \Callcocam\ReactPapaLeguas\Models\Landlord::class,
+        'table' => 'admins',
+        'routes' => [
+            'prefix' => 'landlord',
+            'middleware' => ['web'],
+            // ... outras configurações de rotas
+        ],
+        // ... outras configurações de landlord
+    ],
+    
+    'models' => [
+        'role' => \Callcocam\ReactPapaLeguas\Shinobi\Models\Role::class,
+        'permission' => \Callcocam\ReactPapaLeguas\Shinobi\Models\Permission::class,
+    ],
+];
+```
+
+### Arquivo: `config/shinobi.php`
+
+Configurações específicas do sistema de roles e permissões:
+
+```php
+return [
+    'models' => [
+        'role' => \Callcocam\ReactPapaLeguas\Shinobi\Models\Role::class,
+        'permission' => \Callcocam\ReactPapaLeguas\Shinobi\Models\Permission::class,
+    ],
+    
+    'tables' => [
+        'roles' => 'roles',
+        'permissions' => 'permissions',
+        'role_user' => 'role_user',
+        'permission_user' => 'permission_user',
+        'permission_role' => 'permission_role',
+    ],
+    
+    'cache' => [
+        'enabled' => true,
+        'tag' => 'shinobi.permissions',
+        'length' => 60 * 24, // 24 horas em minutos
+    ],
+];
+```
+
+## Configurações Unificadas
+
+O sistema agora usa uma configuração unificada onde:
+
+- **Tenant scoping**: Use `config('tenant.*')` para configurações de tenant
+- **Landlord auth**: Use `config('react-papa-leguas.landlord.*')` para autenticação landlord  
+- **Models**: Use `config('react-papa-leguas.models.*')` ou `config('shinobi.models.*')` para modelos
+- **Colunas padrão**: Use `config('tenant.default_tenant_columns')` para colunas de tenant
+
+## Compatibilidade
 
 ## Características
 
