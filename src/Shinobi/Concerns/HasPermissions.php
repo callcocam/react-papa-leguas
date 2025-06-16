@@ -35,33 +35,108 @@ trait HasPermissions
      */
     public function hasPermissionTo($permission): bool
     {
-        // Check role flags
+        // Check role flags first (fastest check)
         if ((method_exists($this, 'hasPermissionRoleFlags') and $this->hasPermissionRoleFlags())) {
             return $this->hasPermissionThroughRoleFlag();
         }
         if ((method_exists($this, 'hasPermissionFlags') and $this->hasPermissionFlags())) {
             return $this->hasPermissionThroughFlag();
         }
-        // Fetch permission if we pass through a string
-        if (is_string($permission)) { 
-            $permission = $this->getPermissionModel()->where('slug', $permission)->first();
-
-            if (! $permission) {
-                throw new PermissionNotFoundException;
+        
+        // Convert string to permission slug if needed
+        $permissionSlug = $permission;
+        if ($permission instanceof Permission) {
+            $permissionSlug = $permission->slug;
+        }
+        
+        // Load all user permissions once and check in memory (avoid N+1)
+        if (!$this->relationLoaded('permissions')) {
+            $this->load('permissions');
+        }
+        
+        // Check user permission first (direct permission)
+        if ($this->permissions->where('slug', $permissionSlug)->isNotEmpty()) {
+            return true;
+        }
+        
+        // Check role permissions (load roles with permissions if not loaded)
+        if (method_exists($this, 'hasPermissionThroughRole')) {
+            if (!$this->relationLoaded('roles')) {
+                $this->load('roles.permissions');
             }
-        }
-        
-        // Check role permissions
-        if (method_exists($this, 'hasPermissionThroughRole') and $this->hasPermissionThroughRole($permission)) {
-            return true;
-        }
-        
-        // Check user permission
-        if ($this->hasPermission($permission)) {
-            return true;
+            
+            return $this->hasPermissionThroughRole($permissionSlug);
         }
 
         return false;
+    }
+    
+    /**
+     * Check multiple permissions at once (optimized for performance).
+     * 
+     * @param array $permissions
+     * @return array ['permission_slug' => bool, ...]
+     */
+    public function hasPermissionsTo(array $permissions): array
+    {
+        if (empty($permissions)) {
+            return [];
+        }
+
+        // Load all needed relations once
+        if (!$this->relationLoaded('permissions')) {
+            $this->load('permissions');
+        }
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles.permissions');
+        }
+
+        $results = [];
+        
+        foreach ($permissions as $permission) {
+            $permissionSlug = $permission instanceof Permission ? $permission->slug : $permission;
+            $results[$permissionSlug] = $this->hasPermissionTo($permission);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Check if user has ANY of the given permissions.
+     * 
+     * @param array $permissions
+     * @return bool
+     */
+    public function hasAnyPermission(...$permissions): bool
+    {
+        $permissions = Arr::flatten($permissions);
+        
+        foreach ($permissions as $permission) {
+            if ($this->hasPermissionTo($permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user has ALL of the given permissions.
+     * 
+     * @param array $permissions
+     * @return bool
+     */
+    public function hasAllPermissions(...$permissions): bool
+    {
+        $permissions = Arr::flatten($permissions);
+        
+        foreach ($permissions as $permission) {
+            if (!$this->hasPermissionTo($permission)) {
+                return false;
+            }
+        }
+
+        return true;
     }
     
     /**
@@ -120,50 +195,73 @@ trait HasPermissions
      * Get the specified permissions.
      * 
      * @param  array  $permissions
-     * @return Permission
+     * @return array
      */
-    protected function getPermissions(array $collection)
+    protected function getPermissions(array $collection): array
     {
-        return array_map(function($permission) {
-            $model = $this->getPermissionModel();
-
+        if (empty($collection)) {
+            return [];
+        }
+        
+        // Separate already resolved IDs from slugs/instances
+        $ids = [];
+        $slugsToResolve = [];
+        
+        foreach ($collection as $permission) {
             if ($permission instanceof Permission) {
-                return $permission->id;
+                $ids[] = $permission->id;
+            } elseif (is_string($permission)) {
+                $slugsToResolve[] = $permission;
+            } elseif (is_numeric($permission)) {
+                $ids[] = $permission;
             }
-
-            $permission = $model->where('slug', $permission)->first();
-
-            return $permission->id;
-        }, $collection);
+        }
+        
+        // Resolve all slugs in one query if any
+        if (!empty($slugsToResolve)) {
+            $resolvedPermissions = $this->getPermissionModel()
+                ->whereIn('slug', $slugsToResolve)
+                ->pluck('id')
+                ->toArray();
+            $ids = array_merge($ids, $resolvedPermissions);
+        }
+        
+        return array_unique($ids);
     }
 
     /**
      * Checks if the user has the given permission assigned.
      * 
-     * @param  \Callcocam\PapaLeguas\Core\Shinobi\Models\Permission  $permission
+     * @param  \Callcocam\ReactPapaLeguas\Shinobi\Models\Permission|string  $permission
      * @return boolean
      */
     protected function hasPermission($permission): bool
     {
-        $model = $this->getPermissionModel();
-
+        $permissionSlug = $permission;
         if ($permission instanceof Permission) {
-            $permission = $permission->slug;
+            $permissionSlug = $permission->slug;
         }
 
-        return (bool) $this->permissions->where('slug', $permission)->count();
+        // Load permissions if not loaded to avoid N+1
+        if (!$this->relationLoaded('permissions')) {
+            $this->load('permissions');
+        }
+
+        return $this->permissions->where('slug', $permissionSlug)->isNotEmpty();
     }
 
     /**
      * Get the model instance responsible for permissions.
      * 
-     * @return \Callcocam\PapaLeguas\Core\Shinobi\Contracts\Permission|\Illuminate\Database\Eloquent\Collection
+     * @return \Callcocam\ReactPapaLeguas\Shinobi\Contracts\Permission|\Illuminate\Database\Eloquent\Collection
      */
     protected function getPermissionModel()
     {  
         if (config('shinobi.cache.enabled')) {
+            $cacheKey = 'shinobi.permissions.' . (app('tenant.manager')->getCurrentTenantId() ?? 'global');
+            
             return cache()->tags(config('shinobi.cache.tag'))->remember(
-                'permissions',
+                $cacheKey,
                 config('shinobi.cache.length'),
                 function() {
                     return app()->make(config('shinobi.models.permission'))->get();

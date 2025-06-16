@@ -12,19 +12,22 @@ return new class extends Migration
 {
     public function up()
     {
-        $name = config('papa-leguas.tables.permission_role', 'permission_role');
+        $name = config('shinobi.tables.permission_role', 'permission_role');
 
         Schema::create($name, function (Blueprint $table) {
             $table->foreignUlid('permission_id')->constrained()->onDelete('cascade');
             $table->foreignUlid('role_id')->constrained()->onDelete('cascade');
             $table->primary(['permission_id', 'role_id']);
-            $table->timestamps(); 
+            $table->timestamps();
+            
+            // Add indexes for performance
+            $table->index(['role_id', 'permission_id']); 
         });
     }
 
     public function down()
     {
-        $name = config('papa-leguas.tables.permission_role', 'permission_role');
+        $name = config('shinobi.tables.permission_role', 'permission_role');
         Schema::dropIfExists($name);
     }
 };

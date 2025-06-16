@@ -16,7 +16,7 @@ trait HasRolesAndPermissions
      * Run through the roles assigned to the permission and
      * checks if the user has any of them assigned.
      * 
-     * @param  \Callcocam\PapaLeguas\Core\Shinobi\Models\Permission  $permission
+     * @param  \Callcocam\ReactPapaLeguas\Shinobi\Models\Permission  $permission
      * @return boolean
      */
     protected function hasPermissionThroughRole($permission): bool

@@ -8,13 +8,16 @@ class CreatePermissionUserTable extends Migration
 {
     public function up()
     {
-        $name = config('papa-leguas.tables.permission_user', 'permission_user');
+        $name = config('shinobi.tables.permission_user', 'permission_user');
 
         Schema::create($name, function (Blueprint $table) { 
             $table->foreignUlid('permission_id')->constrained()->onDelete('cascade');
             $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
             $table->primary(['permission_id', 'user_id']);
             $table->timestamps();
+            
+            // Add indexes for performance
+            $table->index(['user_id', 'permission_id']);
         });
     }
 
@@ -25,7 +28,7 @@ class CreatePermissionUserTable extends Migration
      */
     public function down()
     {
-        $name = config('papa-leguas.tables.permission_user', 'permission_user');
+        $name = config('shinobi.tables.permission_user', 'permission_user');
 
         Schema::drop($name);
     }

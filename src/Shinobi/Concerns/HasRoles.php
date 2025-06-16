@@ -29,14 +29,19 @@ trait HasRoles
     /**
      * Checks if the model has the given role assigned.
      * 
-     * @param  string  $role
+     * @param  string|Role  $role
      * @return boolean
      */
     public function hasRole($role): bool
     {
-        $slug = Str::slug($role);
+        $slug = $role instanceof Role ? $role->slug : Str::slug($role);
 
-        return (bool) $this->roles->where('slug', $slug)->count();
+        // Load roles if not loaded to avoid N+1
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+
+        return $this->roles->where('slug', $slug)->isNotEmpty();
     }
 
     /**
@@ -73,9 +78,19 @@ trait HasRoles
         return true;
     }
 
+    /**
+     * Checks if the model has roles assigned.
+     * 
+     * @return bool
+     */
     public function hasRoles(): bool
     {
-        return (bool) $this->roles->count();
+        // Load roles if not loaded to avoid N+1
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+
+        return $this->roles->isNotEmpty();
     }
 
     /**
@@ -134,30 +149,103 @@ trait HasRoles
      * Get the specified roles.
      * 
      * @param  array  $roles
-     * @return Role
+     * @return array
      */
-    protected function getRoles(array $roles)
+    protected function getRoles(array $roles): array
     {
-        return array_map(function ($role) {
-            $model = $this->getRoleModel();
-
-            if ($role instanceof $model) {
-                return $role->id;
+        if (empty($roles)) {
+            return [];
+        }
+        
+        // Separate already resolved IDs from slugs/instances
+        $ids = [];
+        $slugsToResolve = [];
+        
+        foreach ($roles as $role) {
+            if ($role instanceof Role) {
+                $ids[] = $role->id;
+            } elseif (is_string($role)) {
+                $slugsToResolve[] = Str::slug($role);
+            } elseif (is_numeric($role)) {
+                $ids[] = $role;
             }
-
-            $role = $model->where('slug', $role)->first();
-
-            return $role->id;
-        }, $roles);
+        }
+        
+        // Resolve all slugs in one query if any
+        if (!empty($slugsToResolve)) {
+            $resolvedRoles = $this->getRoleModel()
+                ->whereIn('slug', $slugsToResolve)
+                ->pluck('id')
+                ->toArray();
+            $ids = array_merge($ids, $resolvedRoles);
+        }
+        
+        return array_unique($ids);
     }
 
-    public function hasPermissionRoleFlags()
+    /**
+     * Check if user has permission role flags.
+     * 
+     * @return bool
+     */
+    public function hasPermissionRoleFlags(): bool
     {
-        if ($this->hasRoles()) {
-            return ($this->roles
-                ->filter(function ($role) {
-                    return  $role->special;
-                })->count()) >= 1;
+        if (!$this->hasRoles()) {
+            return false;
+        }
+
+        // Load roles if not loaded to avoid N+1
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+
+        return $this->roles->where('special', '!=', null)->isNotEmpty();
+    }
+
+    /**
+     * Check if user has permission through role flag.
+     * 
+     * @return bool
+     */
+    public function hasPermissionThroughRoleFlag(): bool
+    {
+        if (!$this->hasRoles()) {
+            return false;
+        }
+
+        // Load roles if not loaded to avoid N+1
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+
+        // If any role has 'all-access' or similar, grant permission
+        return $this->roles
+            ->where('special', '!=', null)
+            ->where('special', '!=', 'no-access')
+            ->isNotEmpty();
+    }
+
+    /**
+     * Check if user has permission through role.
+     * 
+     * @param string $permissionSlug
+     * @return bool
+     */
+    public function hasPermissionThroughRole(string $permissionSlug): bool
+    {
+        if (!$this->hasRoles()) {
+            return false;
+        }
+
+        // Load roles with permissions if not loaded to avoid N+1
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles.permissions');
+        }
+
+        foreach ($this->roles as $role) {
+            if ($role->permissions->where('slug', $permissionSlug)->isNotEmpty()) {
+                return true;
+            }
         }
 
         return false;
@@ -166,7 +254,7 @@ trait HasRoles
     /**
      * Get the model instance responsible for permissions.
      * 
-     * @return \Callcocam\PapaLeguas\Shinobi\Contracts\Role
+     * @return \Callcocam\ReactPapaLeguas\Shinobi\Contracts\Role
      */
     protected function getRoleModel(): Role
     {

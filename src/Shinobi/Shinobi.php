@@ -36,7 +36,7 @@ class Shinobi
      * Assign roles to a user.
      * 
      * @param  string|array  $roles
-     * @return \Callcocam\PapaLeguas\Core\Shinobi\Tactic\AssignRoleTo
+     * @return \Callcocam\ReactPapaLeguas\Shinobi\Tactic\AssignRoleTo
      */
     public function assign($roles): AssignRoleTo
     {
@@ -47,7 +47,7 @@ class Shinobi
      * Give permissions to a user or role
      * 
      * @param  string|array  $permissions
-     * @return \Callcocam\PapaLeguas\Core\Shinobi\Tactic\GivePermissionTo
+     * @return \Callcocam\ReactPapaLeguas\Shinobi\Tactic\GivePermissionTo
      */
     public function give($permissions): GivePermissionTo
     {
@@ -58,7 +58,7 @@ class Shinobi
      * Revoke permissions from a user or role
      * 
      * @param  string|array  $permissions
-     * @return \Callcocam\PapaLeguas\Core\Shinobi\Tactic\RevokePermissionFrom
+     * @return \Callcocam\ReactPapaLeguas\Shinobi\Tactic\RevokePermissionFrom
      */
     public function revoke($permissions): RevokePermissionFrom
     {
