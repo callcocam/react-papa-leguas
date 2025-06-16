@@ -27,10 +27,20 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
         $package
             ->name('react-papa-leguas')
             ->hasConfigFile()
+            ->hasConfigFile('shinobi')
+            ->hasConfigFile('tenant')
             ->hasRoutes('web', 'api', 'landlord')
             ->hasViews()
             ->hasMigration('create_admins_table')
             ->hasCommand(ReactPapaLeguasCommand::class);
+    }
+
+    public function register(): void
+    {
+        parent::register();
+        
+        // Register service providers first
+        $this->registerServiceProviders();
     }
 
     public function packageBooted(): void
@@ -89,5 +99,14 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
             ->group(function () {
                 $this->loadRoutesFrom(__DIR__ . '/../routes/landlord.php');
             });
+    }
+
+    /**
+     * Register additional service providers.
+     */
+    protected function registerServiceProviders(): void
+    {
+        $this->app->register(\Callcocam\ReactPapaLeguas\Shinobi\ShinobiServiceProvider::class);
+        $this->app->register(\Callcocam\ReactPapaLeguas\Landlord\LandlordServiceProvider::class); 
     }
 }
