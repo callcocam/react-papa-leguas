@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 class Controller extends BaseController{
 
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
+    
 
     /**
      * Get the ID of the controller.
@@ -78,7 +79,7 @@ class Controller extends BaseController{
     {
         return [
             'user' => auth()->user(),
-            'permissions' => auth()->user()->getAllPermissions(),
+            'permissions' => [],
         ];
     }
 

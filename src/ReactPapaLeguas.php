@@ -10,7 +10,7 @@ class ReactPapaLeguas {
 
     protected $id ="admin";
 
-    protected $prefix = "admin";
+    protected $prefix = "landlord";
 
     protected $middelwares = ['web'];
 

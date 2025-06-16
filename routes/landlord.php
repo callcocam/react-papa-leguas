@@ -7,7 +7,8 @@
  */
 
 use Callcocam\ReactPapaLeguas\Http\Controllers\Auth\LandlordLoginController;
-use Callcocam\ReactPapaLeguas\Http\Controllers\Landlord\LandlordController;
+use Callcocam\ReactPapaLeguas\Http\Controllers\Landlord\DashboardController; 
+use Callcocam\ReactPapaLeguas\Http\Controllers\Landlord\TenantController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -38,8 +39,10 @@ Route::middleware(['landlord.auth', 'disable.tenant.scoping'])->group(function (
     Route::get('/logout', [LandlordLoginController::class, 'logout'])
         ->name('landlord.logout.get');
     
-    Route::get('/dashboard', [LandlordController::class, 'index'])
+    Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('landlord.dashboard');
+
+    Route::resource('tenants', TenantController::class);
 });
 
 // Redirect root to dashboard or login
