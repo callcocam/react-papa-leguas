@@ -10,6 +10,8 @@ namespace Callcocam\ReactPapaLeguas;
 
 use Callcocam\ReactPapaLeguas\Commands\ReactPapaLeguasCommand;
 use Callcocam\ReactPapaLeguas\Commands\MakeStandardModelCommand;
+use Callcocam\ReactPapaLeguas\Commands\MigrateToPapaLeguasStandardsCommand;
+use Callcocam\ReactPapaLeguas\Commands\CheckStandardsCommand;
 use Callcocam\ReactPapaLeguas\Guards\LandlordGuard;
 use Callcocam\ReactPapaLeguas\Http\Middleware\LandlordAuth;
 use Callcocam\ReactPapaLeguas\Http\Middleware\DisableTenantScoping;
@@ -36,9 +38,23 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
             ->hasConfigFile('tenant')
             ->hasRoutes('web', 'api', 'landlord')
             ->hasViews()
-            ->hasMigration('create_admins_table')
+            ->hasMigrations([
+                'create_users_table',
+                'create_admins_table',
+                'create_tenants_table', 
+                'create_addresses_table',
+                'create_roles_table',
+                'create_permissions_table',
+                'create_role_user_table',
+                'create_permission_user_table',
+                'create_permission_role_table',
+                'create_admin_role_table',
+                'create_admin_tenant_table'
+            ])
             ->hasCommand(ReactPapaLeguasCommand::class)
             ->hasCommand(MakeStandardModelCommand::class)
+            ->hasCommand(MigrateToPapaLeguasStandardsCommand::class)
+            ->hasCommand(CheckStandardsCommand::class)
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
                     ->publishConfigFile()
@@ -46,7 +62,35 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
                     ->publishMigrations()
                     ->publish('react-papa-leguas:translations')
                     ->askToRunMigrations()
-                    ->copyAndRegisterServiceProviderInApp();
+                    ->copyAndRegisterServiceProviderInApp()
+                    ->askToStarRepoOnGitHub('callcocam/react-papa-leguas')
+                    ->endWith(function (InstallCommand $command) {
+                        $command->info('');
+                        $command->info('🚀 React Papa Leguas instalado com sucesso!');
+                        $command->info('');
+                        
+                        if ($command->confirm('Deseja migrar seus modelos e migrations para os padrões Papa Leguas?', true)) {
+                            $command->call('papa-leguas:migrate-standards', [
+                                '--backup' => true,
+                                '--force' => true
+                            ]);
+                            
+                            $command->info('');
+                            $command->info('✅ Migração concluída! Verifique os arquivos gerados.');
+                            $command->info('�️  As migrations necessárias foram publicadas automaticamente.');
+                            $command->info('�📝 Consulte packages/callcocam/react-papa-leguas/UPDATES.md para mais detalhes.');
+                        } else {
+                            $command->info('');
+                            $command->warn('⚠️  Para migrar mais tarde, execute: php artisan papa-leguas:migrate-standards --backup');
+                            $command->info('📝 Consulte packages/callcocam/react-papa-leguas/UPDATES.md para instruções detalhadas.');
+                        }
+                        
+                        $command->info('');
+                        $command->info('📚 Documentação disponível em:');
+                        $command->info('   - packages/callcocam/react-papa-leguas/DEVELOPMENT_STANDARDS.md');
+                        $command->info('   - packages/callcocam/react-papa-leguas/EXAMPLES.md');
+                        $command->info('   - packages/callcocam/react-papa-leguas/OPTIMIZATION_REPORT.md');
+                    });
             });
     }
 
@@ -68,6 +112,9 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
 
         // Load landlord routes
         $this->loadLandlordRoutes();
+
+        // Show standards update message if needed (only in console)
+        $this->showStandardsUpdateMessage();
     }
 
     /**
@@ -124,5 +171,45 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
     {
         $this->app->register(\Callcocam\ReactPapaLeguas\Shinobi\ShinobiServiceProvider::class);
         $this->app->register(\Callcocam\ReactPapaLeguas\Landlord\LandlordServiceProvider::class);
+    }
+
+    /**
+     * Check if the project needs to be updated to Papa Leguas standards.
+     */
+    public function checkForStandardsUpdate(): bool
+    {
+        $userModelPath = app_path('Models/User.php');
+        
+        if (!file_exists($userModelPath)) {
+            return false;
+        }
+        
+        $userModelContent = file_get_contents($userModelPath);
+        
+        // Check if User model already follows Papa Leguas standards
+        $hasUlid = str_contains($userModelContent, 'HasUlids') || str_contains($userModelContent, 'ulid');
+        $hasSlug = str_contains($userModelContent, 'HasSlug') || str_contains($userModelContent, 'slug');
+        $hasStatus = str_contains($userModelContent, 'status') || str_contains($userModelContent, 'BaseStatus');
+        $hasTenantId = str_contains($userModelContent, 'tenant_id');
+        $hasSoftDeletes = str_contains($userModelContent, 'SoftDeletes');
+        
+        // If missing key Papa Leguas features, needs update
+        return !($hasUlid && $hasSlug && $hasStatus && $hasTenantId && $hasSoftDeletes);
+    }
+
+    /**
+     * Show standards update message if needed.
+     */
+    public function showStandardsUpdateMessage(): void
+    {
+        if ($this->checkForStandardsUpdate()) {
+            if (app()->runningInConsole()) {
+                echo "\n";
+                echo "📦 \033[33mPapa Leguas Standards Update Available\033[0m\n";
+                echo "   Seu projeto pode se beneficiar dos padrões Papa Leguas mais recentes.\n";
+                echo "   Execute: \033[32mphp artisan papa-leguas:migrate-standards --backup\033[0m\n";
+                echo "\n";
+            }
+        }
     }
 }

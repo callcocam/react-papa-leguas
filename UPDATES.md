@@ -7,6 +7,56 @@ Implementar um sistema completo de multi-tenancy (Landlord) e padrões de desenv
 
 ---
 
+## 🚀 AUTOMAÇÃO DA INSTALAÇÃO
+
+### Migração Automática Durante a Instalação
+O pacote agora oferece **migração automática** dos seus modelos e migrations para os padrões Papa Leguas durante o processo de instalação:
+
+```bash
+# Instalar o pacote
+composer require callcocam/react-papa-leguas
+
+# Durante a instalação, você será perguntado:
+# "Deseja migrar seus modelos e migrations para os padrões Papa Leguas? (sim/não)"
+```
+
+### Comandos Disponíveis
+
+#### 1. Verificar Padrões
+```bash
+# Verificar se o projeto segue os padrões Papa Leguas
+php artisan papa-leguas:check-standards
+
+# Ver análise detalhada
+php artisan papa-leguas:check-standards --show-details
+```
+
+#### 2. Migração Manual (se necessário)
+```bash
+# Migrar para os padrões (com backup automático)
+php artisan papa-leguas:migrate-standards --backup
+
+# Forçar migração sem confirmação
+php artisan papa-leguas:migrate-standards --backup --force
+```
+
+#### 3. Gerar Novos Models
+```bash
+# Criar model seguindo os padrões Papa Leguas
+php artisan papa-leguas:make-model Product
+```
+
+### Detecção Automática de Atualizações
+O sistema detecta automaticamente quando seu projeto não está seguindo os padrões mais recentes e exibe uma mensagem informativa no console:
+
+```
+📦 Papa Leguas Standards Update Available
+   Seu projeto pode se beneficiar dos padrões Papa Leguas mais recentes.
+   Execute: php artisan papa-leguas:migrate-standards --backup
+```
+
+---
+
 ## ✅ Implementações Concluídas
 
 ### 1. Guard de Autenticação Landlord ✅
@@ -195,6 +245,21 @@ class PostController extends Controller
 - **Shinobi otimizado**: Performance 60-80% melhor
 - **Comandos Artisan**: Geração automática seguindo padrões
 - **Documentação completa**: Standards, exemplos e otimizações
+- **🚀 AUTOMAÇÃO INSTALAÇÃO**: Migração automática durante `composer install`
+- **🔍 VERIFICAÇÃO**: Comando para verificar conformidade com padrões
+- **📋 DETECÇÃO**: Sistema detecta automaticamente atualizações necessárias
+
+### 🆕 **Novos Comandos Disponíveis:**
+```bash
+# Verificar se projeto segue padrões Papa Leguas
+php artisan papa-leguas:check-standards --show-details
+
+# Migrar projeto para padrões (com backup)
+php artisan papa-leguas:migrate-standards --backup --force
+
+# Gerar model seguindo padrões
+php artisan papa-leguas:make-model NomeDoModel
+```
 
 ### 🎯 **Próxima Fase:**
 - Implementação de componentes React/Vue
