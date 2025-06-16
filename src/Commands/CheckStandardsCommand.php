@@ -88,6 +88,18 @@ class CheckStandardsCommand extends Command
 
         $content = File::get($path);
         
+        // Check if using Papa Leguas Authenticatable class (which includes all standards)
+        $usesPapaLeguasAuth = str_contains($content, 'Callcocam\ReactPapaLeguas\Models\Auth\User as Authenticatable');
+        
+        if ($usesPapaLeguasAuth) {
+            return [
+                'name' => 'User Model Standards',
+                'status' => true,
+                'details' => 'Usando classe Authenticatable do Papa Leguas (padrões incluídos)'
+            ];
+        }
+        
+        // Check individual traits if not using Papa Leguas Authenticatable
         $hasUlid = str_contains($content, 'HasUlids') || str_contains($content, 'ulid');
         $hasSlug = str_contains($content, 'HasSlug') || str_contains($content, 'slug');
         $hasStatus = str_contains($content, 'status') || str_contains($content, 'BaseStatus');
