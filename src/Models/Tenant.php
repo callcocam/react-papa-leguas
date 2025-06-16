@@ -16,28 +16,90 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Tall\Sluggable\HasSlug;
+use Tall\Sluggable\SlugOptions;
 
 class Tenant extends Model
 {
-    use HasUlids, SoftDeletes, HasFactory, HasAddresses;
+    use HasUlids, SoftDeletes, HasFactory, HasAddresses, HasSlug;
 
+    /**
+     * The attributes that aren't mass assignable.
+     */
     protected $guarded = ['id'];
 
+    /**
+     * The attributes that should be cast.
+     */
     protected $casts = [
         'settings' => 'array',
         'status' => TenantStatus::class,
         'is_primary' => 'boolean'
     ];
 
+    /**
+     * The relationships that should always be loaded.
+     */
     protected $with = ['defaultAddress'];
 
+    /**
+     * Get the slug options for the model.
+     */
+    public function getSlugOptions(): SlugOptions
+    {
+        return SlugOptions::create()
+            ->generateSlugsFrom('name')
+            ->saveSlugsTo('slug')
+            ->doNotGenerateSlugsOnUpdate()
+            ->slugsShouldBeNoLongerThan(191);
+    }
+
+    /**
+     * Get the users that belong to this tenant.
+     */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'tenant_user');
     }
+
+    /**
+     * Get the user that created this tenant.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
  
+    /**
+     * Get the roles for this tenant.
+     */
     public function roles(): HasMany
     {
         return $this->hasMany(Role::class);
+    }
+
+    /**
+     * Scope to find by slug.
+     */
+    public function scopeBySlug($query, string $slug)
+    {
+        return $query->where('slug', $slug);
+    }
+
+    /**
+     * Scope to only include active tenants.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', TenantStatus::Published);
+    }
+
+    /**
+     * Route model binding by slug.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 }

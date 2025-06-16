@@ -7,6 +7,7 @@
 namespace Callcocam\ReactPapaLeguas;
 
 use Callcocam\ReactPapaLeguas\Commands\ReactPapaLeguasCommand;
+use Callcocam\ReactPapaLeguas\Commands\MakeStandardModelCommand;
 use Callcocam\ReactPapaLeguas\Guards\LandlordGuard;
 use Callcocam\ReactPapaLeguas\Http\Middleware\LandlordAuth;
 use Callcocam\ReactPapaLeguas\Http\Middleware\DisableTenantScoping;
@@ -33,7 +34,8 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
             ->hasRoutes('web', 'api', 'landlord')
             ->hasViews()
             ->hasMigration('create_admins_table')
-            ->hasCommand(ReactPapaLeguasCommand::class);
+            ->hasCommand(ReactPapaLeguasCommand::class)
+            ->hasCommand(MakeStandardModelCommand::class);
     }
 
     public function register(): void

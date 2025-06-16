@@ -1,0 +1,51 @@
+<?php
+/**
+ * Created by Claudio Campos.
+ * User: callcocam@gmail.com, contato@sigasmart.com.br
+ * https://www.sigasmart.com.br
+ */
+
+namespace App\Models;
+
+use Callcocam\ReactPapaLeguas\Models\AbstractModel;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class {{ModelName}} extends AbstractModel
+{
+    use HasFactory;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+        'status',
+        'user_id',
+        'tenant_id',
+    ];
+
+    /**
+     * Get the source field for slug generation.
+     * Override to use different field as slug source.
+     */
+    protected function getSlugSource(): string
+    {
+        return 'name'; // Change this if needed
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        // Add custom boot logic here if needed
+    }
+
+    // Add your relationships and methods here
+}

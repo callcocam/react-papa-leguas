@@ -6,27 +6,42 @@
  */
 namespace Callcocam\ReactPapaLeguas\Shinobi\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Callcocam\ReactPapaLeguas\Shinobi\Concerns\HasPermissions;
 use Callcocam\ReactPapaLeguas\Shinobi\Contracts\Role as RoleContract;
 use Callcocam\ReactPapaLeguas\Models\AbstractModel;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Role extends AbstractModel implements RoleContract
 {
-    use HasPermissions;
-     
+    use HasPermissions, HasFactory;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+        'status',
+        'special',
+        'user_id',
+        'tenant_id',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     */
+    protected $casts = [
+        'special' => 'boolean',
+    ];
 
     /**
      * Create a new Role instance.
-     * 
-     * @param  array  $attributes
-     * @return void
      */
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
-
         $this->setTable(config('shinobi.tables.roles'));
     }
 

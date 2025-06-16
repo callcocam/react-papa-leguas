@@ -21,7 +21,8 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->enum('status', array_column(PermissionStatus::cases(), 'value'))->default(PermissionStatus::Draft->value); 
-            $table->ulid('tenant_id')->nullable();
+            $table->foreignUlid('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignUlid('tenant_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
             
@@ -29,6 +30,8 @@ return new class extends Migration
             $table->index('tenant_id');
             $table->index(['tenant_id', 'status']);
             $table->index(['slug', 'tenant_id']);
+            $table->index(['user_id', 'tenant_id']);
+            $table->index('status');
         });
     }
 
