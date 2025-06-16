@@ -16,7 +16,7 @@ class LandlordLoginController extends Controller
      */
     public function showLoginForm(): Response
     {
-        return Inertia::render('Landlord/Auth/Login');
+        return Inertia::render('landlord/auth/login');
     }
 
     /**
