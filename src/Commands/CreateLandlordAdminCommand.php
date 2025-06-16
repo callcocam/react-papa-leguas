@@ -64,7 +64,7 @@ class CreateLandlordAdminCommand extends Command
             $this->comment("   Nome: {$admin->name}");
             $this->comment("   Email: {$admin->email}");
             $this->comment("   Senha: {$password}");
-            $this->comment("   Status: " . $admin->status->label());
+            $this->comment("   Status: Ativo");
             $this->newLine();
             
             $this->comment('Próximos passos:');
