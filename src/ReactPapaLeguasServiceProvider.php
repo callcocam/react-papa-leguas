@@ -1,9 +1,11 @@
 <?php
+
 /**
  * Created by Claudio Campos.
  * User: callcocam@gmail.com, contato@sigasmart.com.br
  * https://www.sigasmart.com.br
  */
+
 namespace Callcocam\ReactPapaLeguas;
 
 use Callcocam\ReactPapaLeguas\Commands\ReactPapaLeguasCommand;
@@ -14,6 +16,7 @@ use Callcocam\ReactPapaLeguas\Http\Middleware\DisableTenantScoping;
 use Callcocam\ReactPapaLeguas\Providers\LandlordAuthProvider;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -35,13 +38,22 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
             ->hasViews()
             ->hasMigration('create_admins_table')
             ->hasCommand(ReactPapaLeguasCommand::class)
-            ->hasCommand(MakeStandardModelCommand::class);
+            ->hasCommand(MakeStandardModelCommand::class)
+            ->hasInstallCommand(function (InstallCommand $command) {
+                $command
+                    ->publishConfigFile()
+                    ->publishAssets()
+                    ->publishMigrations()
+                    ->publish('react-papa-leguas:translations')
+                    ->askToRunMigrations()
+                    ->copyAndRegisterServiceProviderInApp();
+            });
     }
 
     public function register(): void
     {
         parent::register();
-        
+
         // Register service providers first
         $this->registerServiceProviders();
     }
@@ -111,6 +123,6 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
     protected function registerServiceProviders(): void
     {
         $this->app->register(\Callcocam\ReactPapaLeguas\Shinobi\ShinobiServiceProvider::class);
-        $this->app->register(\Callcocam\ReactPapaLeguas\Landlord\LandlordServiceProvider::class); 
+        $this->app->register(\Callcocam\ReactPapaLeguas\Landlord\LandlordServiceProvider::class);
     }
 }
