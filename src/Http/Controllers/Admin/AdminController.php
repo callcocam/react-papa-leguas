@@ -6,14 +6,14 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\ReactPapaLeguas\Http\Controllers\App\Admin;
+namespace Callcocam\ReactPapaLeguas\Http\Controllers\Admin;
 
 use Callcocam\ReactPapaLeguas\Http\Controllers\Controller;
 use Inertia\Inertia;
 
 /**
  * Class AdminController
- * @package Callcocam\ReactPapaLeguas\Http\Controllers\App\Admin
+ * @package Callcocam\ReactPapaLeguas\Http\Controllers\Admin
  */
 class AdminController extends Controller
 {
