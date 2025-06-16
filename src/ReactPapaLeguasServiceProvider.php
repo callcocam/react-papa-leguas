@@ -9,6 +9,7 @@ namespace Callcocam\ReactPapaLeguas;
 use Callcocam\ReactPapaLeguas\Commands\ReactPapaLeguasCommand;
 use Callcocam\ReactPapaLeguas\Guards\LandlordGuard;
 use Callcocam\ReactPapaLeguas\Http\Middleware\LandlordAuth;
+use Callcocam\ReactPapaLeguas\Http\Middleware\DisableTenantScoping;
 use Callcocam\ReactPapaLeguas\Providers\LandlordAuthProvider;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -85,6 +86,7 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
         $router = $this->app['router'];
 
         $router->aliasMiddleware('landlord.auth', LandlordAuth::class);
+        $router->aliasMiddleware('disable.tenant.scoping', DisableTenantScoping::class);
     }
 
     /**

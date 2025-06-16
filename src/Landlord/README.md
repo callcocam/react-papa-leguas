@@ -1,4 +1,155 @@
-# Landlord for Laravel & Lumen 5.2+
+# Landlord Multi-Tenant System
+
+Sistema de multi-tenancy que permite isolamento de dados por tenant, com bypass automático para usuários landlord (administradores).
+
+## Características
+
+- **Auto-Scoping**: Filtragem automática por tenant em todos os modelos
+- **Landlord Bypass**: Usuários do guard `landlord` têm acesso global
+- **Domain/Subdomain Resolution**: Resolução automática de tenant por domínio
+- **Flexible Control**: Métodos para controlar scoping dinamicamente
+
+## Uso Básico
+
+### 1. Adicionar trait aos modelos
+
+```php
+use Callcocam\ReactPapaLeguas\Landlord\BelongsToTenants;
+
+class Post extends Model
+{
+    use BelongsToTenants;
+    
+    // O modelo será automaticamente filtrado por tenant_id
+}
+```
+
+### 2. Configurar colunas de tenant personalizadas
+
+```php
+class Post extends Model
+{
+    use BelongsToTenants;
+    
+    protected $tenantColumns = ['tenant_id', 'company_id'];
+}
+```
+
+## Bypass para Landlords
+
+### Automático
+- Usuários autenticados via guard `landlord` têm acesso global
+- Rotas com prefixo `/landlord/*` ignoram tenant scoping
+
+### Manual - Desabilitar temporariamente
+
+```php
+use Callcocam\ReactPapaLeguas\Landlord\TenantManager;
+
+// Para uma operação específica
+app(TenantManager::class)->withoutTenantScoping(function () {
+    return Post::all(); // Retorna posts de todos os tenants
+});
+
+// Ou usar middleware
+Route::middleware('disable.tenant.scoping')->group(function () {
+    // Rotas sem tenant scoping
+});
+```
+
+### Manual - Forçar scoping para landlord
+
+```php
+// Quando landlord precisa trabalhar no contexto de um tenant específico
+app(TenantManager::class)->withTenantScoping(function () {
+    return Post::all(); // Respeitará o tenant atual
+});
+```
+
+## Controle Dinâmico
+
+```php
+$tenantManager = app(TenantManager::class);
+
+// Desabilitar scoping globalmente
+$tenantManager->disable();
+
+// Habilitar scoping
+$tenantManager->enable();
+
+// Adicionar tenant específico
+$tenantManager->addTenant('tenant_id', 123);
+
+// Remover tenant
+$tenantManager->removeTenant('tenant_id');
+
+// Verificar se tenant está ativo
+if ($tenantManager->hasTenant('tenant_id')) {
+    // ...
+}
+```
+
+## Configuração de Tenant
+
+O sistema resolve automaticamente o tenant por:
+
+1. **Domínio exato**: `empresa1.com` → tenant com domain = 'empresa1.com'
+2. **Subdomínio**: `empresa1.app.com` → tenant com prefix = 'empresa1'
+
+## Exemplos de Uso
+
+### Controller Landlord
+```php
+class LandlordDashboardController extends Controller
+{
+    public function stats()
+    {
+        // Automaticamente sem scoping - vê todos os tenants
+        $totalUsers = User::count();
+        $totalPosts = Post::count();
+        
+        return view('landlord.stats', compact('totalUsers', 'totalPosts'));
+    }
+    
+    public function tenantDetails($tenantId)
+    {
+        // Forçar contexto de tenant específico
+        return app(TenantManager::class)->withTenantScoping(function () use ($tenantId) {
+            app(TenantManager::class)->addTenant('tenant_id', $tenantId);
+            return Post::with('user')->get();
+        });
+    }
+}
+```
+
+### Model com bypass condicional
+```php
+class Post extends Model
+{
+    use BelongsToTenants;
+    
+    public function scopeGlobal($query)
+    {
+        // Scope que sempre ignora tenant
+        return app(TenantManager::class)->withoutTenantScoping(function () use ($query) {
+            return $query;
+        });
+    }
+}
+
+// Uso
+$globalPosts = Post::global()->get(); // Posts de todos os tenants
+$tenantPosts = Post::all(); // Posts do tenant atual (se houver)
+```
+
+## Middleware Disponível
+
+- `landlord.auth`: Autentica usuário via guard landlord
+- `disable.tenant.scoping`: Desabilita tenant scoping para a requisição
+
+## Configuração
+
+Veja `config/tenant.php` e `config/react-papa-leguas.php` para opções de configuração.vel & Lumen 5.2+
  
 and set your `default_tenant_columns` setting, if you have an app-wide default. LandLord will use this setting to scope models that don’t have a `$tenantColumns` property set.
 

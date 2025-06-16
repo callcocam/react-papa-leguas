@@ -139,8 +139,13 @@ class TenantManager
      */
     public function applyTenantScopes(Model $model)
     {
-
+        // Skip tenant scoping if disabled
         if (!$this->enabled) {
+            return;
+        }
+
+        // Skip tenant scoping if user is authenticated via landlord guard
+        if ($this->shouldBypassTenantScoping()) {
             return;
         }
 
@@ -265,5 +270,78 @@ class TenantManager
     protected function modelTenants(Model $model)
     {
         return $this->tenants->only($model->getTenantColumns());
+    }
+
+    /**
+     * Check if tenant scoping should be bypassed.
+     *
+     * @return bool
+     */
+    protected function shouldBypassTenantScoping(): bool
+    {
+        // Check if app has auth and if landlord guard is being used
+        if (!app()->bound('auth')) {
+            return false;
+        }
+
+        try {
+            // Check if current user is authenticated via landlord guard
+            if (auth()->guard('landlord')->check()) {
+                return true;
+            }
+
+            // Check if request is coming from landlord routes
+            if (request()->is(config('react-papa-leguas.landlord.routes.prefix', 'landlord') . '/*')) {
+                return true;
+            }
+
+            return false;
+        } catch (\Exception $e) {
+            // In case of any auth errors, don't bypass
+            return false;
+        }
+    }
+
+    /**
+     * Temporarily disable tenant scoping for a callback.
+     * Useful for landlord operations that need to access all tenant data.
+     *
+     * @param callable $callback
+     * @return mixed
+     */
+    public function withoutTenantScoping(callable $callback)
+    {
+        $wasEnabled = $this->enabled;
+        $this->disable();
+
+        try {
+            return $callback();
+        } finally {
+            if ($wasEnabled) {
+                $this->enable();
+            }
+        }
+    }
+
+    /**
+     * Enable tenant scoping for landlord users (override bypass).
+     * Useful when landlord needs to work within specific tenant context.
+     *
+     * @param callable $callback
+     * @return mixed
+     */
+    public function withTenantScoping(callable $callback)
+    {
+        // Store current auth state
+        $currentGuard = auth()->getDefaultDriver();
+
+        try {
+            // Temporarily switch away from landlord guard
+            auth()->setDefaultDriver('web');
+            return $callback();
+        } finally {
+            // Restore original guard
+            auth()->setDefaultDriver($currentGuard);
+        }
     }
 }

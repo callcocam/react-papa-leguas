@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Authentication Routes (Guest only)
-Route::middleware('guest:landlord')->group(function () {
+Route::middleware(['guest:landlord', 'disable.tenant.scoping'])->group(function () {
     Route::get('/login', [LandlordLoginController::class, 'showLoginForm'])
         ->name('landlord.login');
     
@@ -32,7 +32,7 @@ Route::middleware('guest:landlord')->group(function () {
 });
 
 // Authenticated Routes
-Route::middleware('landlord.auth')->group(function () {
+Route::middleware(['landlord.auth', 'disable.tenant.scoping'])->group(function () {
     Route::post('/logout', [LandlordLoginController::class, 'logout'])
         ->name('landlord.logout');
     

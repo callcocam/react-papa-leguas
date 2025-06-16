@@ -38,38 +38,103 @@ class LandlordServiceProvider extends ServiceProvider
 
     public function bootTenant()
     {
-
         if (app()->runningInConsole()) {
             return false;
         }
+        
+        // Skip tenant resolution if landlord guard is active
+        if ($this->shouldSkipTenantResolution()) {
+            return false;
+        }
+
         $tenant = null;
         try {
-            // Verifica se é um subdominio
-            $host = request()->getHost();
-            $tenant = app($this->getModel())->query()->where('domain',   $host)->first();
-            if (!$tenant) :
-                $subdomain = explode('.', $host);
-                $host = $subdomain[0];
-                $tenant = app($this->getModel())->query()->where('prefix',   $host)->first();
-                if (!$tenant) :
-                    die(response("Nenhuma empresa cadastrada com esse endereço " .  $host, 401));
-                endif;
-            endif;
+            $tenant = $this->resolveTenantFromRequest();
+            
             if ($tenant) {
-                app(TenantManager::class)->addTenant("tenant_id", data_get($tenant, 'id'));
-                // config(['app.url'=> sprintf("%s://%s", request()->getScheme(), $tenant->domain)]);
-                config([
-                    'app.tenant_id' => $tenant->id,
-                    'app.name' => Str::limit($tenant->name, 20, '...'),
-                    'app.cover_photo_url' => $tenant->cover_photo_url,
-                    'app.tenant' => $tenant->toArray(),
-                    'app.tenant.company_id' => $tenant->old_id,
-                ]);
+                $this->configureTenant($tenant);
+            } else {
+                $this->handleTenantNotFound();
             }
         } catch (\PDOException $th) {
-
             throw $th;
         }
+    }
+
+    /**
+     * Check if tenant resolution should be skipped.
+     */
+    protected function shouldSkipTenantResolution(): bool
+    {
+        try {
+            // Skip if landlord user is authenticated
+            if (auth()->guard('landlord')->check()) {
+                return true;
+            }
+            
+            // Skip for landlord routes
+            $landlordPrefix = config('react-papa-leguas.landlord.routes.prefix', 'landlord');
+            if (request()->is($landlordPrefix . '/*')) {
+                return true;
+            }
+            
+            return false;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Resolve tenant from current request.
+     */
+    protected function resolveTenantFromRequest()
+    {
+        $host = request()->getHost();
+        
+        // Try exact domain match first
+        $tenant = app($this->getModel())->query()->where('domain', $host)->first();
+        
+        if (!$tenant) {
+            // Try subdomain match
+            $subdomain = explode('.', $host);
+            $host = $subdomain[0];
+            $tenant = app($this->getModel())->query()->where('prefix', $host)->first();
+        }
+        
+        return $tenant;
+    }
+
+    /**
+     * Configure application for the resolved tenant.
+     */
+    protected function configureTenant($tenant): void
+    {
+        app(TenantManager::class)->addTenant("tenant_id", data_get($tenant, 'id'));
+        
+        config([
+            'app.tenant_id' => $tenant->id,
+            'app.name' => Str::limit($tenant->name, 20, '...'),
+            'app.cover_photo_url' => $tenant->cover_photo_url,
+            'app.tenant' => $tenant->toArray(),
+            'app.tenant.company_id' => $tenant->old_id,
+        ]);
+    }
+
+    /**
+     * Handle when no tenant is found.
+     */
+    protected function handleTenantNotFound(): void
+    {
+        $host = request()->getHost();
+        
+        // For API requests, return JSON response
+        if (request()->expectsJson()) {
+            abort(404, "No tenant found for domain: {$host}");
+        }
+        
+        // For web requests, you might want to redirect to a landing page
+        // or show a custom 404 page
+        abort(404, "Nenhuma empresa cadastrada com esse endereço: {$host}");
     }
 
     public  function getModel(): string
