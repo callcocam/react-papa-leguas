@@ -20,8 +20,7 @@ use Illuminate\Support\Facades\Route;
 | These routes are loaded by the ReactPapaLeguasServiceProvider within
 | a group which contains the landlord-specific middleware.
 |
-*/
-
+*/ 
 // Authentication Routes (Guest only)
 Route::middleware(['guest:landlord', 'disable.tenant.scoping'])->group(function () {
     Route::get('/login', [LandlordLoginController::class, 'showLoginForm'])
@@ -41,7 +40,7 @@ Route::middleware(['landlord.auth', 'disable.tenant.scoping'])->group(function (
 });
 
 // Redirect root to dashboard or login
-Route::get('/', function () {
+Route::get('/', function () { 
     if (Auth::guard('landlord')->check()) {
         return redirect()->route('landlord.dashboard');
     }

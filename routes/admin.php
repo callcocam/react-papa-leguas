@@ -27,7 +27,7 @@ Route::prefix(ReactPapaLeguas::getPrefix())
     ->group(function () {
 
         Route::middleware(['auth', 'verified'])->group(function () {
-            Route::get('/', function () {
+            Route::get('/', function () { 
                 return Inertia::render('app');
             })->name('dashboard');
         });

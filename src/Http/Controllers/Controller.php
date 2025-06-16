@@ -46,7 +46,7 @@ class Controller extends BaseController{
      */
     protected function getViewIndex()
     {
-        return 'landlord/crud/index';
+        return 'crud/index';
     }
 
     /**

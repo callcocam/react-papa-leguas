@@ -26,7 +26,7 @@ class LandlordController extends Controller
      */
     public function index()
     {
-        return Inertia::render($this->getViewIndex(),  $this->getViewData());
+        return Inertia::render('landlord/dashboard', $this->getViewData());
     }
 
     /**

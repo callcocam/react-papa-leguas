@@ -42,17 +42,19 @@ class LandlordServiceProvider extends ServiceProvider
             return false;
         }
         
-        // Skip tenant resolution in development if no tenant is required
-        if (app()->environment('local') || app()->environment('development')) {
-            // Check if we're accessing landlord routes or if tenant resolution is disabled
-            $landlordPrefix = config('react-papa-leguas.landlord.routes.prefix', 'landlord');
-            if (request()->is($landlordPrefix . '/*') || config('tenant.skip_resolution', false)) {
-                return false;
-            }
+        // Always skip tenant resolution for landlord routes
+        $landlordPrefix = config('react-papa-leguas.landlord.routes.prefix', 'landlord'); 
+        if (request()->is($landlordPrefix . '/*')) {
+            return false;
         }
         
         // Skip tenant resolution if landlord guard is active
         if ($this->shouldSkipTenantResolution()) {
+            return false;
+        }
+
+        // Skip tenant resolution if explicitly disabled
+        if (config('tenant.skip_resolution', false)) {
             return false;
         }
 
@@ -150,8 +152,7 @@ class LandlordServiceProvider extends ServiceProvider
             } else {
                 abort(404, "Nenhuma empresa cadastrada para o domínio: {$host}");
             }
-        }
-        
+        } 
         // For web requests, show informative page or redirect
         if ($totalTenants === 0) {
             // No tenants in system - show setup page
