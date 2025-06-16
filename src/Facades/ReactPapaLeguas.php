@@ -4,17 +4,17 @@
  * User: callcocam@gmail.com, contato@sigasmart.com.br
  * https://www.sigasmart.com.br
  */
-namespace VendorName\Skeleton\Facades;
+namespace Callcocam\ReactPapaLeguas\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @see \VendorName\Skeleton\Skeleton
+ * @see \Callcocam\ReactPapaLeguas\ReactPapaLeguas
  */
-class Skeleton extends Facade
+class ReactPapaLeguas extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \VendorName\Skeleton\Skeleton::class;
+        return \Callcocam\ReactPapaLeguas\ReactPapaLeguas::class;
     }
 }

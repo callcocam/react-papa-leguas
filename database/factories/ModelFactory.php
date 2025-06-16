@@ -4,7 +4,7 @@
  * User: callcocam@gmail.com, contato@sigasmart.com.br
  * https://www.sigasmart.com.br
  */
-namespace VendorName\Skeleton\Database\Factories;
+namespace Callcocam\ReactPapaLeguas\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 

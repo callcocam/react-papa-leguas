@@ -4,7 +4,7 @@
  * User: callcocam@gmail.com, contato@sigasmart.com.br
  * https://www.sigasmart.com.br
  */
-// config for VendorName/Skeleton
+// config for Callcocam/ReactPapaLeguas
 return [
 
 ];

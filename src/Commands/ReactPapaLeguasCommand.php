@@ -4,13 +4,13 @@
  * User: callcocam@gmail.com, contato@sigasmart.com.br
  * https://www.sigasmart.com.br
  */
-namespace VendorName\Skeleton\Commands;
+namespace Callcocam\ReactPapaLeguas\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class ReactPapaLeguasCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'react-papa-leguas';
 
     public $description = 'My command';
 
