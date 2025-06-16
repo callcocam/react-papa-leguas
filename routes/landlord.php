@@ -6,19 +6,46 @@
  * https://www.sigasmart.com.br
  */
 
-use Callcocam\ReactPapaLeguas\Facades\ReactPapaLeguas;
+use Callcocam\ReactPapaLeguas\Http\Controllers\Auth\LandlordLoginController;
+use Callcocam\ReactPapaLeguas\Http\Controllers\LandlordDashboardController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| Landlord Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
+| Here are the routes for landlord authentication and dashboard.
+| These routes are loaded by the ReactPapaLeguasServiceProvider within
+| a group which contains the landlord-specific middleware.
 |
 */
 
+// Authentication Routes (Guest only)
+Route::middleware('guest:landlord')->group(function () {
+    Route::get('/login', [LandlordLoginController::class, 'showLoginForm'])
+        ->name('landlord.login');
+    
+    Route::post('/login', [LandlordLoginController::class, 'login'])
+        ->name('landlord.login.post');
+});
+
+// Authenticated Routes
+Route::middleware('landlord.auth')->group(function () {
+    Route::post('/logout', [LandlordLoginController::class, 'logout'])
+        ->name('landlord.logout');
+    
+    Route::get('/dashboard', [LandlordDashboardController::class, 'index'])
+        ->name('landlord.dashboard');
+});
+
+// Redirect root to dashboard or login
+Route::get('/', function () {
+    if (Auth::guard('landlord')->check()) {
+        return redirect()->route('landlord.dashboard');
+    }
+    
+    return redirect()->route('landlord.login');
+})->name('landlord.home');
  
