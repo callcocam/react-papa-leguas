@@ -35,6 +35,9 @@ Route::middleware(['landlord.auth', 'disable.tenant.scoping'])->group(function (
     Route::post('/logout', [LandlordLoginController::class, 'logout'])
         ->name('landlord.logout');
     
+    Route::get('/logout', [LandlordLoginController::class, 'logout'])
+        ->name('landlord.logout.get');
+    
     Route::get('/dashboard', [LandlordController::class, 'index'])
         ->name('landlord.dashboard');
 });
