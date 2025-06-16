@@ -1,40 +1,30 @@
 <?php
+/**
+ * Created by Claudio Campos.
+ * User: callcocam@gmail.com, contato@sigasmart.com.br
+ * https://www.sigasmart.com.br
+ */
 
 namespace Callcocam\ReactPapaLeguas\Enums;
 
 enum PermissionStatus: string
 {
-    case Published = 'published';
     case Draft = 'draft';
-    case Inactive = 'inactive';
-    case Archived = 'archived';
+    case Published = 'published';
 
-    /**
-     * Get all possible values.
-     */
-    public static function values(): array
-    {
-        return array_column(self::cases(), 'value');
-    }
-
-    /**
-     * Get the label for the status.
-     */
     public function label(): string
     {
         return match($this) {
-            self::Published => 'Published',
-            self::Draft => 'Draft',
-            self::Inactive => 'Inactive',
-            self::Archived => 'Archived',
+            self::Draft => 'Rascunho',
+            self::Published => 'Publicado',
         };
     }
 
-    /**
-     * Check if the status is published/active.
-     */
-    public function isActive(): bool
+    public function color(): string
     {
-        return $this === self::Published;
+        return match ($this) {
+            self::Draft => 'gray',
+            self::Published => 'green'
+        };
     }
-}
+} 
