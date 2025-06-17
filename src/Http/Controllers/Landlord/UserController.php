@@ -8,7 +8,7 @@
 
 namespace Callcocam\ReactPapaLeguas\Http\Controllers\Landlord;
 
-class TenantController extends LandlordController
+class UserController extends LandlordController
 {
     
 }

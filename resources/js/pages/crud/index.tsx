@@ -1,7 +1,7 @@
 import AppLayout from '../../layouts/react-app-layout'
 import { type BreadcrumbItem } from '../../types'
 import { Head } from '@inertiajs/react'
-import { PapaLeguasTable } from '../../components/table'
+import { PapaLeguasTable } from '../../core/table'
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -65,7 +65,9 @@ export default function CrudIndex({
                     permissions={permissions}
                     pagination={pagination}
                     config={config}
-                />
+                >
+                    Opa
+                </PapaLeguasTable>
             </div>
         </AppLayout>
     )

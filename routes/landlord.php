@@ -10,6 +10,7 @@ use Callcocam\ReactPapaLeguas\Http\Controllers\Auth\LandlordLoginController;
 use Callcocam\ReactPapaLeguas\Http\Controllers\Landlord\DashboardController;
 use Callcocam\ReactPapaLeguas\Http\Controllers\Landlord\TenantController;
 use Callcocam\ReactPapaLeguas\Http\Controllers\Landlord\TestController;
+use Callcocam\ReactPapaLeguas\Http\Controllers\Landlord\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -47,6 +48,9 @@ Route::middleware(['landlord.auth', 'disable.tenant.scoping'])
 
         // Tenant routes
         Route::resource('tenants', TenantController::class);
+        Route::resource('users', UserController::class);
+
+
         Route::post('tenants/bulk-destroy', [TenantController::class, 'bulkDestroy'])
             ->name('landlord.tenants.bulk-destroy');
         Route::patch('tenants/{tenant}/toggle-status', [TenantController::class, 'toggleStatus'])
