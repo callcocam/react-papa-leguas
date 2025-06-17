@@ -18,6 +18,7 @@ use Callcocam\ReactPapaLeguas\Commands\ReactPapaLeguasCommand;
 use Callcocam\ReactPapaLeguas\Commands\MakeStandardModelCommand;
 use Callcocam\ReactPapaLeguas\Commands\MigrateToPapaLeguasStandardsCommand;
 use Callcocam\ReactPapaLeguas\Commands\CheckStandardsCommand;
+use Callcocam\ReactPapaLeguas\Console\Commands\GenerateControllerCommand;
 use Callcocam\ReactPapaLeguas\Commands\CreateLandlordAdminCommand;
 use Callcocam\ReactPapaLeguas\Guards\LandlordGuard;
 use Callcocam\ReactPapaLeguas\Http\Middleware\LandlordAuth;
@@ -63,6 +64,7 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
             ->hasCommand(MigrateToPapaLeguasStandardsCommand::class)
             ->hasCommand(CheckStandardsCommand::class)
             ->hasCommand(CreateLandlordAdminCommand::class)
+            ->hasCommand(GenerateControllerCommand::class)
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
                     ->publishConfigFile()

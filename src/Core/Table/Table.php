@@ -12,20 +12,69 @@ use Callcocam\ReactPapaLeguas\Core;
 
 class Table
 {
-    use Core\Concerns\BelongsToId;
     use Core\Concerns\EvaluatesClosures;
+    use Core\Concerns\BelongsToId;
+    use Core\Concerns\BelongsToModel;
+    use Core\Concerns\BelongsToQuery;
+    use Concerns\HasActions;
+    use Concerns\HasColumns;
+    use Concerns\HasFilters;
+    use Concerns\HasPagination;
+    use Concerns\HasSorting;
+    use Concerns\HasSearch;
+    use Concerns\HasRecords;
 
     /**
      * The component name.
      *
      * @var string
      */
-    protected string $component = 'table';
+    protected string $component = 'PapaLeguasTable';
 
     /**
-     * The component view.
+     * Create a new table instance.
      *
-     * @var string
+     * @return static
      */
-    protected string $view = 'react-papa-leguas::core.table.table';
+    public static function make(): static
+    {
+        return new static();
+    }
+
+    /**
+     * Get the component props.
+     *
+     * @return array
+     */
+    public function getProps(): array
+    {
+        return $this->getTableData();
+    }
+
+    /**
+     * Render the table component.
+     *
+     * @return array
+     */
+    public function render(): array
+    {
+        return [
+            'component' => $this->component,
+            'props' => $this->getProps(),
+        ];
+    }
+
+    /**
+     * Convert the table to an array.
+     *
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'component' => $this->component,
+            'id' => $this->getId(),
+            'props' => $this->getProps(),
+        ];
+    }
 }
