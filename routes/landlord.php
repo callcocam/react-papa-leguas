@@ -1,4 +1,3 @@
-
 <?php
 /**
  * Created by Claudio Campos.
@@ -24,6 +23,12 @@ use Illuminate\Support\Facades\Route;
 | a group which contains the landlord-specific middleware.
 |
 */
+
+// Rota de teste pública (sem autenticação)
+Route::get('/test-table', [TenantController::class, 'test'])
+    ->middleware('disable.tenant.scoping')
+    ->name('landlord.test.table');
+
 // Authentication Routes (Guest only)
 Route::middleware(['guest:landlord', 'disable.tenant.scoping'])->group(function () {
     Route::get('/login', [LandlordLoginController::class, 'showLoginForm'])

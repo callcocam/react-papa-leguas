@@ -69,12 +69,34 @@ class DateColumn extends Column
     }
 
     /**
+     * Mostrar tempo relativo (ex: "há 2 dias")
+     */
+    public function since(bool $since = true): static
+    {
+        $this->formatConfig['since'] = $since;
+        return $this;
+    }
+
+    /**
+     * Definir placeholder para data vazia
+     */
+    public function placeholder(string $placeholder): static
+    {
+        $this->formatConfig['placeholder'] = $placeholder;
+        return $this;
+    }
+
+    /**
      * Aplicar formatação padrão
      */
     protected function applyDefaultFormatting($value, $record): mixed
     {
         if (is_null($value)) {
-            return null;
+            return [
+                'value' => null,
+                'formatted' => $this->formatConfig['placeholder'] ?? '',
+                'placeholder' => true,
+            ];
         }
 
         try {
@@ -92,6 +114,11 @@ class DateColumn extends Column
             // Adicionar data relativa se solicitado
             if ($this->formatConfig['relative'] ?? false) {
                 $formatted['relative'] = $date->diffForHumans();
+            }
+
+            // Adicionar since se solicitado
+            if ($this->formatConfig['since'] ?? false) {
+                $formatted['since'] = $date->diffForHumans();
             }
 
             // Adicionar nome do dia se solicitado

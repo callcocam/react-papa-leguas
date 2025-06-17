@@ -233,6 +233,90 @@ class Column
     }
 
     /**
+     * Definir ícone da coluna
+     */
+    public function icon(string $icon, string $position = 'before'): static
+    {
+        $this->formatConfig['icon'] = [
+            'name' => $icon,
+            'position' => $position,
+        ];
+        return $this;
+    }
+
+    /**
+     * Definir cor da coluna
+     */
+    public function color(string $color): static
+    {
+        $this->formatConfig['color'] = $color;
+        return $this;
+    }
+
+    /**
+     * Definir tooltip
+     */
+    public function tooltip(string $tooltip): static
+    {
+        $this->formatConfig['tooltip'] = $tooltip;
+        return $this;
+    }
+
+    /**
+     * Renderizar como imagem
+     */
+    public function renderAsImage(bool $renderAsImage = true): static
+    {
+        $this->formatConfig['renderAsImage'] = $renderAsImage;
+        return $this;
+    }
+
+    /**
+     * Limitar texto
+     */
+    public function limit(int $limit): static
+    {
+        $this->formatConfig['limit'] = $limit;
+        return $this;
+    }
+
+    /**
+     * Tornar texto copiável
+     */
+    public function copyable(bool $copyable = true): static
+    {
+        $this->formatConfig['copyable'] = $copyable;
+        return $this;
+    }
+
+    /**
+     * Usar fonte monoespaçada
+     */
+    public function fontMono(bool $fontMono = true): static
+    {
+        $this->formatConfig['fontMono'] = $fontMono;
+        return $this;
+    }
+
+    /**
+     * Formatar como moeda
+     */
+    public function currency(string $currency = 'BRL'): static
+    {
+        $this->formatConfig['currency'] = $currency;
+        return $this;
+    }
+
+    /**
+     * Definir placeholder
+     */
+    public function placeholder(string $placeholder): static
+    {
+        $this->formatConfig['placeholder'] = $placeholder;
+        return $this;
+    }
+
+    /**
      * Definir formatação customizada
      */
     public function format(Closure $callback): static

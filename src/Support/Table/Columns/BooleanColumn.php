@@ -69,18 +69,83 @@ class BooleanColumn extends Column
     }
 
     /**
+     * Ícone para valor verdadeiro
+     */
+    public function trueIcon(string $icon): static
+    {
+        $this->formatConfig['trueIcon'] = $icon;
+        return $this;
+    }
+
+    /**
+     * Ícone para valor falso
+     */
+    public function falseIcon(string $icon): static
+    {
+        $this->formatConfig['falseIcon'] = $icon;
+        return $this;
+    }
+
+    /**
+     * Cor para valor verdadeiro
+     */
+    public function trueColor(string $color): static
+    {
+        $this->formatConfig['trueColor'] = $color;
+        return $this;
+    }
+
+    /**
+     * Cor para valor falso
+     */
+    public function falseColor(string $color): static
+    {
+        $this->formatConfig['falseColor'] = $color;
+        return $this;
+    }
+
+    /**
+     * Label para valor verdadeiro
+     */
+    public function trueLabel(string $label): static
+    {
+        $this->formatConfig['trueLabel'] = $label;
+        return $this;
+    }
+
+    /**
+     * Label para valor falso
+     */
+    public function falseLabel(string $label): static
+    {
+        $this->formatConfig['falseLabel'] = $label;
+        return $this;
+    }
+
+    /**
      * Aplicar formatação padrão
      */
     protected function applyDefaultFormatting($value, $record): mixed
     {
         $boolValue = (bool) $value;
-        $labels = $this->formatConfig['labels'] ?? ['Sim', 'Não'];
-        $colors = $this->formatConfig['colors'] ?? ['green', 'red'];
+        
+        // Labels padrão ou específicos
+        $trueLabel = $this->formatConfig['trueLabel'] ?? ($this->formatConfig['labels'][0] ?? 'Sim');
+        $falseLabel = $this->formatConfig['falseLabel'] ?? ($this->formatConfig['labels'][1] ?? 'Não');
+        
+        // Cores padrão ou específicas
+        $trueColor = $this->formatConfig['trueColor'] ?? ($this->formatConfig['colors'][0] ?? 'green');
+        $falseColor = $this->formatConfig['falseColor'] ?? ($this->formatConfig['colors'][1] ?? 'red');
+        
+        // Ícones se definidos
+        $trueIcon = $this->formatConfig['trueIcon'] ?? null;
+        $falseIcon = $this->formatConfig['falseIcon'] ?? null;
 
         return [
             'value' => $boolValue,
-            'text' => $boolValue ? $labels[0] : $labels[1],
-            'color' => $boolValue ? $colors[0] : $colors[1],
+            'text' => $boolValue ? $trueLabel : $falseLabel,
+            'color' => $boolValue ? $trueColor : $falseColor,
+            'icon' => $boolValue ? $trueIcon : $falseIcon,
             'display' => $this->formatConfig['display'] ?? 'text',
         ];
     }

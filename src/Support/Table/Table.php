@@ -86,6 +86,7 @@ class Table implements TableInterface
         'bordered' => false,
         'hover' => true,
         'compact' => false,
+        'perPage' => 15,
     ];
 
     /**
@@ -219,6 +220,14 @@ class Table implements TableInterface
     public function getModel(): ?string
     {
         return $this->model;
+    }
+
+    /**
+     * Obter todas as ações (header + row)
+     */
+    public function getActions(): array
+    {
+        return array_merge($this->getHeaderActions(), $this->getRowActions());
     }
 
     /**
