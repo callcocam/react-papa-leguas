@@ -8,14 +8,17 @@
 
 namespace Callcocam\ReactPapaLeguas\Core\Table;
 
-use Callcocam\ReactPapaLeguas\Core;
+use Callcocam\ReactPapaLeguas\Core\Concerns\EvaluatesClosures;
+use Callcocam\ReactPapaLeguas\Core\Concerns\BelongsToId;
+use Callcocam\ReactPapaLeguas\Core\Concerns\BelongsToModel;
+use Callcocam\ReactPapaLeguas\Core\Table\Concerns\BelongsToQuery;
 
 class Table
 {
-    use Core\Concerns\EvaluatesClosures;
-    use Core\Concerns\BelongsToId;
-    use Core\Concerns\BelongsToModel;
-    use Core\Concerns\BelongsToQuery;
+    use EvaluatesClosures;
+    use BelongsToId;
+    use BelongsToModel;
+    use BelongsToQuery;
     use Concerns\HasActions;
     use Concerns\HasColumns;
     use Concerns\HasFilters;
