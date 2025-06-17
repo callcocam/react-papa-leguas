@@ -12,9 +12,9 @@ class ActionsColumn extends Column
     /**
      * Criar nova instância da coluna de ações
      */
-    public static function make(string $name = 'actions'): static
+    public static function make(string $key = 'actions', ?string $label = null): static
     {
-        return new static($name);
+        return new static($key, $label ?? 'Ações');
     }
 
     /**
