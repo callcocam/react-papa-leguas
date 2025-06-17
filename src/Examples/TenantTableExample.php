@@ -35,7 +35,7 @@ class TenantTableExample
             ->booleanColumn('active', 'Ativo')
             
             // Configure filters  
-            // ->textFilter('name', 'Nome')
+            ->textFilter('name', 'Nome')
             
             // Configure basic settings
             ->searchable()
