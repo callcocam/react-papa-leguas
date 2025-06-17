@@ -34,7 +34,7 @@ class TenantController extends LandlordController
             }
             
             // Para requisições web, retornar view com Inertia
-            return inertia('Tenants/Index', [
+            return inertia('tenants/index', [
                 'table' => $tableData,
                 'title' => 'Gerenciamento de Tenants',
                 'description' => 'Sistema completo de gerenciamento de tenants'

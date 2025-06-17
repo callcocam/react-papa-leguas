@@ -431,6 +431,11 @@ Todas as funcionalidades estão implementadas e prontas para uso em produção.
    - **Resultado**: Sistema 100% funcional com 6 colunas, 4 filtros, 2 actions e 1 bulk action
    - **Status**: ✅ Validado
 
+4. **Undefined array key "perPage"**:
+   - **Problema**: Configuração padrão da tabela não incluía a chave `perPage`
+   - **Solução**: Adicionada chave `perPage` com valor padrão 15 e melhorada robustez do método `getPaginatedData()`
+   - **Status**: ✅ Resolvido
+
 **Teste de Funcionamento:**
 ```bash
 curl "http://papa-leguas-app-react.test/test-table" -H "Accept: application/json"

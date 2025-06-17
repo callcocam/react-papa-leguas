@@ -430,13 +430,13 @@ class Table implements TableInterface
 
     protected function getPaginatedData(Builder $query, Request $request): array
     {
-        $perPage = $request->get('per_page', $this->config['perPage']);
+        $perPage = $request->get('per_page', $this->config['perPage'] ?? 15);
         $page = $request->get('page', 1);
 
-        if (!$this->config['paginated']) {
+        if (!($this->config['paginated'] ?? true)) {
             $data = $query->get();
             return [
-                'data' => $data,
+                'data' => $data->toArray(),
                 'pagination' => [
                     'enabled' => false,
                     'total' => $data->count(),
@@ -447,7 +447,7 @@ class Table implements TableInterface
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
         return [
-            'data' => $paginated->items(),
+            'data' => collect($paginated->items())->toArray(),
             'pagination' => [
                 'enabled' => true,
                 'current_page' => $paginated->currentPage(),
@@ -457,7 +457,7 @@ class Table implements TableInterface
                 'from' => $paginated->firstItem(),
                 'to' => $paginated->lastItem(),
                 'has_more_pages' => $paginated->hasMorePages(),
-                'links' => $paginated->linkCollection(),
+                'links' => $paginated->toArray()['links'] ?? [],
             ],
         ];
     }
