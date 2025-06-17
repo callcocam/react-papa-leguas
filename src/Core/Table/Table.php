@@ -22,8 +22,18 @@ class Table
     use Concerns\HasActions;
     use Concerns\HasColumns;
     use Concerns\HasFilters;
-    use Concerns\HasPagination;
-    use Concerns\HasSorting;
+    use Concerns\HasPagination {
+        Concerns\HasPagination::perPage insteadof BelongsToQuery;
+        Concerns\HasPagination::perPageOptions insteadof BelongsToQuery;
+        Concerns\HasPagination::getPerPage insteadof BelongsToQuery;
+        Concerns\HasPagination::getPerPageOptions insteadof BelongsToQuery;
+        Concerns\HasPagination::paginated insteadof BelongsToQuery;
+        Concerns\HasPagination::isPaginated insteadof BelongsToQuery;
+    }
+    use Concerns\HasSorting {
+        Concerns\HasSorting::defaultSort insteadof BelongsToQuery;
+        Concerns\HasSorting::getDefaultSortDirection insteadof BelongsToQuery;
+    }
     use Concerns\HasSearch;
     use Concerns\HasRecords;
 

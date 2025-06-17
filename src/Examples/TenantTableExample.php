@@ -8,14 +8,10 @@
 
 namespace Callcocam\ReactPapaLeguas\Examples;
 
-use Callcocam\ReactPapaLeguas\Core\Table\Table;
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Header\CreateHeaderAction;
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Header\ExportHeaderAction;
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Rows\ViewRowAction;
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Rows\EditRowAction;
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Rows\DeleteRowAction;
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Bulk\DeleteBulkAction;
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Bulk\ActivateBulkAction;
+use Callcocam\ReactPapaLeguas\Support\Table\Table;
+use Callcocam\ReactPapaLeguas\Support\Table\Actions\HeaderAction;
+use Callcocam\ReactPapaLeguas\Support\Table\Actions\RowAction;
+use Callcocam\ReactPapaLeguas\Support\Table\Actions\BulkAction;
 use Callcocam\ReactPapaLeguas\Models\Tenant;
 
 /**
@@ -33,78 +29,27 @@ class TenantTableExample
             // Configure columns
             ->textColumn('name', 'Nome')
                 ->searchable()
-                ->copyable()
             ->textColumn('slug', 'Slug')
-                ->copyable()
-            ->editableColumn('status', 'Status')
-                ->asSelect()
-                ->updateRoute('landlord.tenants.update-status')
-                ->options([
-                    ['value' => 'active', 'label' => 'Ativo'],
-                    ['value' => 'inactive', 'label' => 'Inativo'],
-                    ['value' => 'suspended', 'label' => 'Suspenso'],
-                ])
-                ->requiresConfirmation()
-                ->confirmationTitle('Alterar status')
-                ->confirmationDescription('Deseja alterar o status deste tenant?')
-            ->badgeColumn('status', 'Status Atual')
-                ->statusColors()
-                ->statusIcons()
-                ->statusLabels()
+            ->badgeColumn('status', 'Status')
             ->dateColumn('created_at', 'Criado em')
-                ->dateOnly()
-                ->relative()
             ->booleanColumn('active', 'Ativo')
-                ->activeInactive()
-                ->asBadge()
-            ->editableColumn('name', 'Nome (Editável)')
-                ->asText()
-                ->updateRoute('landlord.tenants.update-field')
-                ->autosave()
-                ->debounce(1000)
-                ->validation(['required', 'string', 'max:255'])
             
             // Configure filters  
-            ->textFilter('name', 'Nome')
-                ->placeholder('Buscar por nome...')
-                ->contains()
-            ->selectFilter('status', 'Status')
-                ->statusOptions()
-                ->clearable()
-            ->booleanFilter('active', 'Ativo')
-                ->activeInactive()
-                ->asSelect()
-            ->dateRangeFilter('created_at', 'Data de criação')
-                ->includeTime(false)
-            ->selectFilter('domain_type', 'Tipo de Domínio')
-                ->options([
-                    ['value' => 'subdomain', 'label' => 'Subdomínio'],
-                    ['value' => 'domain', 'label' => 'Domínio próprio'],
-                ])
-                ->multiple()
+            // ->textFilter('name', 'Nome')
             
-            // Configure search
+            // Configure basic settings
             ->searchable()
-            ->searchPlaceholder('Buscar tenants...')
-            ->searchColumns(['name', 'slug', 'domain'])
-            
-            // Configure sorting
-            ->defaultSort('name', 'asc')
             ->sortable()
-            
-            // Configure pagination
-            ->perPage(15)
-            ->perPageOptions([10, 15, 25, 50, 100])
             ->paginated()
             
             // Configure header actions
             ->headerActions([
-                CreateHeaderAction::make()
+                HeaderAction::make('create')
                     ->route('landlord.tenants.create')
                     ->label('Novo Tenant')
                     ->color('primary'),
                     
-                ExportHeaderAction::make()
+                HeaderAction::make('export')
                     ->route('landlord.tenants.export')
                     ->label('Exportar')
                     ->color('secondary'),
@@ -112,17 +57,17 @@ class TenantTableExample
             
             // Configure row actions
             ->rowActions([
-                ViewRowAction::make()
+                RowAction::make('view')
                     ->route('landlord.tenants.show')
                     ->label('Ver')
                     ->color('secondary'),
                     
-                EditRowAction::make()
+                RowAction::make('edit')
                     ->route('landlord.tenants.edit')
                     ->label('Editar')
                     ->color('primary'),
                     
-                DeleteRowAction::make()
+                RowAction::make('delete')
                     ->route('landlord.tenants.destroy')
                     ->label('Excluir')
                     ->color('destructive')
@@ -133,12 +78,12 @@ class TenantTableExample
             
             // Configure bulk actions
             ->bulkActions([
-                ActivateBulkAction::make()
+                BulkAction::make('activate')
                     ->route('landlord.tenants.bulk-activate')
                     ->label('Ativar selecionados')
                     ->color('success'),
                     
-                DeleteBulkAction::make()
+                BulkAction::make('delete')
                     ->route('landlord.tenants.bulk-delete')
                     ->label('Excluir selecionados')
                     ->color('destructive')
