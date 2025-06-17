@@ -9,6 +9,7 @@
 namespace Callcocam\ReactPapaLeguas\Http\Controllers\Landlord;
 
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 
 class TestController extends LandlordController
 {
@@ -17,8 +18,8 @@ class TestController extends LandlordController
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render('tests/index', $this->getDataForViews());
+        return Inertia::render('tests/index', $this->getDataForViews($request));
     }
 }

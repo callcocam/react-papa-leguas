@@ -1,0 +1,218 @@
+<?php
+
+namespace {{namespace}};
+
+use App\Http\Controllers\Controller;
+use {{modelNamespace}}\{{modelName}};
+use {{tableNamespace}}\{{className}};
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+/**
+ * Controller para {{tableName}} gerado automaticamente
+ * 
+ * Este controller foi gerado pelo comando papa-leguas:make-table
+ * e pode ser customizado conforme necessário.
+ */
+class {{controllerName}} extends Controller
+{
+    /**
+     * Exibir listagem de {{tableName}}
+     */
+    public function index(Request $request): Response
+    {
+        try {
+            // Criar instância da tabela Papa Leguas
+            $table = {{className}}::create();
+            
+            // Aplicar filtros da requisição
+            $table->applyRequest($request);
+            
+            // Obter dados da tabela
+            $tableData = $table->getData();
+            
+            return Inertia::render('{{reactPagePath}}', [
+                'table' => $tableData,
+                'title' => '{{tableTitle}}',
+                'filters' => $request->only(['search', 'status', 'per_page']),
+            ]);
+            
+        } catch (\Exception $e) {
+            // Log do erro
+            \Log::error('Erro ao carregar tabela {{tableName}}: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all(),
+            ]);
+            
+            // Retornar página com dados vazios em caso de erro
+            return Inertia::render('{{reactPagePath}}', [
+                'table' => [
+                    'data' => [],
+                    'total' => 0,
+                    'per_page' => 15,
+                    'current_page' => 1,
+                    'last_page' => 1,
+                ],
+                'title' => '{{tableTitle}}',
+                'error' => 'Erro ao carregar dados. Tente novamente.',
+            ]);
+        }
+    }
+
+    /**
+     * Mostrar formulário de criação
+     */
+    public function create(): Response
+    {
+        return Inertia::render('{{reactPagePath}}/Create', [
+            'title' => 'Novo {{singularTitle}}',
+        ]);
+    }
+
+    /**
+     * Armazenar novo registro
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:{{tableName}},email',
+            'status' => 'required|in:active,inactive,pending,cancelled',
+            // Adicione mais validações conforme necessário
+        ]);
+
+        ${{camelSingular}} = {{modelName}}::create($validated);
+
+        return redirect()
+            ->route('{{routeName}}.index')
+            ->with('success', '{{singularTitle}} criado com sucesso!');
+    }
+
+    /**
+     * Exibir registro específico
+     */
+    public function show({{modelName}} ${{camelSingular}}): Response
+    {
+        return Inertia::render('{{reactPagePath}}/Show', [
+            '{{camelSingular}}' => ${{camelSingular}},
+            'title' => 'Visualizar {{singularTitle}}',
+        ]);
+    }
+
+    /**
+     * Mostrar formulário de edição
+     */
+    public function edit({{modelName}} ${{camelSingular}}): Response
+    {
+        return Inertia::render('{{reactPagePath}}/Edit', [
+            '{{camelSingular}}' => ${{camelSingular}},
+            'title' => 'Editar {{singularTitle}}',
+        ]);
+    }
+
+    /**
+     * Atualizar registro
+     */
+    public function update(Request $request, {{modelName}} ${{camelSingular}})
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:{{tableName}},email,' . ${{camelSingular}}->id,
+            'status' => 'required|in:active,inactive,pending,cancelled',
+            // Adicione mais validações conforme necessário
+        ]);
+
+        ${{camelSingular}}->update($validated);
+
+        return redirect()
+            ->route('{{routeName}}.index')
+            ->with('success', '{{singularTitle}} atualizado com sucesso!');
+    }
+
+    /**
+     * Remover registro
+     */
+    public function destroy({{modelName}} ${{camelSingular}})
+    {
+        ${{camelSingular}}->delete();
+
+        return redirect()
+            ->route('{{routeName}}.index')
+            ->with('success', '{{singularTitle}} excluído com sucesso!');
+    }
+
+    /**
+     * Exportar dados
+     */
+    public function export(Request $request)
+    {
+        try {
+            // Criar instância da tabela Papa Leguas
+            $table = {{className}}::create();
+            
+            // Aplicar filtros da requisição
+            $table->applyRequest($request);
+            
+            // Obter todos os dados (sem paginação)
+            $data = $table->getExportData();
+            
+            // Configurar headers para download
+            $filename = '{{tableName}}_' . date('Y-m-d_H-i-s') . '.csv';
+            
+            return response()->streamDownload(function () use ($data) {
+                $handle = fopen('php://output', 'w');
+                
+                // Cabeçalhos CSV
+                if (!empty($data)) {
+                    fputcsv($handle, array_keys($data[0]));
+                    
+                    // Dados
+                    foreach ($data as $row) {
+                        fputcsv($handle, $row);
+                    }
+                }
+                
+                fclose($handle);
+            }, $filename, [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Erro ao exportar {{tableName}}: ' . $e->getMessage());
+            
+            return redirect()
+                ->back()
+                ->with('error', 'Erro ao exportar dados. Tente novamente.');
+        }
+    }
+
+    /**
+     * Exclusão em lote
+     */
+    public function bulkDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:{{tableName}},id',
+        ]);
+
+        try {
+            {{modelName}}::whereIn('id', $validated['ids'])->delete();
+            
+            $count = count($validated['ids']);
+            
+            return redirect()
+                ->route('{{routeName}}.index')
+                ->with('success', "{$count} registro(s) excluído(s) com sucesso!");
+                
+        } catch (\Exception $e) {
+            \Log::error('Erro na exclusão em lote de {{tableName}}: ' . $e->getMessage());
+            
+            return redirect()
+                ->back()
+                ->with('error', 'Erro ao excluir registros. Tente novamente.');
+        }
+    }
+} 

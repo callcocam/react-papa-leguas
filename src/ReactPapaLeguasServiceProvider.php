@@ -2,14 +2,7 @@
 
 /**
  * Created by Claudio Campos.
- * User: callcocam@gmail.com, contato@sigasmart.com.br
-    public function register(): void
-    {
-        parent::register();
-
-        // Register service providers first
-        $this->registerServiceProviders();
-    }s://www.sigasmart.com.br
+ * User: callcocam@gmail.com, contato@sigasmart.com.br 
  */
 
 namespace Callcocam\ReactPapaLeguas;
@@ -18,6 +11,7 @@ use Callcocam\ReactPapaLeguas\Commands\ReactPapaLeguasCommand;
 use Callcocam\ReactPapaLeguas\Commands\MakeStandardModelCommand;
 use Callcocam\ReactPapaLeguas\Commands\MigrateToPapaLeguasStandardsCommand;
 use Callcocam\ReactPapaLeguas\Commands\CheckStandardsCommand;
+use Callcocam\ReactPapaLeguas\Commands\MakeTableCommand;
 use Callcocam\ReactPapaLeguas\Console\Commands\GenerateControllerCommand;
 use Callcocam\ReactPapaLeguas\Commands\CreateLandlordAdminCommand;
 use Callcocam\ReactPapaLeguas\Guards\LandlordGuard;
@@ -64,6 +58,7 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
             ->hasCommand(MigrateToPapaLeguasStandardsCommand::class)
             ->hasCommand(CheckStandardsCommand::class)
             ->hasCommand(CreateLandlordAdminCommand::class)
+            ->hasCommand(MakeTableCommand::class)
             ->hasCommand(GenerateControllerCommand::class)
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command

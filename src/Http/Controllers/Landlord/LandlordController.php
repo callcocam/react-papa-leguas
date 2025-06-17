@@ -10,6 +10,7 @@ namespace Callcocam\ReactPapaLeguas\Http\Controllers\Landlord;
 
 use Callcocam\ReactPapaLeguas\Http\Controllers\Controller;
 use Callcocam\ReactPapaLeguas\Models\Tenant;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -24,9 +25,9 @@ class LandlordController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render($this->getViewIndex(), $this->getDataForViews());
+        return Inertia::render($this->getViewIndex(), $this->getDataForViews($request));
     }
  
 }

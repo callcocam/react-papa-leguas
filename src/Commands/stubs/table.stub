@@ -1,0 +1,90 @@
+<?php
+
+namespace {{namespace}};
+
+{{imports}}
+
+/**
+ * Tabela Papa Leguas gerada automaticamente para {{tableName}}
+ * 
+ * Esta classe foi gerada pelo comando papa-leguas:make-table
+ * e pode ser customizada conforme necessário.
+ */
+class {{className}}
+{
+    /**
+     * Criar instância da tabela
+     */
+    public static function create(): Table
+    {
+        return Table::make()
+            ->model({{modelName}}::class)
+            ->id('{{tableId}}')
+            ->title('{{tableTitle}}')
+            ->description('Gerenciamento de {{tableName}} do sistema')
+            ->searchable()
+            ->sortable()
+            ->paginated()
+            ->perPage(15)
+            ->columns([
+                {{columns}}
+            ])
+            ->filters([
+                {{filters}}
+            ])
+            ->headerActions([
+                {{actions}}
+            ])
+            ->bulkActions([
+                {{bulkActions}}
+            ]){{withRelationships}};
+    }
+
+    /**
+     * Configurar colunas da tabela
+     */
+    protected static function getColumns(): array
+    {
+        return [
+            {{columns}}
+        ];
+    }
+
+    /**
+     * Configurar filtros da tabela
+     */
+    protected static function getFilters(): array
+    {
+        return [
+            {{filters}}
+        ];
+    }
+
+    /**
+     * Configurar ações do cabeçalho
+     */
+    protected static function getHeaderActions(): array
+    {
+        return [
+            {{actions}}
+        ];
+    }
+
+    /**
+     * Configurar ações em lote
+     */
+    protected static function getBulkActions(): array
+    {
+        return [
+            {{bulkActions}}
+        ];
+    }
+
+    /**
+     * Configurar relacionamentos para eager loading
+     */
+    protected static function getRelationships(): array
+    {
+        return [{{relationships}}];
+    }
+} 

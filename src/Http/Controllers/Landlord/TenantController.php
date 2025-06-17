@@ -14,15 +14,14 @@ use Illuminate\Support\Facades\Log;
 
 class TenantController extends LandlordController
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
             // Criar a tabela usando o exemplo completo
             $table = CompleteTableExample::createUsersTable();
             
             // Renderizar os dados da tabela
-            $request = request();
-            $tableData = $table->render($request); 
+            $tableData = $table->render($request);
             
             // Retornar como JSON para API ou view para web
             if ($request->expectsJson()) {
@@ -37,7 +36,7 @@ class TenantController extends LandlordController
             return inertia('tenants/index', [
                 'table' => $tableData,
                 'title' => 'Gerenciamento de Tenants',
-                'description' => 'Sistema completo de gerenciamento de tenants'
+                'description' => 'Sistema completo de gerenciamento de tenants usando Papa Leguas'
             ]);
             
         } catch (\Exception $e) {
@@ -48,7 +47,6 @@ class TenantController extends LandlordController
                 'trace' => $e->getTraceAsString()
             ]);
             
-            $request = request();
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
@@ -56,7 +54,12 @@ class TenantController extends LandlordController
                 ], 500);
             }
             
-            return back()->with('error', 'Erro ao carregar tabela: ' . $e->getMessage());
+            // Se der erro, retornar página sem dados do backend
+            return inertia('Tenants/Index', [
+                'title' => 'Gerenciamento de Tenants',
+                'description' => 'Sistema de gerenciamento de tenants (modo fallback)',
+                'error' => 'Erro ao carregar dados do backend: ' . $e->getMessage()
+            ]);
         }
     }
 

@@ -461,7 +461,132 @@ curl "http://papa-leguas-app-react.test/test-table" -H "Accept: application/json
 - `src/Support/Table/Table.php` - Adicionado método `getActions()`
 - `routes/landlord.php` - Rota de teste pública adicionada
 
-**Próximos passos opcionais:**
+## ✅ Passo 11: Comando Inteligente de Geração de Tabelas
+
+**Status: ✅ CONCLUÍDO**
+
+O décimo primeiro passo implementa um comando inteligente que analisa a estrutura do banco de dados e gera automaticamente tabelas Papa Leguas completas com controller e página React.
+
+**Recursos Implementados no Passo 11:**
+
+### 🔍 **Análise Inteligente do Banco**
+- **Detecção Automática de Tipos**: Reconhece automaticamente tipos de colunas (email, status, money, boolean, date, image, etc.)
+- **Relacionamentos**: Identifica foreign keys e configura eager loading automático
+- **Timestamps**: Detecta `created_at`, `updated_at` e `deleted_at`
+- **Chaves Primárias**: Identifica automaticamente a chave primária
+
+### 📄 **Stubs Organizados**
+- **`table.stub`**: Template para classe da tabela Papa Leguas
+- **`controller.stub`**: Template para controller completo com CRUD
+- **`react-page.stub`**: Template para página React moderna
+
+### 🚀 **Comando Completo**
+```bash
+# Gerar apenas a tabela
+php artisan papa-leguas:make-table users
+
+# Gerar tabela + controller + página React
+php artisan papa-leguas:make-table users --with-controller --with-frontend
+
+# Opções avançadas
+php artisan papa-leguas:make-table users \
+    --model=User \
+    --name=CustomUsersTable \
+    --namespace="App\\Tables" \
+    --controller-name=UsersController \
+    --force
+```
+
+### 🎛️ **Controller Gerado**
+- **CRUD Completo**: index, create, store, show, edit, update, destroy
+- **Validações**: Validação automática baseada na estrutura da tabela
+- **Tratamento de Erros**: Try/catch com logs e fallbacks
+- **Exportação**: Método para exportar dados em CSV
+- **Ações em Lote**: Exclusão múltipla com validação
+- **Integração Inertia**: Páginas React com dados estruturados
+
+### 🎨 **Página React Gerada**
+- **Interface Moderna**: Design responsivo com shadcn/ui
+- **Busca em Tempo Real**: Filtro instantâneo nos dados
+- **Seleção Múltipla**: Checkboxes para ações em lote
+- **Badges Coloridos**: Status visuais para diferentes estados
+- **Dropdown de Ações**: Visualizar, editar, excluir por linha
+- **Estatísticas**: Cards com totais, ativos, filtrados
+- **Fallback de Dados**: Dados mock se backend falhar
+- **Debug Expansível**: Seção para desenvolvimento
+
+### 🔧 **Detecção Automática de Tipos**
+```php
+// Email
+if (Str::contains($name, 'email')) return 'email';
+
+// Status/Estado
+if (Str::contains($name, ['status', 'state'])) return 'status';
+
+// Dinheiro
+if (Str::contains($name, ['price', 'amount', 'cost', 'value']) 
+    && Str::contains($type, ['decimal', 'float', 'double'])) return 'money';
+
+// Imagem
+if (Str::contains($name, ['image', 'photo', 'avatar', 'picture'])) return 'image';
+
+// Relacionamento
+if (Str::endsWith($name, '_id') && $name !== 'id') return 'relationship';
+
+// Boolean
+if (in_array($type, ['boolean', 'bool', 'tinyint(1)'])) return 'boolean';
+```
+
+### 📊 **Exemplo de Saída do Comando**
+```
+🔍 Analisando estrutura da tabela 'users'...
+📊 Tabela analisada:
+   • Colunas: 8
+   • Timestamps: ✅
+   • Soft Deletes: ✅
+   • Relacionamentos: 2
+
+🎛️ Gerando controller...
+🎨 Gerando página React...
+
+✅ Tabela Papa Leguas gerada com sucesso!
+
+📋 Resumo da Geração:
+   • Tabela analisada: users
+   • Colunas detectadas: 8
+   • Relacionamentos: 2
+
+📂 Arquivos Gerados:
+   • Classe da Tabela: app/Tables/UsersTable.php
+   • Controller: app/Http/Controllers/UsersController.php
+   • Página React: packages/callcocam/react-papa-leguas/resources/js/pages/users/index.tsx
+
+🚀 Próximos Passos:
+   1. Revise e customize os arquivos gerados conforme necessário
+   2. Adicione as rotas no arquivo de rotas apropriado
+   3. Configure as validações no controller
+   4. Teste a funcionalidade gerada
+
+📝 Exemplo de Rotas (web.php):
+   Route::resource('users', UsersController::class);
+   Route::post('users/export', [UsersController::class, 'export'])->name('users.export');
+   Route::post('users/bulk-delete', [UsersController::class, 'bulkDelete'])->name('users.bulk-delete');
+```
+
+### 💡 **Opções Avançadas**
+- `--model=ModelName`: Especifica o modelo a ser usado
+- `--name=TableClassName`: Nome customizado para a classe da tabela
+- `--namespace=Custom\\Namespace`: Namespace customizado
+- `--output=path/to/directory`: Diretório de saída customizado
+- `--force`: Sobrescreve arquivos existentes
+- `--with-frontend`: Gera também a página React
+- `--with-controller`: Gera também o controller
+- `--controller-name=ControllerName`: Nome customizado do controller
+- `--controller-namespace=Namespace`: Namespace customizado do controller
+
+**🎉 COMANDO INTELIGENTE IMPLEMENTADO COM SUCESSO!**
+
+Agora é possível gerar tabelas Papa Leguas completas analisando automaticamente a estrutura do banco de dados, economizando horas de desenvolvimento manual.
 
 ## Support us
 
@@ -538,3 +663,28 @@ Please review [our security policy](../../security/policy) on how to report secu
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+
+## ✅ Comando Inteligente de Geração de Tabelas
+
+### 🚀 **Comando papa-leguas:make-table**
+
+Comando inteligente que analisa a estrutura do banco de dados e gera automaticamente tabelas Papa Leguas completas.
+
+```bash
+# Gerar apenas a tabela
+php artisan papa-leguas:make-table users
+
+# Gerar tabela + controller + página React
+php artisan papa-leguas:make-table users --with-controller --with-frontend
+
+# Opções avançadas
+php artisan papa-leguas:make-table users --model=User --name=CustomUsersTable --force
+```
+
+### 🔍 **Recursos**
+- **Análise Inteligente**: Detecta automaticamente tipos de colunas (email, status, money, boolean, etc.)
+- **Relacionamentos**: Identifica foreign keys e configura eager loading
+- **Stubs Organizados**: Templates separados para tabela, controller e página React
+- **Controller Completo**: CRUD completo com validações e tratamento de erros
+- **Página React Moderna**: Interface responsiva com busca, filtros e ações em lote
+- **Resumo Detalhado**: Relatório completo do que foi gerado com próximos passos

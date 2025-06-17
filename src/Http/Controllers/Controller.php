@@ -75,11 +75,12 @@ class Controller extends BaseController{
     /**
      * Get data for views.
      */
-    protected function getDataForViews()
+    protected function getDataForViews(Request $request)
     {
         return [
             'user' => auth()->user(),
             'permissions' => [],
+            'request' => $request->query(),
         ];
     }
 
