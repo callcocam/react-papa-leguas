@@ -14,8 +14,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany; 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Tall\Sluggable\HasSlug;
 use Tall\Sluggable\SlugOptions;
@@ -41,7 +40,7 @@ class Tenant extends Model
     /**
      * The relationships that should always be loaded.
      */
-    protected $with = ['defaultAddress'];
+    protected $with = ['addresses'];
 
     /**
      * Get the slug options for the model.
@@ -58,9 +57,9 @@ class Tenant extends Model
     /**
      * Get the users that belong to this tenant.
      */
-    public function users(): BelongsToMany
+    public function users(): HasMany
     {
-        return $this->belongsToMany(User::class, 'tenant_user');
+        return $this->hasMany(User::class, 'tenant_id', 'id');
     }
 
     /**

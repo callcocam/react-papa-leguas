@@ -30,5 +30,30 @@ Route::prefix(ReactPapaLeguas::getPrefix())
             Route::get('/', function () {
                 return Inertia::render('app');
             })->name('dashboard');
+
+            // Rota para página de testes
+            Route::get('/tests', function () {
+                return Inertia::render('tests/index');
+            })->name('tests');
+
+            // Rota para CRUD (produção)
+            Route::get('/crud', function () {
+                return Inertia::render('crud/index', [
+                    'data' => [],
+                    'columns' => [],
+                    'filters' => [],
+                    'actions' => [],
+                    'permissions' => [
+                        'user_permissions' => auth()->user()->getAllPermissions()->pluck('name') ?? [],
+                        'user_roles' => auth()->user()->getRoleNames() ?? [],
+                        'is_super_admin' => auth()->user()->hasRole('super-admin') ?? false,
+                    ],
+                    'config' => [
+                        'selectable' => true,
+                        'sortable' => true,
+                        'filterable' => true
+                    ]
+                ]);
+            })->name('crud');
         });
     });

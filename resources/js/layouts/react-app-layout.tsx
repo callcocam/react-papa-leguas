@@ -26,7 +26,8 @@ import {
   Moon,
   User,
   LogOut,
-  X
+  X,
+  TestTube
 } from 'lucide-react'
 import { usePermissions } from '../components/table/hooks/usePermissions'
 import { PermissionLink } from '../components/table/components/PermissionLink'
@@ -64,6 +65,12 @@ export default function AppLayout({
       permission: 'dashboard.view'
     },
     {
+      title: 'CRUD',
+      href: '/crud',
+      icon: Database,
+      permission: 'crud.view'
+    },
+    {
       title: 'Usuários',
       href: '/users',
       icon: Users,
@@ -82,16 +89,16 @@ export default function AppLayout({
       permission: 'documents.view'
     },
     {
-      title: 'Base de Dados',
-      href: '/database',
-      icon: Database,
-      permission: 'database.view'
-    },
-    {
       title: 'Permissões',
       href: '/permissions',
       icon: Shield,
       permission: 'permissions.view'
+    },
+    {
+      title: 'Testes',
+      href: '/tests',
+      icon: TestTube,
+      permission: 'tests.view'
     },
     {
       title: 'Configurações',
