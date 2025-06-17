@@ -32,9 +32,7 @@ Route::prefix(ReactPapaLeguas::getPrefix())
             })->name('dashboard');
 
             // Rota para página de testes
-            Route::get('/tests', function () {
-                return Inertia::render('tests/index');
-            })->name('tests');
+            
 
             // Rota para CRUD (produção)
             Route::get('/crud', function () {
