@@ -29,8 +29,8 @@ import {
   X,
   TestTube
 } from 'lucide-react'
-import { usePermissions } from '../components/table/hooks/usePermissions'
-import { PermissionLink } from '../components/table/components/PermissionLink'
+import { usePermissions } from '../components/table-old/hooks/usePermissions'
+import { PermissionLink } from '../components/table-old/components/PermissionLink'
 import { router } from '@inertiajs/react'
 
 interface AppLayoutProps {
