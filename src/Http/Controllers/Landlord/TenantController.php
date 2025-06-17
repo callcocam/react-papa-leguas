@@ -8,14 +8,13 @@
 
 namespace Callcocam\ReactPapaLeguas\Http\Controllers\Landlord;
 
-use Callcocam\ReactPapaLeguas\Examples\TenantTableExample;
+use Callcocam\ReactPapaLeguas\Examples\CompleteTableExample;
 
 class TenantController extends LandlordController
 {
     public function index()
     {
-        dd(TenantTableExample::create());
-        return ;
+        return CompleteTableExample::createUsersTable();
     }
 
 }
