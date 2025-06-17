@@ -91,7 +91,7 @@ class TenantController extends Controller
             'email' => ['required', 'email', 'unique:tenants,email'],
             'document' => ['nullable', 'string', 'max:20'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'website' => ['nullable', 'url', 'max:255'],
+            'domain' => ['nullable', 'url', 'max:255'],
             'status' => ['required', Rule::enum(TenantStatus::class)],
             'description' => ['nullable', 'string', 'max:1000'],
             'settings' => ['nullable', 'array'],
@@ -155,7 +155,7 @@ class TenantController extends Controller
      */
     public function edit(Tenant $tenant): Response
     {
-        $tenant->load(['defaultAddress']);
+        $tenant->load(['addresses']);
 
         return Inertia::render('landlord/tenants/edit', [
             'tenant' => $tenant,
@@ -176,7 +176,7 @@ class TenantController extends Controller
             'email' => ['required', 'email', Rule::unique('tenants', 'email')->ignore($tenant->id)],
             'document' => ['nullable', 'string', 'max:20'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'website' => ['nullable', 'url', 'max:255'],
+            'domain' => ['nullable', 'string', 'max:255'],
             'status' => ['required', Rule::enum(TenantStatus::class)],
             'description' => ['nullable', 'string', 'max:1000'],
             'settings' => ['nullable', 'array'],

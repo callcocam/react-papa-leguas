@@ -52,7 +52,7 @@ interface Tenant {
     email: string;
     document?: string;
     phone?: string;
-    website?: string;
+    domain?: string;
     status: 'draft' | 'published';
     status_label?: string;
     description?: string;
@@ -356,11 +356,11 @@ export default function TenantsIndex({ tenants, filters, stats, status_options }
                                                             {tenant.phone}
                                                         </div>
                                                     )}
-                                                    {tenant.website && (
+                                                    {tenant.domain && (
                                                         <div className="flex items-center gap-1 text-sm text-gray-500">
                                                             <Globe className="w-3 h-3 text-gray-400" />
-                                                            <a href={tenant.website} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">
-                                                                {tenant.website.replace(/^https?:\/\//, '')}
+                                                            <a href={tenant.domain} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">
+                                                                {tenant.domain.replace(/^https?:\/\//, '')}
                                                             </a>
                                                         </div>
                                                     )}

@@ -52,7 +52,7 @@ interface Tenant {
     email: string;
     document?: string;
     phone?: string;
-    website?: string;
+    domain?: string;
     status: string;
     status_label: string;
     description?: string;
@@ -241,17 +241,17 @@ export default function TenantsShow({ tenant, stats }: Props) {
                                             </div>
                                         )}
                                         
-                                        {tenant.website && (
+                                        {tenant.domain && (
                                             <div className="flex items-center gap-2 text-sm">
                                                 <Globe className="w-4 h-4 text-gray-400" />
                                                 <span className="font-medium">Website:</span>
                                                 <a 
-                                                    href={tenant.website} 
+                                                    href={tenant.domain} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
                                                     className="text-blue-600 hover:text-blue-800"
                                                 >
-                                                    {tenant.website.replace(/^https?:\/\//, '')}
+                                                    {tenant.domain.replace(/^https?:\/\//, '')}
                                                 </a>
                                             </div>
                                         )}

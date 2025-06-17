@@ -29,7 +29,7 @@ export default function TenantsCreate({ status_options }: Props) {
         email: '',
         document: '',
         phone: '',
-        website: '',
+        domain: '',
         status: 'draft',
         description: '',
         is_primary: false,
@@ -158,17 +158,17 @@ export default function TenantsCreate({ status_options }: Props) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="website">Website</Label>
+                                        <Label htmlFor="domain">Website</Label>
                                         <Input
-                                            id="website"
+                                            id="domain"
                                             type="text"
-                                            value={data.website}
-                                            onChange={(e) => setData('website', e.target.value)}
-                                            error={errors.website}
+                                            value={data.domain}
+                                            onChange={(e) => setData('domain', e.target.value)}
+                                            error={errors.domain}
                                             placeholder="empresa.com"
                                         />
-                                        {errors.website && (
-                                            <p className="text-sm text-red-600">{errors.website}</p>
+                                        {errors.domain && (
+                                            <p className="text-sm text-red-600">{errors.domain}</p>
                                         )}
                                     </div>
 

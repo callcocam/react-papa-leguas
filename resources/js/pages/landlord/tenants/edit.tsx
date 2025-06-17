@@ -22,7 +22,7 @@ interface Tenant {
     email: string;
     document?: string;
     phone?: string;
-    website?: string;
+    domain?: string;
     status: string;
     description?: string;
     is_primary: boolean;
@@ -52,7 +52,7 @@ export default function TenantsEdit({ tenant, status_options }: Props) {
         email: tenant.email || '',
         document: tenant.document || '',
         phone: tenant.phone || '',
-        website: tenant.website || '',
+        domain: tenant.domain || '',
         status: tenant.status || 'draft',
         description: tenant.description || '',
         is_primary: tenant.is_primary || false,
@@ -181,17 +181,17 @@ export default function TenantsEdit({ tenant, status_options }: Props) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="website">Website</Label>
+                                        <Label htmlFor="domain">Website</Label>
                                         <Input
-                                            id="website"
-                                            type="url"
-                                            value={data.website}
-                                            onChange={(e) => setData('website', e.target.value)}
-                                            error={errors.website}
+                                            id="domain"
+                                            type="text"
+                                            value={data.domain}
+                                            onChange={(e) => setData('domain', e.target.value)}
+                                            error={errors.domain}
                                             placeholder="https://empresa.com"
                                         />
-                                        {errors.website && (
-                                            <p className="text-sm text-red-600">{errors.website}</p>
+                                        {errors.domain && (
+                                            <p className="text-sm text-red-600">{errors.domain}</p>
                                         )}
                                     </div>
 

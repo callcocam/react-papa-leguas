@@ -93,12 +93,5 @@ class Tenant extends Model
     {
         return $query->where('status', TenantStatus::Published);
     }
-
-    /**
-     * Route model binding by slug.
-     */
-    public function getRouteKeyName(): string
-    {
-        return 'slug';
-    }
+ 
 }
