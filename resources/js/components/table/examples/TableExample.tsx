@@ -287,7 +287,7 @@ export const TableExample: React.FC = () => {
             Combina configuração do backend com customizações específicas via JSX.
           </p>
           
-          <Table 
+          <PapaLeguasTable 
             data={sampleUsers} 
             permissions={permissions}
             columns={dynamicColumns} // Base do backend
@@ -295,29 +295,29 @@ export const TableExample: React.FC = () => {
             debug={true}
           >
             {/* Customizar apenas colunas específicas */}
-            <Column key="name" label="Nome Customizado">
-              <Content>
-                {(user) => (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                      {user.name.split(' ').map(n => n.charAt(0)).join('')}
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-gray-100">
-                        {user.name}
+            <PapaLeguasTable.Column key="name" label="Nome Customizado">
+                              <PapaLeguasTable.Content>
+                  {(user) => (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                        {user.name.split(' ').map((n: string) => n.charAt(0)).join('')}
                       </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {user.role === 'admin' ? '👑 Administrador' : '👤 Usuário'}
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">
+                          {user.name}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {user.role === 'admin' ? '👑 Administrador' : '👤 Usuário'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </Content>
-            </Column>
+                  )}
+                </PapaLeguasTable.Content>
+              </PapaLeguasTable.Column>
 
             {/* Outras colunas (id, email, status, created_at) */}
             {/* serão renderizadas automaticamente via dynamicColumns */}
-          </Table>
+          </PapaLeguasTable>
         </div>
       )}
     </div>

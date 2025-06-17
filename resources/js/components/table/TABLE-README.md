@@ -488,7 +488,7 @@ export const Table: React.FC<TableProps> = ({
           customRows={customRows}
         />
         <TablePagination />
-      </div>
+    </div>
     </TableProvider>
   )
 }
@@ -498,7 +498,7 @@ export const Table: React.FC<TableProps> = ({
 ```tsx
 interface ColumnProps {
   key: string
-  label: string
+      label: string
   sortable?: boolean
   filterable?: boolean
   width?: string

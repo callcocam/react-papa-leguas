@@ -44,7 +44,7 @@ class LandlordServiceProvider extends ServiceProvider
         
         // Always skip tenant resolution for landlord routes
         $landlordPrefix = config('react-papa-leguas.landlord.routes.prefix', 'landlord'); 
-        if (request()->is($landlordPrefix . '/*')) {
+        if (request()->is($landlordPrefix)) {
             return false;
         }
         

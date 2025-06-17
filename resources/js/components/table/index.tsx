@@ -2,12 +2,14 @@ import React from 'react'
 import { useTableDetector, type TableConfig } from './core/TableDetector'
 import DynamicTable from './core/DynamicTable'
 import DeclarativeTable from './core/DeclarativeTable'
+import HybridTable from './core/HybridTable'
+import { Column, Content, Rows } from './children'
 
 // Tipos principais da tabela
 export interface PapaLeguasTableProps {
   // Dados obrigatórios
   data: any[]
-  
+
   // Props dinâmicas (vem do backend via Inertia)
   columns?: ColumnConfig[]
   filters?: FilterConfig[]
@@ -15,16 +17,16 @@ export interface PapaLeguasTableProps {
   bulkActions?: BulkActionConfig[]
   permissions?: PermissionsData
   pagination?: PaginationData
-  
+
   // Props de UI e comportamento
   loading?: boolean
   className?: string
   onRowClick?: (row: any, index: number) => void
   onSelectionChange?: (selectedRows: any[]) => void
-  
+
   // Children declarativos (sintaxe JSX)
   children?: React.ReactNode
-  
+
   // Configurações avançadas
   config?: TableConfig
   debug?: boolean // Habilita logs detalhados
@@ -111,7 +113,11 @@ export interface PaginationData {
  * - Declarative: Configuração via children (JSX)
  * - Hybrid: Ambos simultaneamente (children tem prioridade)
  */
-export const PapaLeguasTable: React.FC<PapaLeguasTableProps> = ({
+export const PapaLeguasTable: React.FC<PapaLeguasTableProps> & {
+  Column: typeof Column
+  Content: typeof Content
+  Rows: typeof Rows
+} = ({
   children,
   columns,
   data,
@@ -130,27 +136,27 @@ export const PapaLeguasTable: React.FC<PapaLeguasTableProps> = ({
     isDeclarative,
     hasConflicts
   } = useTableDetector(children, columns, config)
-  
+
   // Log adicional se debug estiver habilitado
   React.useEffect(() => {
     if (debug) {
       console.group('🚀 Papa Leguas Table - Debug Mode')
       console.log('🎯 Modo detectado:', mode.mode)
-      console.log('📊 Props recebidas:', { 
+      console.log('📊 Props recebidas:', {
         dataLength: data?.length || 0,
         columnsCount: columns?.length || 0,
         hasChildren: !!children,
         hasPermissions: !!permissions
       })
-      
+
       if (hasConflicts) {
         console.warn('⚠️ Conflitos detectados:', conflicts)
       }
-      
+
       console.groupEnd()
     }
   }, [debug, mode, data, columns, children, permissions, hasConflicts, conflicts])
-  
+
   // Validação básica
   if (!data || !Array.isArray(data)) {
     console.error('❌ Papa Leguas Table: prop "data" é obrigatória e deve ser um array')
@@ -165,23 +171,23 @@ export const PapaLeguasTable: React.FC<PapaLeguasTableProps> = ({
       </div>
     )
   }
-  
+
   // Renderizar baseado no modo detectado
   switch (mode.mode) {
     case 'declarative':
       return (
-        <DeclarativeTable 
-          data={data} 
+        <DeclarativeTable
+          data={data}
           permissions={permissions}
           {...props}
         >
           {children}
         </DeclarativeTable>
       )
-    
+
     case 'hybrid':
       return (
-        <HybridTable 
+        <HybridTable
           data={data}
           permissions={permissions}
           columns={columns}
@@ -192,7 +198,7 @@ export const PapaLeguasTable: React.FC<PapaLeguasTableProps> = ({
           {children}
         </HybridTable>
       )
-    
+
     case 'dynamic':
     default:
       return (
@@ -207,44 +213,10 @@ export const PapaLeguasTable: React.FC<PapaLeguasTableProps> = ({
   }
 }
 
-
-
-
-
-// Componente placeholder para HybridTable (será implementado depois)
-const HybridTable: React.FC<any> = ({ data, columns, children, conflicts, ...props }) => {
-  const childrenCount = React.Children.count(children)
-  const columnsCount = columns?.length || 0
-  
-  return (
-    <div className="border rounded-lg p-4 bg-white dark:bg-gray-900">
-      <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800">
-        <h3 className="font-medium text-purple-800 dark:text-purple-200">
-          🔀 Modo Híbrido (Props + Children)
-        </h3>
-        <p className="text-purple-600 dark:text-purple-300 text-sm mt-1">
-          Combinação inteligente de props e children
-        </p>
-        <p className="text-purple-500 dark:text-purple-400 text-xs mt-1">
-          {data.length} registros • {columnsCount} props + {childrenCount} children
-        </p>
-        
-        {conflicts.length > 0 && (
-          <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
-            <p className="text-yellow-700 dark:text-yellow-300 text-xs">
-              ⚠️ Conflitos: {conflicts.join(', ')} (children terão prioridade)
-            </p>
-          </div>
-        )}
-      </div>
-      
-      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-        <p>🚧 HybridTable em desenvolvimento</p>
-        <p className="text-sm mt-1">Será implementado na próxima etapa</p>
-      </div>
-    </div>
-  )
-}
+// Adicionar componentes como propriedades estáticas
+PapaLeguasTable.Column = Column
+PapaLeguasTable.Content = Content
+PapaLeguasTable.Rows = Rows
 
 // Export do componente principal
 export default PapaLeguasTable
