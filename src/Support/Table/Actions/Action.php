@@ -130,7 +130,7 @@ abstract class Action
      */
     protected ?string $tooltip = null;
 
-    public function __construct(string $id = null)
+    public function __construct(?string $id = null)
     {
         $this->id = $id ?? 'action-' . uniqid();
     }
@@ -138,7 +138,7 @@ abstract class Action
     /**
      * Criar nova instância
      */
-    public static function make(string $id = null): static
+    public static function make(?string $id = null): static
     {
         return new static($id);
     }

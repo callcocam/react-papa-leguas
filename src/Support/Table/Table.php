@@ -100,12 +100,27 @@ class Table implements TableInterface
     protected ?\Callcocam\ReactPapaLeguas\Support\Table\Columns\Column $lastColumn = null;
 
     /**
+     * Construtor - chama setUp() se definido na classe filha
+     */
+    public function __construct()
+    {
+        if (method_exists($this, 'setUp')) {
+            $this->setUp();
+        }
+    }
+
+    /**
      * Criar nova instância da tabela
      */
     public static function make(string $id = null): static
     {
         $instance = new static();
         $instance->id = $id ?? 'table-' . uniqid();
+        
+        // Chamar setUp() se definido na classe filha
+        if (method_exists($instance, 'setUp')) {
+            $instance->setUp();
+        }
         
         return $instance;
     }

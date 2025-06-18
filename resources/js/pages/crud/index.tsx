@@ -41,13 +41,35 @@ interface CrudIndexProps {
             filterable?: boolean;
         };
     };
+    routes: {
+        index: string;
+        create: string;
+        store: string;
+        show: (id: string | number) => string;
+        edit: (id: string | number) => string;
+        update: (id: string | number) => string;
+        destroy: (id: string | number) => string;
+        export: string;
+        bulk_destroy: string;
+    };
+    config: {
+        model_name: string;
+        page_title: string;
+        page_description: string;
+        route_prefix: string;
+        can_create: boolean;
+        can_edit: boolean;
+        can_delete: boolean;
+        can_export: boolean;
+        can_bulk_delete: boolean;
+    };
     error?: string;
 }
 
-export default function CrudIndex({ table, error }: CrudIndexProps) {
+export default function CrudIndex({ table, routes, config, error }: CrudIndexProps) {
     // Handlers para integração com o backend
     const handleFilterChange = (filters: Record<string, any>) => {
-        router.get(route('crud.index'), filters, {
+        router.get(routes.index, filters, {
             preserveState: true,
             preserveScroll: true,
             only: ['table'],
@@ -55,7 +77,7 @@ export default function CrudIndex({ table, error }: CrudIndexProps) {
     };
 
     const handleSortChange = (column: string, direction: 'asc' | 'desc') => {
-        router.get(route('crud.index'), {
+        router.get(routes.index, {
             sort: column,
             direction,
         }, {
@@ -66,7 +88,7 @@ export default function CrudIndex({ table, error }: CrudIndexProps) {
     };
 
     const handlePageChange = (page: number) => {
-        router.get(route('crud.index'), { 
+        router.get(routes.index, { 
             page 
         }, {
             preserveState: true,
@@ -80,24 +102,26 @@ export default function CrudIndex({ table, error }: CrudIndexProps) {
         
         switch (action.key) {
             case 'create':
-                router.visit(route('crud.create'));
+                if (config.can_create) {
+                    router.visit(routes.create);
+                }
                 break;
             
             case 'edit':
-                if (row) {
-                    router.visit(route('crud.edit', row.id));
+                if (row && config.can_edit) {
+                    router.visit(routes.edit(row.id));
                 }
                 break;
             
             case 'view':
                 if (row) {
-                    router.visit(route('crud.show', row.id));
+                    router.visit(routes.show(row.id));
                 }
                 break;
             
             case 'delete':
-                if (row) {
-                    router.delete(route('crud.destroy', row.id), {
+                if (row && config.can_delete) {
+                    router.delete(routes.destroy(row.id), {
                         onSuccess: () => {
                             // Recarregar dados após exclusão
                             router.reload({ only: ['table'] });
@@ -107,8 +131,10 @@ export default function CrudIndex({ table, error }: CrudIndexProps) {
                 break;
             
             case 'export':
-                // Fazer download do arquivo
-                window.open(route('crud.export'), '_blank');
+                if (config.can_export) {
+                    // Fazer download do arquivo
+                    window.open(routes.export, '_blank');
+                }
                 break;
             
             case 'bulk-delete':
@@ -130,8 +156,8 @@ export default function CrudIndex({ table, error }: CrudIndexProps) {
         
         switch (action.key) {
             case 'bulk-delete':
-                if (selectedRows.length > 0) {
-                    router.delete(route('crud.bulk-destroy'), {
+                if (selectedRows.length > 0 && config.can_bulk_delete) {
+                    router.delete(routes.bulk_destroy, {
                         data: {
                             ids: selectedRows.map(row => row.id)
                         },
@@ -143,9 +169,9 @@ export default function CrudIndex({ table, error }: CrudIndexProps) {
                 break;
             
             case 'bulk-export':
-                if (selectedRows.length > 0) {
+                if (selectedRows.length > 0 && config.can_export) {
                     const ids = selectedRows.map(row => row.id).join(',');
-                    window.open(route('crud.export') + `?ids=${ids}`, '_blank');
+                    window.open(routes.export + `?ids=${ids}`, '_blank');
                 }
                 break;
             
@@ -157,19 +183,19 @@ export default function CrudIndex({ table, error }: CrudIndexProps) {
     return (
         <AppLayout 
             breadcrumbs={breadcrumbs}
-            title={table.meta?.title || "Lista de Registros"}
+            title={config.page_title}
         >
-            <Head title="CRUD - Lista" />
+            <Head title={`${config.page_title} - Lista`} />
             
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                            {table.meta?.title || "Lista de Registros"}
+                            {config.page_title}
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400 mt-2">
-                            {table.meta?.description || "Gerencie seus registros de forma eficiente"}
+                            {config.page_description}
                         </p>
                     </div>
                 </div>

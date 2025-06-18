@@ -8,7 +8,14 @@
 
 namespace Callcocam\ReactPapaLeguas\Http\Controllers\Landlord;
 
+use App\Models\User;
+
 class UserController extends LandlordController
 {
+    public function __construct()
+    {
+        $this->model(User::class); 
+    }
+
     
 }
