@@ -4,6 +4,9 @@ import ButtonActionRenderer from './renderers/ButtonActionRenderer';
 import LinkActionRenderer from './renderers/LinkActionRenderer';
 import DropdownActionRenderer from './renderers/DropdownActionRenderer';
 import CallbackActionRenderer from './renderers/CallbackActionRenderer';
+import { icons } from 'lucide-react';
+
+const iconMap: { [key: string]: React.ElementType } = icons;
 
 // Mapeamento de tipos de ação para componentes
 const renderers: { [key: string]: React.FC<ActionRendererProps> } = {
@@ -86,8 +89,9 @@ export default function ActionRenderer({ action, item }: ActionRendererComponent
 
     // Seleciona o renderer apropriado, ou o padrão como fallback
     const Renderer = renderers[type] || renderers.default;
-
-    return <Renderer action={action} item={item} />;
+    const iconName = action.icon;
+    const IconComponent = iconName ? iconMap[iconName as keyof typeof iconMap] : undefined; 
+    return <Renderer action={action} item={item} IconComponent={IconComponent} />;
 }
 
 /**

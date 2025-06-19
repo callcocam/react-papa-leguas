@@ -65,8 +65,26 @@ interface CrudIndexProps {
 
 export default function CrudIndex({ table, routes, config, capabilities, error }: CrudIndexProps) {
     
-    // Criar ações baseadas nas permissões
+    // 🔍 DEBUG: Ver dados vindos do backend
+    React.useEffect(() => {
+        console.log('📊 DEBUG - Dados do Backend:');
+        console.log('table?.actions:', table?.actions);
+        console.log('table?.data:', table?.data?.length, 'items');
+        console.log('table?.columns:', table?.columns?.length, 'columns');
+        console.log('config:', config);
+        console.log('routes:', routes);
+    }, [table, config, routes]);
+    
+    // ✅ USAR AÇÕES DO BACKEND - Sistema de Ações Avançado
     const actions = React.useMemo(() => {
+        // 🎯 PRIORIDADE 1: Usar ações vindas do backend (UserTable.php)
+        if (table?.actions && Array.isArray(table.actions) && table.actions.length > 0) {
+            console.log('🚀 Usando ações do backend:', table.actions);
+            return table.actions;
+        }
+        
+        // 🔄 FALLBACK: Criar ações baseadas nas permissões (compatibilidade)
+        console.log('⚠️ Fallback: Criando ações baseadas em config/routes');
         const actionList = [];
         
         if (config?.can_edit && routes?.edit) {
@@ -105,7 +123,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
         }
         
         return actionList;
-    }, [config, routes]);
+    }, [table?.actions, config, routes]);
     
     return (
         <AppLayout 

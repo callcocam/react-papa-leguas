@@ -50,6 +50,7 @@ export interface TableAction {
 export interface ActionRendererProps {
     action: TableAction;
     item: any;
+    IconComponent?: React.ElementType;
 }
 
 export interface PapaLeguasTableProps {

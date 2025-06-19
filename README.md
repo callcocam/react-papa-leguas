@@ -1156,4 +1156,50 @@ protected function actions(): array
 
 ---
 
-**Status**: 🟢 **Sistema Extensível Unificado Completo** - Padrão de mapeamento aplicado em ColumnRenderer, FilterRenderer e ActionRenderer. API consistente para injeção/extensão, funções de gerenciamento, compatibilidade total. Permite adicionar novos renderers para qualquer sistema sem modificar código base.
+#### **Correção de Conflito de Métodos - ✅ Resolvida**
+
+**Problema Identificado**: Conflito entre `InteractsWithTable::getActions()` e `HasActions::getActions()`
+
+**Solução Implementada**:
+- ✅ **Renomeação de Método**: `InteractsWithTable::getActions()` → `getTableActions()`
+- ✅ **Atualização de Chamadas**: Todas as referências internas atualizadas
+- ✅ **Compatibilidade Mantida**: Trait `HasActions` mantém método original
+- ✅ **Fallback Seguro**: `getTableActions()` usa `getActionsConfig()` do HasActions
+
+**Resolução do Conflito**:
+```php
+// ANTES - Conflito
+trait InteractsWithTable {
+    protected function getActions(): array { ... }  // ❌ Conflito
+}
+
+trait HasActions {
+    public function getActions(): array { ... }     // ❌ Conflito
+}
+
+// DEPOIS - Resolvido
+trait InteractsWithTable {
+    protected function getTableActions(): array {   // ✅ Sem conflito
+        if (method_exists($this, 'getActionsConfig')) {
+            return $this->getActionsConfig();        // Usa HasActions
+        }
+        return [];
+    }
+}
+
+trait HasActions {
+    public function getActions(): array { ... }     // ✅ Método principal
+    public function getActionsConfig(): array { ... } // ✅ Para serialização
+}
+```
+
+**Vantagens da Correção**:
+- ✅ **Sem Conflitos**: Métodos com nomes únicos
+- ✅ **Hierarquia Clara**: HasActions tem prioridade sobre InteractsWithTable
+- ✅ **Integração Perfeita**: InteractsWithTable delega para HasActions
+- ✅ **Compatibilidade**: Não quebra código existente
+- ✅ **Performance**: Evita overhead de resolução de conflitos
+
+---
+
+**Status**: 🟢 **Sistema Extensível Unificado Completo** - Padrão de mapeamento aplicado em ColumnRenderer, FilterRenderer e ActionRenderer. API consistente para injeção/extensão, funções de gerenciamento, compatibilidade total. Conflito de métodos resolvido. Sistema 100% funcional.

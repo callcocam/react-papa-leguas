@@ -70,7 +70,7 @@ trait InteractsWithTable
                         'data' => $formattedData,
                         'columns' => $this->getColumnsConfig(),
                         'filters' => $this->getFiltersConfig(),
-                        'actions' => $this->getActions(),
+                        'actions' => $this->getTableActions(),
                         'pagination' => [
                             'current_page' => $paginatedData->currentPage(),
                             'per_page' => $paginatedData->perPage(),
@@ -118,7 +118,7 @@ trait InteractsWithTable
                         'data' => $formattedData,
                         'columns' => $this->getColumnsConfig(),
                         'filters' => $this->getFiltersConfig(),
-                        'actions' => $this->getActions(),
+                        'actions' => $this->getTableActions(),
                         'pagination' => [
                             'current_page' => 1,
                             'per_page' => $this->getPerPage(),
@@ -216,7 +216,7 @@ trait InteractsWithTable
     /**
      * Métodos padrão para traits opcionais
      */
-    protected function getActions(): array
+    protected function getTableActions(): array
     {
         // Verificar se o trait HasActions está sendo usado
         if (method_exists($this, 'getActionsConfig')) {
@@ -260,7 +260,7 @@ trait InteractsWithTable
     /**
      * Verificar se a tabela tem ações
      */
-    protected function hasActions(): bool
+    protected function hasTableActions(): bool
     {
         // Verificar se o trait HasActions está sendo usado
         if (method_exists($this, 'getActionsCount')) {
@@ -268,7 +268,7 @@ trait InteractsWithTable
         }
         
         // Fallback: verificar se há ações
-        return !empty($this->getActions());
+        return !empty($this->getTableActions());
     }
 
     /**

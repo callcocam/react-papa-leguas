@@ -43,7 +43,9 @@ class UserController extends LandlordController
                 'create' => $this->getRouteNameCreate(),
                 'export' => $this->getRouteNameExport(),
             ];
-            
+            if($request->has('debug')){
+                return Inertia::render('crud/debug', $tableData);
+            }
             return Inertia::render('crud/index', $tableData);
             
         } catch (\Exception $e) {

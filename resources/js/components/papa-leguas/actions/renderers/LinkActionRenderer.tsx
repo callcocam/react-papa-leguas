@@ -6,7 +6,7 @@ import { type ActionRendererProps } from '../../types';
  * Renderizador de Ação Link
  * Usado para ações que são links navegáveis
  */
-export default function LinkActionRenderer({ action, item }: ActionRendererProps) {
+export default function LinkActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
     // URL pode ser string ou função
     const url = typeof action.url === 'function' ? action.url(item) : action.url || '#';
     
@@ -18,8 +18,8 @@ export default function LinkActionRenderer({ action, item }: ActionRendererProps
             className={className}
             title={action.tooltip || action.label}
         >
-            {action.icon && <span className="mr-1">{action.icon}</span>}
-            {action.label}
+            {IconComponent && <IconComponent className="mr-1" />}
+            <span>{action.label}</span>
         </Link>
     );
 } 

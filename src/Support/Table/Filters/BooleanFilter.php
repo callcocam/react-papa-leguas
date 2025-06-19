@@ -19,6 +19,7 @@ class BooleanFilter extends Filter
     protected mixed $trueValue = 1;
     protected mixed $falseValue = 0;
     protected bool $allowAll = true;
+ 
 
     /**
      * Definir labels para os valores

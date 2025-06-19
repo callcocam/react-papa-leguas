@@ -301,7 +301,7 @@ trait HasActions
      */
     protected function editAction(string $route = null): RouteAction
     {
-        $route = $route ?? $this->getRoutePrefix() . '.edit';
+        $route = $route ?? $this->getActionRoutePrefix() . '.edit';
         
         return $this->routeAction('edit')
             ->label('Editar')
@@ -314,7 +314,7 @@ trait HasActions
      */
     protected function viewAction(string $route = null): RouteAction
     {
-        $route = $route ?? $this->getRoutePrefix() . '.show';
+        $route = $route ?? $this->getActionRoutePrefix() . '.show';
         
         return $this->routeAction('view')
             ->label('Visualizar')
@@ -327,7 +327,7 @@ trait HasActions
      */
     protected function deleteAction(string $route = null): RouteAction
     {
-        $route = $route ?? $this->getRoutePrefix() . '.destroy';
+        $route = $route ?? $this->getActionRoutePrefix() . '.destroy';
         
         return $this->routeAction('delete')
             ->label('Excluir')
@@ -341,7 +341,7 @@ trait HasActions
      */
     protected function duplicateAction(string $route = null): RouteAction
     {
-        $route = $route ?? $this->getRoutePrefix() . '.duplicate';
+        $route = $route ?? $this->getActionRoutePrefix() . '.duplicate';
         
         return $this->routeAction('duplicate')
             ->label('Duplicar')
@@ -351,10 +351,16 @@ trait HasActions
     }
 
     /**
-     * Obtém prefixo de rotas (implementado em InteractsWithTable)
+     * Obtém prefixo de rotas (delegado para BelongsToRoutes)
      */
-    protected function getRoutePrefix(): string
+    protected function getActionRoutePrefix(): string
     {
+        // Verificar se o trait BelongsToRoutes está sendo usado
+        if (method_exists($this, 'getRoutePrefix')) {
+            return $this->getRoutePrefix();
+        }
+        
+        // Fallback: usar propriedade routePrefix se existir
         return property_exists($this, 'routePrefix') ? $this->routePrefix : '';
     }
 } 

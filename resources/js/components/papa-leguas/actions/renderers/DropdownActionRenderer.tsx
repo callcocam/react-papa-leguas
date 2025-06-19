@@ -13,7 +13,7 @@ import { type ActionRendererProps } from '../../types';
  * Renderizador de Ação Dropdown
  * Usado para múltiplas ações agrupadas em um menu dropdown
  */
-export default function DropdownActionRenderer({ action, item }: ActionRendererProps) {
+export default function DropdownActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
     // Para dropdown, esperamos que action.actions contenha as sub-ações
     const subActions = (action as any).actions || [];
 
@@ -53,8 +53,8 @@ export default function DropdownActionRenderer({ action, item }: ActionRendererP
                     size="sm"
                     className={action.className}
                 >
-                    {action.icon && <span className="mr-1">{action.icon}</span>}
-                    {action.label || 'Ações'}
+                    {IconComponent && <IconComponent className="mr-1" />}
+                    <span>{action.label || 'Ações'}</span>
                     <span className="ml-1">▼</span>
                 </Button>
             </DropdownMenuTrigger>

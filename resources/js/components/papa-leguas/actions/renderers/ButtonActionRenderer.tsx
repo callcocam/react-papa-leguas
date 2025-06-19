@@ -7,7 +7,7 @@ import { type ActionRendererProps } from '../../types';
  * Renderizador de Ação Button
  * Usado para ações básicas como Edit, Delete, View
  */
-export default function ButtonActionRenderer({ action, item }: ActionRendererProps) {
+export default function ButtonActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
     const handleClick = () => {
         if (action.onClick) {
             action.onClick(item);
@@ -53,14 +53,14 @@ export default function ButtonActionRenderer({ action, item }: ActionRendererPro
     return (
         <Button
             variant={variant}
-            size={action.size || 'sm'}
+            size={action.size as 'default' | 'sm' | 'lg' | 'icon' | 'default'}
             onClick={handleClick}
             disabled={action.disabled}
             className={action.className}
             title={action.tooltip || action.label}
         >
-            {action.icon && <span className="mr-1">{action.icon}</span>}
-            {action.label}
+            {IconComponent && <IconComponent className="mr-1" />}
+            <span>{action.label}</span>
         </Button>
     );
 } 

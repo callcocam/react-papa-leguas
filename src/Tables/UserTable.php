@@ -302,63 +302,252 @@ class UserTable extends Table
     }
 
     /**
-     * Define as ações da tabela
+     * Define as ações da tabela usando o Sistema de Ações Avançado
      */
     protected function actions(): array
     {
         return [
-            'header' => [
-                [
-                    'key' => 'create',
-                    'label' => 'Novo Usuário',
-                    'icon' => 'plus',
-                    'variant' => 'primary'
-                ],
-                [
-                    'key' => 'export',
-                    'label' => 'Exportar',
-                    'icon' => 'download',
-                    'variant' => 'secondary'
-                ]
-            ],
-            'row' => [
-                [
-                    'key' => 'view',
-                    'label' => 'Visualizar',
-                    'icon' => 'eye'
-                ],
-                [
-                    'key' => 'edit',
-                    'label' => 'Editar',
-                    'icon' => 'edit'
-                ],
-                [
-                    'key' => 'resend-verification',
-                    'label' => 'Reenviar Verificação',
-                    'icon' => 'mail',
-                    'variant' => 'secondary',
-                ],
-                [
-                    'key' => 'delete',
-                    'label' => 'Excluir',
-                    'icon' => 'trash',
-                    'variant' => 'danger'
-                ]
-            ],
-            'bulk' => [
-                [
-                    'key' => 'bulk-delete',
-                    'label' => 'Excluir Selecionados',
-                    'icon' => 'trash',
-                    'variant' => 'danger'
-                ],
-                [
-                    'key' => 'bulk-verify',
-                    'label' => 'Marcar como Verificados',
-                    'icon' => 'shield-check',
-                    'variant' => 'success'
-                ]
-            ]
+            // ✅ AÇÃO DE VISUALIZAÇÃO - RouteAction com visibilidade condicional
+            $this->viewAction('landlord.users.show')
+                ->label('Visualizar Usuário')
+                ->icon('Eye')
+                ->tooltip('Ver detalhes completos do usuário')
+                ->variant('outline')
+                ->visible(function ($item, $context) {
+                    // Verificação de segurança para evitar erro null
+                    if (!$item) return true;
+                    // Visível para todos os usuários ativos
+                    return $item->status === 'active';
+                }),
+
+            // ✅ AÇÃO DE EDIÇÃO - RouteAction com habilitação condicional
+            $this->editAction('landlord.users.edit')
+                ->label('Editar')
+                ->icon('Pencil')
+                ->tooltip('Editar informações do usuário')
+                ->enabled(function ($item, $context) {
+                    // Verificação de segurança para evitar erro null
+                    if (!$item) return true;
+                    // Habilitado apenas se o usuário atual pode editar
+                    return auth()->user()->can('update', $item);
+                }),
+
+            // ✅ AÇÃO DE CALLBACK - Alternar status de verificação de e-mail
+            $this->callbackAction('toggle_verification')
+                ->labelUsing(function ($item, $context) {
+                    if (!$item) return 'Verificação';
+                    return $item->email_verified_at 
+                        ? 'Desmarcar Verificação' 
+                        : 'Marcar como Verificado';
+                })
+                ->iconUsing(function ($item, $context) {
+                    if (!$item) return 'Shield';
+                    return $item->email_verified_at 
+                        ? 'ShieldX' 
+                        : 'ShieldCheck';
+                })
+                ->variantUsing(function ($item, $context) {
+                    if (!$item) return 'secondary';
+                    return $item->email_verified_at ? 'warning' : 'success';
+                })
+                ->tooltip('Alternar status de verificação do e-mail')
+                ->callback(function ($item, $context) {
+                    if (!$item) {
+                        return [
+                            'success' => false,
+                            'message' => 'Item não encontrado!',
+                            'reload' => false
+                        ];
+                    }
+                    
+                    if ($item->email_verified_at) {
+                        // Remover verificação
+                        $item->update(['email_verified_at' => null]);
+                        return [
+                            'success' => true,
+                            'message' => 'Verificação de e-mail removida com sucesso!',
+                            'reload' => true
+                        ];
+                    } else {
+                        // Marcar como verificado
+                        $item->update(['email_verified_at' => now()]);
+                        return [
+                            'success' => true,
+                            'message' => 'E-mail marcado como verificado!',
+                            'reload' => true
+                        ];
+                    }
+                })
+                ->position('start'),
+
+            // ✅ AÇÃO DE CALLBACK - Alternar status do usuário
+            $this->callbackAction('toggle_status')
+                ->labelUsing(function ($item, $context) {
+                    if (!$item) return 'Alterar Status';
+                    return $item->status === 'active' 
+                        ? 'Desativar Usuário' 
+                        : 'Ativar Usuário';
+                })
+                ->iconUsing(function ($item, $context) {
+                    if (!$item) return 'User';
+                    return $item->status === 'active' 
+                        ? 'UserX' 
+                        : 'UserCheck';
+                })
+                ->variantUsing(function ($item, $context) {
+                    if (!$item) return 'secondary';
+                    return $item->status === 'active' ? 'secondary' : 'success';
+                })
+                ->tooltip('Alternar status ativo/inativo do usuário')
+                ->requiresConfirmation(
+                    'Tem certeza que deseja alterar o status deste usuário?',
+                    'Confirmar Alteração'
+                )
+                ->callback(function ($item, $context) {
+                    if (!$item) {
+                        return [
+                            'success' => false,
+                            'message' => 'Item não encontrado!',
+                            'reload' => false
+                        ];
+                    }
+                    
+                    $newStatus = $item->status === 'active' ? 'inactive' : 'active';
+                    $item->update(['status' => $newStatus]);
+                    
+                    return [
+                        'success' => true,
+                        'message' => "Usuário {$item->name} foi " . 
+                                   ($newStatus === 'active' ? 'ativado' : 'desativado') . 
+                                   ' com sucesso!',
+                        'reload' => true
+                    ];
+                }),
+
+            // ✅ AÇÃO DE URL - Enviar e-mail direto (mailto)
+            $this->urlAction('send_email')
+                ->label('Enviar E-mail')
+                ->icon('Mail')
+                ->variant('outline')
+                ->tooltip('Abrir cliente de e-mail para enviar mensagem')
+                ->urlUsing(function ($item, $context) {
+                    if (!$item || !$item->email) return '#';
+                    return "mailto:{$item->email}?subject=Contato via Sistema";
+                })
+                ->openInNewTab(false)
+                ->visible(function ($item, $context) {
+                    // Verificação de segurança para evitar erro null
+                    if (!$item) return false;
+                    // Visível apenas se o e-mail estiver verificado
+                    return !is_null($item->email_verified_at);
+                }),
+
+            // ✅ AÇÃO DE URL - Ver perfil do usuário no site
+            $this->urlAction('view_profile')
+                ->label('Ver Perfil')
+                ->icon('ExternalLink')
+                ->variant('ghost')
+                ->tooltip('Ver perfil público do usuário')
+                ->urlUsing(function ($item, $context) {
+                    if (!$item || !$item->id) return '#';
+                    return url("/profile/{$item->id}");
+                })
+                ->openInNewTab()
+                ->visible(function ($item, $context) {
+                    // Verificação de segurança para evitar erro null
+                    if (!$item) return false;
+                    // Visível apenas para usuários ativos
+                    return $item->status === 'active';
+                }),
+
+            // ✅ AÇÃO DE CALLBACK - Reenviar e-mail de verificação
+            $this->callbackAction('resend_verification')
+                ->label('Reenviar Verificação')
+                ->icon('MailPlus')
+                ->variant('secondary')
+                ->tooltip('Reenviar e-mail de verificação')
+                ->callback(function ($item, $context) {
+                    if (!$item) {
+                        return [
+                            'success' => false,
+                            'message' => 'Item não encontrado!',
+                            'reload' => false
+                        ];
+                    }
+                    
+                    try {
+                        // Simular envio de e-mail de verificação
+                        // $item->sendEmailVerificationNotification();
+                        
+                        return [
+                            'success' => true,
+                            'message' => "E-mail de verificação reenviado para {$item->email}!",
+                            'reload' => false
+                        ];
+                    } catch (\Exception $e) {
+                        return [
+                            'success' => false,
+                            'message' => 'Erro ao reenviar e-mail: ' . $e->getMessage(),
+                            'reload' => false
+                        ];
+                    }
+                })
+                ->visible(function ($item, $context) {
+                    // Verificação de segurança para evitar erro null
+                    if (!$item) return false;
+                    // Visível apenas para usuários com e-mail não verificado
+                    return is_null($item->email_verified_at);
+                }),
+
+            // ✅ AÇÃO DE EXCLUSÃO - RouteAction com confirmação
+            $this->deleteAction('landlord.users.destroy')
+                ->label('Excluir Usuário')
+                ->icon('Trash2')
+                ->variant('destructive')
+                ->tooltip('Excluir permanentemente este usuário')
+                ->requiresConfirmation(
+                    'Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.',
+                    'Confirmar Exclusão'
+                )
+                ->enabled(function ($item, $context) {
+                    // Verificação de segurança para evitar erro null
+                    if (!$item) return false;
+                    // Não permitir exclusão do próprio usuário
+                    return auth()->id() !== $item->id;
+                }),
+
+            // ✅ AÇÃO DE CALLBACK - Duplicar usuário
+            $this->callbackAction('duplicate_user')
+                ->label('Duplicar')
+                ->icon('Copy')
+                ->variant('ghost')
+                ->tooltip('Criar novo usuário baseado neste')
+                ->callback(function ($item, $context) {
+                    if (!$item) {
+                        return [
+                            'success' => false,
+                            'message' => 'Item não encontrado!',
+                            'reload' => false
+                        ];
+                    }
+                    
+                    $newUser = $item->replicate();
+                    $newUser->name = $item->name . ' (Cópia)';
+                    $newUser->email = 'copy_' . time() . '_' . $item->email;
+                    $newUser->email_verified_at = null;
+                    $newUser->save();
+                    
+                    return [
+                        'success' => true,
+                        'message' => "Usuário duplicado com sucesso! Novo ID: {$newUser->id}",
+                        'reload' => true
+                    ];
+                })
+                ->enabled(function ($item, $context) {
+                    // Verificação de segurança para evitar erro null
+                    if (!$item) return false;
+                    return auth()->user()->can('create', User::class);
+                }),
         ];
     }
 

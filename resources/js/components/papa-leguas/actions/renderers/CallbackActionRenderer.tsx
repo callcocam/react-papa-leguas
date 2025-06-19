@@ -6,7 +6,7 @@ import { type ActionRendererProps } from '../../types';
  * Renderizador de Ação Callback
  * Usado para ações customizadas que executam callbacks no backend
  */
-export default function CallbackActionRenderer({ action, item }: ActionRendererProps) {
+export default function CallbackActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
     const handleClick = async () => {
         try {
             // Confirmação se necessária
@@ -77,8 +77,8 @@ export default function CallbackActionRenderer({ action, item }: ActionRendererP
             className={action.className}
             title={action.tooltip || action.label}
         >
-            {action.icon && <span className="mr-1">{action.icon}</span>}
-            {action.label}
+            {IconComponent && <IconComponent className="mr-1" />}
+            <span>{action.label}</span>
         </Button>
     );
 } 
