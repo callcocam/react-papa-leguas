@@ -257,34 +257,24 @@ class CurrencyCast extends Cast
     }
 
     /**
-     * {@inheritdoc}
+     * Verifica se o cast pode ser aplicado
+     *
+     * CONDIÇÕES PARA APLICAÇÃO:
+     * 1. A coluna deve ser do tipo 'currency'.
+     * 2. O valor deve ser numérico.
      */
     protected function checkCanCast(mixed $value, ?string $type = null): bool
     {
-        // Verificar tipo explícito
-        if ($type && $type !== 'currency') {
+        // 🎯 REGRA 1: Só aplicar se a coluna for do tipo 'currency'
+        if ($type !== 'currency') {
             return false;
         }
-        
-        // Verificar se é um valor numérico ou string numérica
-        if (is_numeric($value)) {
-            return true;
+
+        // REGRA 2: Só aplicar se o valor for numérico
+        if (!is_numeric($this->toNumeric($value))) {
+            return false;
         }
-        
-        if (is_string($value)) {
-            // Verificar se contém símbolos de moeda
-            $currencySymbols = ['R$', '$', '€', '£', '¥'];
-            foreach ($currencySymbols as $symbol) {
-                if (str_contains($value, $symbol)) {
-                    return true;
-                }
-            }
-            
-            // Verificar se é uma string numérica
-            $cleaned = preg_replace('/[^\d,.-]/', '', $value);
-            return is_numeric(str_replace(',', '.', $cleaned));
-        }
-        
-        return false;
+
+        return true;
     }
 } 

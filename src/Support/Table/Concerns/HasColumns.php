@@ -7,7 +7,6 @@ use Callcocam\ReactPapaLeguas\Support\Table\Concerns\HasCasts;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\CurrencyCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\DateCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\StatusCast;
-use Callcocam\ReactPapaLeguas\Support\Table\Casts\ClosureCast;
 
 trait HasColumns
 {
