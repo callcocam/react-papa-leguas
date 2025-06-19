@@ -218,6 +218,12 @@ trait InteractsWithTable
      */
     protected function getActions(): array
     {
+        // Verificar se o trait HasActions está sendo usado
+        if (method_exists($this, 'getActionsConfig')) {
+            return $this->getActionsConfig();
+        }
+        
+        // Fallback: usar método actions() se existir
         return method_exists($this, 'actions') ? $this->actions() : [];
     }
 
@@ -249,5 +255,32 @@ trait InteractsWithTable
     {
         // Verificar se há filtros disponíveis
         return !empty($this->getFiltersConfig());
+    }
+
+    /**
+     * Verificar se a tabela tem ações
+     */
+    protected function hasActions(): bool
+    {
+        // Verificar se o trait HasActions está sendo usado
+        if (method_exists($this, 'getActionsCount')) {
+            return $this->getActionsCount() > 0;
+        }
+        
+        // Fallback: verificar se há ações
+        return !empty($this->getActions());
+    }
+
+    /**
+     * Obter colunas de ações
+     */
+    protected function getActionableColumns(): array
+    {
+        // Verificar se o trait HasActions está sendo usado
+        if (method_exists($this, 'getVisibleActions')) {
+            return collect($this->getVisibleActions())->pluck('key')->toArray();
+        }
+        
+        return [];
     }
 }

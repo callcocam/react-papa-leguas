@@ -1,64 +1,155 @@
 import React from 'react';
-import { type ActionRendererProps } from '../types';
-
-// Importar os renderers específicos
+import { type ActionRendererProps, type TableAction } from '../types';
 import ButtonActionRenderer from './renderers/ButtonActionRenderer';
 import LinkActionRenderer from './renderers/LinkActionRenderer';
 import DropdownActionRenderer from './renderers/DropdownActionRenderer';
+import CallbackActionRenderer from './renderers/CallbackActionRenderer';
+
+// Mapeamento de tipos de ação para componentes
+const renderers: { [key: string]: React.FC<ActionRendererProps> } = {
+    // Renderers de botão
+    button: ButtonActionRenderer,
+    buttonActionRenderer: ButtonActionRenderer,
+    
+    // Renderers de link
+    link: LinkActionRenderer,
+    linkActionRenderer: LinkActionRenderer,
+    
+    // Renderers de dropdown
+    dropdown: DropdownActionRenderer,
+    dropdownActionRenderer: DropdownActionRenderer,
+    
+    // Renderers de callback
+    callback: CallbackActionRenderer,
+    callbackActionRenderer: CallbackActionRenderer,
+    custom: CallbackActionRenderer,
+    
+    // Renderers para tipos específicos (compatibilidade)
+    edit: ButtonActionRenderer,
+    delete: ButtonActionRenderer,
+    view: ButtonActionRenderer,
+    primary: ButtonActionRenderer,
+    secondary: ButtonActionRenderer,
+    
+    // Renderers para tipos do backend
+    route: ButtonActionRenderer,
+    url: ButtonActionRenderer,
+    
+    // Renderer padrão
+    default: ButtonActionRenderer,
+    defaultActionRenderer: ButtonActionRenderer,
+};
 
 /**
- * Factory de Renderers de Ações
- * Seleciona automaticamente o renderer correto baseado no tipo da ação
+ * Adiciona ou substitui um renderer de ação
+ * Permite injeção de novos renderers em runtime
  */
-export default function ActionRenderer(props: ActionRendererProps) {
-    const { action } = props;
-    
+export function addActionRenderer(type: string, renderer: React.FC<ActionRendererProps>): void {
+    renderers[type] = renderer;
+}
+
+/**
+ * Remove um renderer de ação
+ */
+export function removeActionRenderer(type: string): void {
+    delete renderers[type];
+}
+
+/**
+ * Obtém todos os renderers disponíveis
+ */
+export function getActionRenderers(): { [key: string]: React.FC<ActionRendererProps> } {
+    return { ...renderers };
+}
+
+/**
+ * Verifica se um renderer existe
+ */
+export function hasActionRenderer(type: string): boolean {
+    return type in renderers;
+}
+
+interface ActionRendererComponentProps {
+    action: TableAction;
+    item: any;
+}
+
+export default function ActionRenderer({ action, item }: ActionRendererComponentProps) {
     // Verificação de segurança
     if (!action || typeof action !== 'object') {
         console.warn('⚠️ Ação inválida:', action);
         return null;
     }
-    
-    try {
-        // Verificar se é dropdown (tem sub-ações)
-        if ((action as any).actions && Array.isArray((action as any).actions)) {
-            return <DropdownActionRenderer {...props} />;
-        }
-        
-        // Verificar por renderAs específico
-        if ((action as any).renderAs) {
-            switch ((action as any).renderAs) {
-                case 'link':
-                    return <LinkActionRenderer {...props} />;
-                case 'button':
-                    return <ButtonActionRenderer {...props} />;
-                case 'dropdown':
-                    return <DropdownActionRenderer {...props} />;
-                default:
-                    console.log(`🔄 RenderAs desconhecido: "${(action as any).renderAs}", usando ButtonActionRenderer como fallback`);
-                    return <ButtonActionRenderer {...props} />;
+
+    // Define o tipo baseado em renderAs, type ou fallback para 'button'
+    const type = (action as any).renderAs || action.type || 'button';
+
+    // Seleciona o renderer apropriado, ou o padrão como fallback
+    const Renderer = renderers[type] || renderers.default;
+
+    return <Renderer action={action} item={item} />;
+}
+
+/**
+ * Hook para processar ações programaticamente
+ */
+export const useActionProcessor = () => {
+    const executeAction = async (action: TableAction, item: any) => {
+        try {
+            // Se tem confirmação, solicitar confirmação primeiro
+            if (action.confirmMessage) {
+                const confirmed = window.confirm(action.confirmMessage);
+                if (!confirmed) return;
             }
+
+            // Executar onClick se fornecido
+            if (action.onClick) {
+                action.onClick(item);
+                return;
+            }
+
+            // Processar baseado no tipo
+            switch (action.type) {
+                case 'custom':
+                case 'callback':
+                    await handleCallbackAction(action, item);
+                    break;
+                    
+                default:
+                    console.warn('Tipo de ação não suportado para execução automática:', action.type);
+            }
+        } catch (error) {
+            console.error('Erro ao executar ação:', error);
         }
+    };
+
+    const handleCallbackAction = async (action: TableAction, item: any) => {
+        // Fazer requisição para executar callback no backend
+        const response = await fetch(`/api/actions/${action.key}/execute`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            },
+            body: JSON.stringify({
+                item_id: item.id,
+            }),
+        });
+
+        const result = await response.json();
         
-        // Auto-detectar baseado no tipo
-        switch (action.type) {
-            case 'link':
-                return <LinkActionRenderer {...props} />;
-            case 'dropdown':
-                return <DropdownActionRenderer {...props} />;
-            case 'edit':
-            case 'delete':
-            case 'view':
-            case 'primary':
-            case 'secondary':
-            case 'custom':
-            default:
-                // Fallback para botão
-                return <ButtonActionRenderer {...props} />;
+        if (result.success) {
+            console.log('Ação executada com sucesso:', result.message);
+            if (result.reload !== false) {
+                window.location.reload();
+            }
+        } else {
+            console.error('Erro na execução da ação:', result.message);
+            alert(result.message || 'Erro ao executar ação');
         }
-    } catch (error) {
-        console.error('❌ Erro ao renderizar ação:', error);
-        // Fallback seguro
-        return <ButtonActionRenderer {...props} />;
-    }
-} 
+    };
+
+    return {
+        executeAction,
+    };
+}; 

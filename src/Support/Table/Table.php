@@ -10,17 +10,16 @@ namespace Callcocam\ReactPapaLeguas\Support\Table;
 
 use Callcocam\ReactPapaLeguas\Support\Table\Concerns\HasColumns;
 use Callcocam\ReactPapaLeguas\Support\Table\Concerns\HasFilters;
+use Callcocam\ReactPapaLeguas\Support\Table\Concerns\HasActions;
 use Callcocam\ReactPapaLeguas\Support\Table\Concerns\InteractsWithTable;
 
 /**
  * Classe Table moderna com suporte completo a formatação avançada,
- * relacionamentos, badges dinâmicos, filtros avançados e componentes React customizados.
+ * relacionamentos, badges dinâmicos, filtros avançados, ações dinâmicas e componentes React customizados.
  */
 abstract class Table 
 {
-    use HasColumns, HasFilters, InteractsWithTable;
-
-    protected $actions = [];
+    use HasColumns, HasFilters, HasActions, InteractsWithTable;
 
     /**
      * Constructor
@@ -52,13 +51,5 @@ abstract class Table
     protected function actions(): array
     {
         return [];
-    }
-
-    /**
-     * Boot method específico da Table
-     */
-    protected function bootTable()
-    {
-        $this->actions = $this->actions();
     }
 } 

@@ -8,13 +8,16 @@
 
 namespace Callcocam\ReactPapaLeguas\Support\Concerns;
 
+/**
+ * Trait para implementar o padrão Factory
+ */
 trait FactoryPattern
 {
     /**
-     * Criar uma nova instância da classe
+     * Cria uma nova instância da classe
      */
-    public static function make(...$args): static
+    public static function make(...$arguments): static
     {
-        return new static(...$args);
+        return new static(...$arguments);
     }
 } 

@@ -33,7 +33,7 @@ export interface FilterRendererProps {
 export interface TableAction {
     key: string;
     label: string;
-    type?: 'edit' | 'delete' | 'view' | 'primary' | 'secondary' | 'custom' | 'link' | 'dropdown';
+    type?: 'edit' | 'delete' | 'view' | 'primary' | 'secondary' | 'custom' | 'link' | 'dropdown' | 'callback' | 'button' | 'route' | 'url';
     method?: 'get' | 'post' | 'put' | 'delete';
     url?: string | ((item: any) => string);
     onClick?: (item: any) => void;
@@ -44,6 +44,7 @@ export interface TableAction {
     className?: string;
     tooltip?: string;
     confirmMessage?: string;
+    renderAs?: string;
 }
 
 export interface ActionRendererProps {

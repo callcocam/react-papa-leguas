@@ -39,6 +39,35 @@ const renderers: { [key: string]: React.FC<FilterRendererProps> } = {
 };
 
 /**
+ * Adiciona ou substitui um renderer de filtro
+ * Permite injeção de novos renderers em runtime
+ */
+export function addFilterRenderer(type: string, renderer: React.FC<FilterRendererProps>): void {
+    renderers[type] = renderer;
+}
+
+/**
+ * Remove um renderer de filtro
+ */
+export function removeFilterRenderer(type: string): void {
+    delete renderers[type];
+}
+
+/**
+ * Obtém todos os renderers disponíveis
+ */
+export function getFilterRenderers(): { [key: string]: React.FC<FilterRendererProps> } {
+    return { ...renderers };
+}
+
+/**
+ * Verifica se um renderer existe
+ */
+export function hasFilterRenderer(type: string): boolean {
+    return type in renderers;
+}
+
+/**
  * Factory de Renderers de Filtros
  * Seleciona automaticamente o renderer correto baseado no tipo do filtro
  */
