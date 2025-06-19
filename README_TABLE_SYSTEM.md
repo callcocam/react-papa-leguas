@@ -12,477 +12,229 @@ Sistema completo de tabelas interativas com colunas editáveis, actions, filtros
 - ↕️ **Ordenação**: Ordenação por qualquer coluna
 - 📁 **Exportação**: Exportação para CSV/Excel
 - 🏗️ **Extensível**: Sistema baseado em traits e herança
-- ✅ **Testado**: Cobertura completa de testes
 
-## 🚀 Instalação e Configuração
+## 🎯 PLANEJAMENTO ARQUITETURAL - Sistema Universal
 
-### 1. Registro no ServiceProvider
+### **OBJETIVO PRINCIPAL**
+- ⏳ Criar sistema de tabelas que funcione como camada de transformação de dados
+- ⏳ Independente do frontend (Vue, React, ou qualquer outro)
+- ⏳ Formatação avançada via closures e casts antes de chegar no backend e antes de chegar no frontend
+- ⏳ Suporte a múltiplas fontes de dados (API, JSON, Excel, Collections)
 
-O sistema é automaticamente registrado via ServiceProvider:
+## 🏗️ ARQUITETURA ESCOLHIDA
+
+### **📋 DECISÃO: Classes Filhas (Opção 2)**
+
+**Definimos usar classes filhas especializadas para cada tabela:**
 
 ```php
-// packages/callcocam/react-papa-leguas/src/ReactPapaLeguasServiceProvider.php
-public function boot()
+// UserTable.php - Classe filha especializada
+class UserTable extends Table 
 {
-    // Migrations, commands, views, etc. são registrados automaticamente
-}
-```
-
-### 2. Traits Disponíveis
-
-O sistema utiliza traits para organização modular:
-
-```php
-// Core/Concerns/
-BelongsToTenant.php      // Multi-tenancy
-BelongsToUser.php        // Relacionamento com usuário
-BelongsToLandlord.php    // Relacionamento com landlord
-BelongsToTable.php       // Funcionalidades de tabela
-BelongsToForm.php        // Funcionalidades de formulário
-```
-
-## 📋 Uso Básico
-
-### Controller Simples
-
-```php
-<?php
-
-use Callcocam\ReactPapaLeguas\Core\Table\Table;
-use Callcocam\ReactPapaLeguas\Models\Tenant;
-
-class TenantController extends Controller
-{
-    public function index()
+    protected $model = User::class;
+    
+    protected function columns(): array 
     {
-        $table = Table::make()
-            ->id('tenants-table')
-            ->model(Tenant::class)
-            ->query(fn() => Tenant::query())
-            
-            // Colunas
-            ->textColumn('name', 'Nome')->searchable()
-            ->editableColumn('status', 'Status')->asSelect()
-                ->options([
-                    ['value' => 'active', 'label' => 'Ativo'],
-                    ['value' => 'inactive', 'label' => 'Inativo'],
-                ])
-                ->updateRoute('tenants.update-status')
-            ->dateColumn('created_at', 'Criado em')->relative()
-            
-            // Filtros
-            ->textFilter('name', 'Nome')->contains()
-            ->selectFilter('status', 'Status')->statusOptions()
-            
-            // Configurações
-            ->searchable()
-            ->sortable()
-            ->paginated()
-            ->perPage(15);
-
-        return inertia('tenants/index', [
-            'table' => $table->getTableData(),
-            'data' => $table->getRecords(),
-            'meta' => $table->getMeta(),
-        ]);
+        return [
+            Column::make('id')->label('ID')->sortable(),
+            Column::make('name')->label('Nome')->searchable(),
+            Column::make('email')->label('E-mail')->searchable(),
+            Column::make('status')->label('Status')->badge(),
+        ];
+    }
+    
+    protected function filters(): array
+    {
+        return [
+            Filter::select('status')->options(['active', 'inactive']),
+            Filter::text('search')->placeholder('Buscar usuários...'),
+        ];
     }
 }
-```
 
-## 🏗️ Geração Automática de Controllers
-
-Use o comando Artisan para gerar controllers automaticamente:
-
-```bash
-# Controller básico
-php artisan papa-leguas:generate-controller UserController
-
-# Controller com modelo
-php artisan papa-leguas:generate-controller UserController --model=User
-
-# Controller com recursos completos
-php artisan papa-leguas:generate-controller UserController --model=User --resource --table --form
-
-# Controller para área admin
-php artisan papa-leguas:generate-controller Admin/UserController --type=admin --model=User --table
-
-# Controller para landlord
-php artisan papa-leguas:generate-controller Landlord/TenantController --type=landlord --model=Tenant --resource
-```
-
-### Opções do Comando:
-
-- `--model`: Especifica o modelo para integração
-- `--resource`: Gera métodos CRUD completos
-- `--api`: Gera controller API (sem create/edit)
-- `--type`: admin, landlord, ou padrão
-- `--table`: Adiciona funcionalidades de tabela
-- `--form`: Adiciona funcionalidades de formulário
-- `--force`: Força a criação, sobrescrevendo arquivos existentes
-
-## 📊 Sistema de Colunas
-
-### Tipos Disponíveis
-
-```php
-// Texto simples
-->textColumn('name', 'Nome')
-    ->searchable()
-    ->copyable()
-    ->truncate(50)
-
-// Coluna editável ⭐ NOVO
-->editableColumn('status', 'Status')
-    ->asSelect()
-    ->updateRoute('items.update-field')
-    ->autosave()
-    ->debounce(1000)
-    ->requiresConfirmation()
-
-// Números/Moeda
-->numberColumn('price', 'Preço')
-    ->currency('BRL')
-    ->precision(2)
-
-// Datas
-->dateColumn('created_at', 'Criado em')
-    ->dateOnly()
-    ->relative()
-    ->format('d/m/Y')
-
-// Boolean/Status
-->booleanColumn('active', 'Ativo')
-    ->activeInactive()
-    ->asBadge()
-
-// Badges/Status
-->badgeColumn('status', 'Status')
-    ->statusColors()
-    ->statusIcons()
-
-// Imagens
-->imageColumn('avatar', 'Avatar')
-    ->circular()
-    ->size(64)
-    ->defaultImage('/default.png')
-```
-
-### Edição Inline
-
-As colunas editáveis permitem modificação direta na tabela:
-
-```php
-->editableColumn('name', 'Nome')
-    ->asText()                           // Tipo: text, textarea, number, select, boolean, date
-    ->updateRoute('items.update-field')  // Rota para salvar
-    ->autosave()                         // Salva automaticamente
-    ->debounce(1000)                     // Delay antes de salvar
-    ->validation(['required', 'string']) // Validação
-    ->placeholder('Digite...')           // Placeholder
-```
-
-## 🔍 Sistema de Filtros
-
-### Tipos Disponíveis
-
-```php
-// Filtro de texto
-->textFilter('name', 'Nome')
-    ->placeholder('Buscar por nome...')
-    ->contains()    // Operadores: contains, exact, starts_with, ends_with
-
-// Filtro de seleção
-->selectFilter('status', 'Status')
-    ->options([
-        ['value' => 'active', 'label' => 'Ativo'],
-        ['value' => 'inactive', 'label' => 'Inativo'],
-    ])
-    ->multiple()
-    ->clearable()
-
-// Filtro de data
-->dateFilter('created_at', 'Data de criação')
-    ->includeTime(false)
-    ->format('d/m/Y')
-
-// Filtro de intervalo de datas
-->dateRangeFilter('created_at', 'Período')
-    ->includeTime(true)
-
-// Filtro numérico
-->numberFilter('price', 'Preço')
-    ->currency('BRL')
-    ->operators(['=', '>', '<', '>=', '<='])
-
-// Filtro boolean
-->booleanFilter('active', 'Ativo')
-    ->activeInactive()
-    ->asSelect()    // ou asSwitch(), asCheckbox()
-```
-
-## ⚡ Sistema de Actions
-
-### Header Actions
-
-```php
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Header\CreateHeaderAction;
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Header\ExportHeaderAction;
-
-->headerActions([
-    CreateHeaderAction::make()
-        ->route('items.create')
-        ->label('Novo Item')
-        ->color('primary')
-        ->icon('plus'),
-        
-    ExportHeaderAction::make()
-        ->route('items.export')
-        ->label('Exportar')
-        ->color('secondary'),
-])
-```
-
-### Row Actions
-
-```php
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Rows\ViewRowAction;
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Rows\EditRowAction;
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Rows\DeleteRowAction;
-
-->rowActions([
-    ViewRowAction::make()
-        ->route('items.show')
-        ->label('Ver'),
-        
-    EditRowAction::make()
-        ->route('items.edit')
-        ->label('Editar'),
-        
-    DeleteRowAction::make()
-        ->route('items.destroy')
-        ->label('Excluir')
-        ->requiresConfirmation()
-        ->confirmationTitle('Confirmar exclusão'),
-])
-```
-
-### Bulk Actions
-
-```php
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Bulk\DeleteBulkAction;
-use Callcocam\ReactPapaLeguas\Core\Table\Actions\Bulk\ActivateBulkAction;
-
-->bulkActions([
-    ActivateBulkAction::make()
-        ->route('items.bulk-activate')
-        ->label('Ativar selecionados'),
-        
-    DeleteBulkAction::make()
-        ->route('items.bulk-delete')
-        ->label('Excluir selecionados')
-        ->confirmationTitle('Confirmar exclusão em massa'),
-])
-```
-
-## 🔧 Configurações Avançadas
-
-### Busca e Ordenação
-
-```php
-$table = Table::make()
-    // Busca
-    ->searchable()
-    ->searchPlaceholder('Buscar items...')
-    ->searchColumns(['name', 'description', 'tags'])
-    
-    // Ordenação
-    ->sortable()
-    ->defaultSort('name', 'asc')
-    
-    // Paginação
-    ->paginated()
-    ->perPage(25)
-    ->perPageOptions([10, 25, 50, 100]);
-```
-
-### Integração com Modelos
-
-```php
-$table = Table::make()
-    ->model(Tenant::class)
-    ->query(function () {
-        return Tenant::query()
-            ->with(['users', 'subscriptions'])
-            ->whereHas('subscriptions', function ($query) {
-                $query->where('active', true);
-            });
-    });
-```
-
-## 🧪 Testes
-
-O sistema inclui testes abrangentes:
-
-```bash
-# Testes do sistema de tabelas
-php artisan test --filter=TableSystemTest
-
-# Testes de CRUD
-php artisan test --filter=TenantCrudTest
-
-# Testes do comando de geração
-php artisan test --filter=GenerateControllerCommandTest
-
-# Todos os testes do pacote
-php artisan test packages/callcocam/react-papa-leguas/tests/
-```
-
-### Factories Incluídas
-
-```php
-// Tenants para teste
-Tenant::factory()->active()->create();
-Tenant::factory()->suspended()->subdomain()->create();
-
-// Landlords para teste  
-Landlord::factory()->superAdmin()->create();
-Landlord::factory()->withRoles(['admin', 'manager'])->create();
-```
-
-## 📚 Exemplos Completos
-
-### Exemplo: Tabela de Produtos
-
-```php
-public function index()
+// UserController.php - Uso no controller
+public function index() 
 {
-    $table = Table::make()
-        ->id('products-table')
-        ->model(Product::class)
-        ->query(fn() => Product::with(['category', 'supplier']))
-        
-        // Colunas
-        ->imageColumn('image', 'Imagem')
-            ->size(48)
-            ->circular(false)
-        ->textColumn('name', 'Nome')
-            ->searchable()
-            ->copyable()
-        ->editableColumn('price', 'Preço')
-            ->asNumber()
-            ->currency('BRL')
-            ->updateRoute('products.update-price')
-            ->autosave()
-        ->badgeColumn('status', 'Status')
-            ->statusColors()
-        ->numberColumn('stock', 'Estoque')
-            ->precision(0)
-        ->dateColumn('created_at', 'Criado em')
-            ->relative()
-            
-        // Filtros
-        ->textFilter('name', 'Nome')
-            ->contains()
-        ->selectFilter('category_id', 'Categoria')
-            ->relationship('category', 'name')
-            ->clearable()
-        ->numberFilter('price', 'Preço')
-            ->currency('BRL')
-            ->operators(['>=', '<='])
-        ->selectFilter('status', 'Status')
-            ->statusOptions()
-            
-        // Actions
-        ->headerActions([
-            CreateHeaderAction::make()
-                ->route('products.create')
-                ->label('Novo Produto'),
-            ExportHeaderAction::make()
-                ->route('products.export'),
-        ])
-        ->rowActions([
-            ViewRowAction::make()->route('products.show'),
-            EditRowAction::make()->route('products.edit'),
-            DeleteRowAction::make()
-                ->route('products.destroy')
-                ->requiresConfirmation(),
-        ])
-        ->bulkActions([
-            ActivateBulkAction::make()
-                ->route('products.bulk-activate'),
-            DeleteBulkAction::make()
-                ->route('products.bulk-delete')
-                ->confirmationTitle('Excluir produtos selecionados?'),
-        ])
-        
-        // Configurações
-        ->searchable()
-        ->sortable()
-        ->defaultSort('name', 'asc')
-        ->paginated()
-        ->perPage(20);
-
-    return inertia('products/index', [
-        'table' => $table->getTableData(),
-        'products' => $table->getRecords(),
-        'meta' => $table->getMeta(),
-    ]);
+    $table = new UserTable();
+    return Inertia::render('crud/index', $table->toArray());
 }
 ```
 
-### Rotas para Edição Inline
+### **🎯 Justificativas da Escolha:**
 
-```php
-// routes/web.php ou routes/admin.php
-Route::put('products/{product}/update-price', [ProductController::class, 'updatePrice'])
-    ->name('products.update-price');
+1. **Organização**: Cada tabela tem sua própria classe especializada
+2. **Reutilização**: UserTable pode ser usada em múltiplos controllers
+3. **Configuração Centralizada**: Colunas, filtros e formatação em um só lugar
+4. **Manutenção**: Mudanças na tabela ficam isoladas e organizadas
+5. **Padrão Consistente**: Segue o padrão já estabelecido no projeto
+6. **Tipagem Forte**: Melhor IntelliSense e detecção de erros
+7. **Extensibilidade**: Fácil de estender com métodos específicos
 
-Route::put('products/{product}/update-field', [ProductController::class, 'updateField'])
-    ->name('products.update-field');
+### **📂 Estrutura de Arquivos:**
+```
+app/Tables/
+├── UserTable.php
+├── ProductTable.php
+├── CategoryTable.php
+└── ...
 
-// Controller
-public function updatePrice(Product $product, Request $request)
-{
-    $request->validate(['price' => 'required|numeric|min:0']);
-    
-    $product->update(['price' => $request->price]);
-    
-    return response()->json(['success' => true]);
-}
-
-public function updateField(Product $product, Request $request)
-{
-    $field = $request->input('field');
-    $value = $request->input('value');
-    
-    // Validação dinâmica baseada no campo
-    $rules = $this->getFieldValidationRules($field);
-    $request->validate([$field => $rules]);
-    
-    $product->update([$field => $value]);
-    
-    return response()->json(['success' => true]);
-}
+packages/callcocam/react-papa-leguas/src/Support/Table/
+├── Table.php (classe base)
+├── Column.php
+├── Filter.php
+├── Action.php
+└── ...
 ```
 
-## 🤝 Contribuindo
+## 🔄 FLUXO DE TRANSFORMAÇÃO
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+### **PIPELINE DUPLO DE TRANSFORMAÇÃO**
+- ⏳ **Etapa 1 - Backend**: Dados Brutos → Casts/Closures → Dados Processados → JSON
+- ⏳ **Etapa 2 - Frontend**: JSON Recebido → Formatadores Frontend → Dados Finais → Renderização
+- ⏳ **Separação clara**: Lógica de negócio no backend, apresentação no frontend
+- ⏳ **Auto-conversão**: Array → Collection automaticamente para facilitar manipulação
 
-## 📄 Licença
+### **PROCESSAMENTO INTELIGENTE**
+- ⏳ **Detecção de tipo**: Models, Arrays, JSON, API responses
+- ⏳ **Contexto da linha**: Acesso aos dados completos durante transformação
+- ⏳ **Contexto da tabela**: Acesso a configurações globais
+- ⏳ **Lazy processing**: Só processa quando necessário
+- ⏳ **Batch processing**: Processa múltiplas linhas de uma vez
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+> **📝 NOTA IMPORTANTE**: Os dados devem sempre vir de uma fonte única por tabela. Se os dados vêm do banco, a tabela trabalha exclusivamente com Models. Se vêm de uma Collection/Array, trabalha só com essa fonte. Isso garante consistência e performance otimizada.
 
-## 🆘 Suporte
+## 📋 ESTRUTURA DE DESENVOLVIMENTO
 
-- 📧 Email: callcocam@gmail.com, contato@sigasmart.com.br
-- 🌐 Website: https://www.sigasmart.com.br
-- 📚 Documentação: [TABLE_SYSTEM.md](docs/TABLE_SYSTEM.md)
+### **1. CORE - Processamento de Dados**
+- ⏳ Criar classe `Table.php` principal
+- ⏳ Implementar `DataProcessor.php` para processar dados de qualquer fonte
+- ⏳ Desenvolver `ColumnManager.php` para gerenciar colunas e formatação
+- ⏳ Criar `CastManager.php` para sistema de casts
+- ⏳ Integrar com `EvaluatesClosures` para execução de callbacks
+
+### **2. SISTEMA DE COLUNAS**
+- ⏳ Criar classe base `Column.php`
+- ⏳ Implementar `TextColumn.php` para textos
+- ⏳ Implementar `NumberColumn.php` para números
+- ⏳ Implementar `DateColumn.php` para datas
+- ⏳ Implementar `BooleanColumn.php` para booleanos
+- ⏳ Criar `CustomColumn.php` para closures personalizados
+- ⏳ Adicionar suporte a formatação via closures
+- ⏳ Implementar meta-dados para colunas (width, align, sortable, etc.)
+
+### **3. SISTEMA DE CASTS**
+- ⏳ Criar interface/classe base `Cast.php`
+- ⏳ Implementar `CurrencyCast.php` para formatação monetária
+- ⏳ Implementar `DateCast.php` para formatação de datas
+- ⏳ Implementar `StatusCast.php` para badges de status
+- ⏳ Criar `ClosureCast.php` para closures personalizados
+- ⏳ Adicionar sistema de pipeline para múltiplos casts
+- ⏳ Implementar cache para casts pesados
+
+### **4. FONTES DE DADOS**
+- ⏳ Criar interface `DataSource.php`
+- ⏳ Implementar `CollectionSource.php` para Laravel Collections
+- ⏳ Implementar `ApiSource.php` para APIs externas
+- ⏳ Implementar `JsonSource.php` para arquivos JSON
+- ⏳ Implementar `ExcelSource.php` para arquivos Excel
+- ⏳ Adicionar suporte a paginação por fonte
+- ⏳ Implementar filtros e busca por fonte
+- ⏳ Criar cache para fontes externas
+
+### **5. SISTEMA DE FORMATADORES**
+- ⏳ Criar interface `Formatter.php`
+- ⏳ Implementar `CurrencyFormatter.php`
+- ⏳ Implementar `DateFormatter.php`
+- ⏳ Implementar `CustomFormatter.php` para closures
+- ⏳ Adicionar formatadores condicionais
+- ⏳ Implementar formatadores compostos
+- ⏳ Criar sistema de formatação por contexto
+
+### **6. PROCESSAMENTO DE DADOS**
+- ⏳ Implementar pipeline de transformação de dados
+- ⏳ Aplicar casts antes da formatação
+- ⏳ Aplicar formatadores depois dos casts
+- ⏳ Suporte a transformação de dados aninhados
+- ⏳ Implementar lazy loading para dados pesados
+- ⏳ Adicionar validação de dados transformados
+
+### **7. SISTEMA DE FILTROS**
+- ⏳ Criar filtros tipados por coluna
+- ⏳ Implementar filtros compostos
+- ⏳ Adicionar filtros por relacionamentos
+- ⏳ Suporte a filtros customizados via closures
+- ⏳ Implementar filtros por range de dados
+- ⏳ Criar filtros salvos e reutilizáveis
+
+### **8. SISTEMA DE AÇÕES**
+- ⏳ Implementar Header Actions (criar, exportar, etc.)
+- ⏳ Implementar Row Actions (editar, excluir, visualizar)
+- ⏳ Implementar Bulk Actions (excluir em lote, etc.)
+- ⏳ Adicionar ações condicionais
+- ⏳ Suporte a ações customizadas via closures
+- ⏳ Implementar confirmações e validações
+
+### **9. EXPORTAÇÃO E IMPORTAÇÃO**
+- ⏳ Suporte a exportação CSV
+- ⏳ Suporte a exportação Excel
+- ⏳ Suporte a exportação PDF
+- ⏳ Aplicar formatação na exportação
+- ⏳ Implementar importação de dados
+- ⏳ Validação de dados importados
+
+### **10. FRONTEND AGNÓSTICO**
+- ⏳ Gerar estrutura JSON para qualquer frontend
+- ⏳ Incluir meta-dados de colunas
+- ⏳ Incluir configurações de filtros
+- ⏳ Incluir ações disponíveis
+- ⏳ Suporte a temas e estilos
+- ⏳ Implementar API REST para tabelas
+
+### **11. PERFORMANCE E CACHE**
+- ⏳ Implementar cache de dados processados
+- ⏳ Cache de casts e formatadores
+- ⏳ Lazy loading de relacionamentos
+- ⏳ Otimização de queries
+- ⏳ Implementar paginação eficiente
+- ⏳ Cache de resultados de filtros
+- ⏳ Processamento assíncrono para transformações pesadas
+- ⏳ Streaming de dados para grandes volumes
+
+### **12. INTEGRAÇÃO COM TRAITS EXISTENTES**
+- ⏳ Integrar com `ResolvesModel` para auto-detecção
+- ⏳ Integrar com `ModelQueries` para operações CRUD
+- ⏳ Integrar com `BelongsToModel` para relacionamentos
+- ⏳ Usar `EvaluatesClosures` para callbacks
+- ⏳ Manter compatibilidade com controllers existentes
+
+### **13. CONFIGURAÇÃO E CUSTOMIZAÇÃO**
+- ⏳ Sistema de configuração via config files
+- ⏳ Mapeamentos de casts personalizados
+- ⏳ Temas e estilos configuráveis
+- ⏳ Formatadores globais
+- ⏳ Configuração de fontes de dados
+- ⏳ Configuração de cache e performance
+
+### **14. FLEXIBILIDADE E DEBUGGING**
+- ⏳ Data enrichment: Adiciona dados relacionados (mesma fonte)
+- ⏳ Data validation: Valida dados durante transformação
+- ⏳ Data normalization: Padroniza formatos diferentes
+- ⏳ Log de transformações: Rastreia cada etapa do pipeline
+- ⏳ Métricas de performance: Tempo de cada transformação
+- ⏳ Debug mode: Mostra dados antes/depois de cada etapa
+- ⏳ Profiling: Identifica gargalos de performance
+
+### **15. DOCUMENTAÇÃO E TESTES**
+- ⏳ Documentação completa da API
+- ⏳ Guias de uso para diferentes cenários
+- ⏳ Testes unitários para todos os componentes
+- ⏳ Testes de integração
+- ⏳ Benchmarks de performance
+- ⏳ Exemplos práticos de implementação
 
 ---
 
-*Sistema desenvolvido por Claudio Campos para o ecossistema React Papa Leguas*
+**Status**: 🟡 **Arquitetura Definida** - Classes filhas escolhidas, próximo passo: implementar Table.php base e UserTable como exemplo
+**Próximo passo**: Criar implementação simples da Table.php e UserTable para teste no frontend
+ 
+ 

@@ -15,7 +15,7 @@ class CreateLandlordAdminCommand extends Command
      * @var string
      */
     protected $signature = 'papa-leguas:create-admin 
-                            {--email=admin@papaleguas.com : Admin email} 
+                            {--email=admin@react-papa-leguas.test : Admin email} 
                             {--password=password : Admin password}
                             {--name=Administrador Papa Leguas : Admin name}';
 

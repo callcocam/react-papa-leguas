@@ -7,13 +7,56 @@
 
 namespace Callcocam\ReactPapaLeguas\Enums;
 
+/**
+ * Enum para status base do sistema
+ */
 enum BaseStatus: string
 {
     case Draft = 'draft';
     case Published = 'published';
+    case Active = 'active';
+    case Inactive = 'inactive';
+    case Archived = 'archived';
+    case Deleted = 'deleted';
 
     /**
-     * Get all status values.
+     * Obter label em português
+     */
+    public function label(): string
+    {
+        return match($this) {
+            self::Draft => 'Rascunho',
+            self::Published => 'Publicado',
+            self::Active => 'Ativo',
+            self::Inactive => 'Inativo',
+            self::Archived => 'Arquivado',
+            self::Deleted => 'Excluído',
+        };
+    }
+
+    /**
+     * Obter variante de badge
+     */
+    public function badgeVariant(): string
+    {
+        return match($this) {
+            self::Active, self::Published => 'success',
+            self::Inactive, self::Draft => 'secondary',
+            self::Archived => 'warning',
+            self::Deleted => 'destructive',
+        };
+    }
+
+    /**
+     * Verificar se é ativo
+     */
+    public function isActive(): bool
+    {
+        return in_array($this, [self::Active, self::Published]);
+    }
+
+    /**
+     * Obter todos os valores
      */
     public static function values(): array
     {
@@ -21,51 +64,13 @@ enum BaseStatus: string
     }
 
     /**
-     * Get status labels.
+     * Obter opções para select
      */
-    public function label(): string
+    public static function options(): array
     {
-        return match($this) {
-            self::Draft => 'Rascunho',
-            self::Published => 'Publicado',
-        };
-    }
-
-    /**
-     * Get status color for UI.
-     */
-    public function color(): string
-    {
-        return match($this) {
-            self::Draft => 'gray',
-            self::Published => 'green',
-        };
-    }
-
-    /**
-     * Get badge class for Tailwind CSS.
-     */
-    public function badgeClass(): string
-    {
-        return match($this) {
-            self::Draft => 'bg-gray-100 text-gray-800 border-gray-200',
-            self::Published => 'bg-green-100 text-green-800 border-green-200',
-        };
-    }
-
-    /**
-     * Check if status is published.
-     */
-    public function isPublished(): bool
-    {
-        return $this === self::Published;
-    }
-
-    /**
-     * Check if status is draft.
-     */
-    public function isDraft(): bool
-    {
-        return $this === self::Draft;
+        return array_map(fn($case) => [
+            'value' => $case->value,
+            'label' => $case->label()
+        ], self::cases());
     }
 }

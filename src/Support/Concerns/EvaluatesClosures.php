@@ -6,7 +6,7 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\ReactPapaLeguas\Core\Concerns;
+namespace Callcocam\ReactPapaLeguas\Support\Concerns;
 
 use Closure;
 use Illuminate\Contracts\Container\BindingResolutionException;

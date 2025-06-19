@@ -128,10 +128,10 @@ export default function AppLayout({
   }
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
+    <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-background border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+        "fixed inset-y-0 left-0 z-30 w-64 bg-background border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Sidebar Header */}
@@ -220,15 +220,15 @@ export default function AppLayout({
       {/* Overlay para mobile */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+      <div className="min-h-screen flex flex-col lg:ml-64">
         {/* Header */}
-        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative z-0">
           <div className="flex h-14 items-center gap-4 px-4">
             <Button
               variant="ghost"
@@ -300,7 +300,7 @@ export default function AppLayout({
 
         {/* Page Content */}
         <main className={cn(
-          "flex-1 overflow-auto",
+          "flex-1 overflow-auto relative z-0",
           className
         )}>
           <div className="container mx-auto p-4 space-y-4">
