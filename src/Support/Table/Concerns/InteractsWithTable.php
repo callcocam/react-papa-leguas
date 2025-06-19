@@ -102,8 +102,8 @@ trait InteractsWithTable
                     ],
                     'routes' => $this->getRouteNames(),
                     'capabilities' => [
-                        'searchable_columns' => $this->getSearchableColumns(),
-                        'sortable_columns' => $this->getSortableColumns(),
+                        'searchable_columns' => $this->getSearchableColumnKeys(),
+                        'sortable_columns' => $this->getSortableColumnKeys(),
                         'filterable_columns' => $this->getFilterableColumns(),
                     ],
                     'data_source' => $this->getDataSourceInfo(),
@@ -150,8 +150,8 @@ trait InteractsWithTable
                     ],
                     'routes' => $this->getRouteNames(),
                     'capabilities' => [
-                        'searchable_columns' => $this->getSearchableColumns(),
-                        'sortable_columns' => $this->getSortableColumns(),
+                        'searchable_columns' => $this->getSearchableColumnKeys(),
+                        'sortable_columns' => $this->getSortableColumnKeys(),
                         'filterable_columns' => $this->getFilterableColumns(),
                     ],
                     'data_source' => $this->getDataSourceInfo(),

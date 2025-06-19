@@ -387,12 +387,12 @@ trait HasDataSource
         return $this->meta;
     }
 
-    public function getSearchableColumns(): array
+    public function getSearchableColumnKeys(): array
     {
         return $this->searchableColumns;
     }
 
-    public function getSortableColumns(): array
+    public function getSortableColumnKeys(): array
     {
         return $this->sortableColumns;
     }

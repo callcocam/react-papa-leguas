@@ -3,6 +3,7 @@
 namespace Callcocam\ReactPapaLeguas\Support\Table\Concerns;
 
 use Callcocam\ReactPapaLeguas\Support\Table\Columns\Column;
+use Callcocam\ReactPapaLeguas\Support\Table\Concerns\HasCasts;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\CurrencyCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\DateCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\StatusCast;
@@ -138,27 +139,7 @@ trait HasColumns
         return array_filter($this->columns, fn($column) => $column->isSortable());
     }
 
-    /**
-     * Obter keys das colunas pesquisáveis
-     */
-    public function getSearchableColumnKeys(): array
-    {
-        return array_map(
-            fn($column) => $column->getKey(),
-            $this->getSearchableColumns()
-        );
-    }
 
-    /**
-     * Obter keys das colunas ordenáveis
-     */
-    public function getSortableColumnKeys(): array
-    {
-        return array_map(
-            fn($column) => $column->getKey(),
-            $this->getSortableColumns()
-        );
-    }
 
     /**
      * Verificar se uma coluna é pesquisável
