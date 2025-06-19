@@ -12,7 +12,7 @@ use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToModel;
 use Callcocam\ReactPapaLeguas\Http\Controllers\Controller;
 use Callcocam\ReactPapaLeguas\Support\Concerns\ResolvesModel;
 use Callcocam\ReactPapaLeguas\Support\Concerns\ModelQueries;
-use Illuminate\Http\Request; 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -26,7 +26,7 @@ class LandlordController extends Controller
 {
     use BelongsToModel, ResolvesModel, ModelQueries;
 
-     /**
+    /**
      * Display the landlord dashboard.
      *
      * @return \Illuminate\View\View
@@ -36,4 +36,8 @@ class LandlordController extends Controller
         return Inertia::render($this->getViewIndex(), $this->getDataForViews($request));
     }
 
+    public function test(Request $request)
+    {
+        return Inertia::render('crud/debug', $this->getDataForViews($request));
+    }
 }

@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '../../layouts/react-app-layout';
 import { type BreadcrumbItem } from '../../types';
+
+// Utilitário para gerar keys únicos
+const generateUniqueKey = (...parts: (string | number | undefined)[]): string => {
+    return parts.filter(Boolean).join('-');
+};
 import {
     Table,
     TableBody,
@@ -13,7 +18,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -131,14 +135,27 @@ function renderCellValue(value: any, column: any) {
 }
 
 // Função para renderizar filtro
-function renderFilter(filter: any, value: any, onChange: (value: any) => void) {
+function renderFilter(filter: any, value: any, onChange: (value: any) => void, filterIndex: number = 0, onApplyFilters?: () => void) {
+    // Verificação de segurança
+    if (!filter || typeof filter !== 'object') {
+        console.warn('⚠️ Filtro inválido:', filter);
+        return null;
+    }
+
     switch (filter.type) {
         case 'text':
             return (
                 <Input
-                    placeholder={filter.placeholder || `Filtrar por ${filter.label}`}
+                    key={`filter-${filterIndex}-text-input`}
+                    placeholder={filter.placeholder || `Filtrar por ${filter.label || 'campo'}`}
                     value={value || ''}
                     onChange={(e) => onChange(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && onApplyFilters) {
+                            e.preventDefault();
+                            onApplyFilters();
+                        }
+                    }}
                     className="w-full"
                 />
             );
@@ -150,10 +167,10 @@ function renderFilter(filter: any, value: any, onChange: (value: any) => void) {
                     onChange={(e) => onChange(e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 >
-                    <option value="">{filter.placeholder || `Selecione ${filter.label}`}</option>
-                    {filter.options && Object.entries(filter.options).map(([key, label]: [string, any]) => (
-                        <option key={key} value={key}>
-                            {typeof label === 'string' ? label : label.label || key}
+                    <option key={`filter-${filterIndex}-select-placeholder`} value="">{filter.placeholder || `Selecione ${filter.label || 'opção'}`}</option>
+                    {filter.options && typeof filter.options === 'object' && Object.entries(filter.options).map(([key, label]: [string, any], optionIndex: number) => (
+                        <option key={`filter-${filterIndex}-select-option-${key}-${optionIndex}`} value={key}>
+                            {typeof label === 'string' ? label : (label && label.label) || key}
                         </option>
                     ))}
                 </select>
@@ -166,9 +183,9 @@ function renderFilter(filter: any, value: any, onChange: (value: any) => void) {
                     onChange={(e) => onChange(e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 >
-                    {filter.options && Object.entries(filter.options).map(([key, label]: [string, any]) => (
-                        <option key={key} value={key}>
-                            {typeof label === 'string' ? label : label.label || key}
+                    {filter.options && typeof filter.options === 'object' && Object.entries(filter.options).map(([key, label]: [string, any], optionIndex: number) => (
+                        <option key={`filter-${filterIndex}-boolean-option-${key}-${optionIndex}`} value={key}>
+                            {typeof label === 'string' ? label : (label && label.label) || key}
                         </option>
                     ))}
                 </select>
@@ -178,12 +195,14 @@ function renderFilter(filter: any, value: any, onChange: (value: any) => void) {
             return (
                 <div className="space-y-2">
                     <Input
+                        key={`filter-${filterIndex}-date-start-input`}
                         type="date"
                         placeholder="Data inicial"
                         value={value?.start || ''}
                         onChange={(e) => onChange({ ...value, start: e.target.value })}
                     />
                     <Input
+                        key={`filter-${filterIndex}-date-end-input`}
                         type="date"
                         placeholder="Data final"
                         value={value?.end || ''}
@@ -195,9 +214,16 @@ function renderFilter(filter: any, value: any, onChange: (value: any) => void) {
         default:
             return (
                 <Input
-                    placeholder={filter.placeholder || `Filtrar por ${filter.label}`}
+                    key={`filter-${filterIndex}-default-input`}
+                    placeholder={filter.placeholder || `Filtrar por ${filter.label || 'campo'}`}
                     value={value || ''}
                     onChange={(e) => onChange(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && onApplyFilters) {
+                            e.preventDefault();
+                            onApplyFilters();
+                        }
+                    }}
                 />
             );
     }
@@ -206,6 +232,48 @@ function renderFilter(filter: any, value: any, onChange: (value: any) => void) {
 export default function CrudIndex({ table, routes, config, capabilities, error }: CrudIndexProps) {
     const [filters, setFilters] = useState<Record<string, any>>({});
     const [showFilters, setShowFilters] = useState(false);
+    const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+
+    // Inicializar filtros com valores da URL (se existirem)
+    React.useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlFilters: Record<string, any> = {};
+        
+        urlParams.forEach((value, key) => {
+            if (key.startsWith('filter_')) {
+                const filterKey = key.replace('filter_', '');
+                // Parse valores especiais
+                if (value === 'true') urlFilters[filterKey] = true;
+                else if (value === 'false') urlFilters[filterKey] = false;
+                else if (key.includes('date_range')) {
+                    // Parse date range
+                    try {
+                        urlFilters[filterKey] = JSON.parse(value);
+                    } catch {
+                        urlFilters[filterKey] = value;
+                    }
+                } else {
+                    urlFilters[filterKey] = value;
+                }
+            }
+        });
+        
+        if (Object.keys(urlFilters).length > 0) {
+            setFilters(urlFilters);
+            setShowFilters(true); // Mostrar filtros se existirem na URL
+        }
+    }, []);
+
+    // Debug para verificar duplicatas
+    React.useEffect(() => {
+        if (table?.data) {
+            const rowIds = table.data.map((row: any, index: number) => row.id || index);
+            const uniqueIds = new Set(rowIds);
+            if (rowIds.length !== uniqueIds.size) {
+                console.warn('⚠️ Keys duplicados detectados nos dados:', rowIds);
+            }
+        }
+    }, [table?.data]);
 
     const handleFilterChange = (key: string, value: any) => {
         setFilters(prev => ({
@@ -214,15 +282,110 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
         }));
     };
 
-    const applyFilters = () => {
-        // Aqui você implementaria a lógica para aplicar os filtros
-        // Por exemplo, fazer uma nova requisição para o backend
-        console.log('Aplicando filtros:', filters);
+    const buildFilterParams = () => {
+        const params: Record<string, any> = {};
+        
+        Object.entries(filters).forEach(([key, value]) => {
+            // Só inclui filtros que têm valor
+            if (value !== null && value !== undefined && value !== '') {
+                // Para date_range, serializa como JSON se for objeto
+                if (typeof value === 'object' && value !== null) {
+                    params[`filter_${key}`] = JSON.stringify(value);
+                } else {
+                    params[`filter_${key}`] = value;
+                }
+            }
+        });
+        
+        return params;
     };
 
-    const clearFilters = () => {
-        setFilters({});
+    const applyFilters = async () => {
+        if (isApplyingFilters) return;
+        
+        setIsApplyingFilters(true);
+        
+        try {
+            const filterParams = buildFilterParams();
+            const currentUrl = window.location.pathname;
+            
+            // Fazer requisição Inertia com os filtros
+            router.get(currentUrl, filterParams, {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    console.log('✅ Filtros aplicados com sucesso');
+                },
+                onError: (errors) => {
+                    console.error('❌ Erro ao aplicar filtros:', errors);
+                },
+                onFinish: () => {
+                    setIsApplyingFilters(false);
+                }
+            });
+        } catch (error) {
+            console.error('❌ Erro inesperado ao aplicar filtros:', error);
+            setIsApplyingFilters(false);
+        }
     };
+
+    const clearFilters = async () => {
+        if (isApplyingFilters) return;
+        
+        setIsApplyingFilters(true);
+        setFilters({});
+        
+        try {
+            const currentUrl = window.location.pathname;
+            
+            // Fazer requisição sem parâmetros de filtro
+            router.get(currentUrl, {}, {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    console.log('✅ Filtros limpos com sucesso');
+                },
+                onError: (errors) => {
+                    console.error('❌ Erro ao limpar filtros:', errors);
+                },
+                onFinish: () => {
+                    setIsApplyingFilters(false);
+                }
+            });
+        } catch (error) {
+            console.error('❌ Erro inesperado ao limpar filtros:', error);
+            setIsApplyingFilters(false);
+        }
+    };
+
+    // Função debounce personalizada
+    const debounce = (func: Function, wait: number) => {
+        let timeout: NodeJS.Timeout;
+        return (...args: any[]) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(null, args), wait);
+        };
+    };
+
+    // Aplicar filtros automaticamente quando há mudanças (opcional)
+    const handleAutoFilter = React.useCallback(
+        debounce((newFilters: Record<string, any>) => {
+            // Auto-aplicar filtros após 500ms de inatividade
+            // Descomente a linha abaixo para ativar filtros automáticos
+            // applyFilters();
+        }, 500),
+        []
+    );
+
+    // Verificar se há filtros ativos
+    const hasActiveFilters = Object.values(filters).some(value => 
+        value !== null && value !== undefined && value !== ''
+    );
+
+    // Contar quantos filtros estão ativos
+    const activeFiltersCount = Object.values(filters).filter(value => 
+        value !== null && value !== undefined && value !== ''
+    ).length;
 
     return (
         <AppLayout 
@@ -251,12 +414,31 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
                         )}
                         
                         {table?.filters && table.filters.length > 0 && (
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowFilters(!showFilters)}
-                            >
-                                {showFilters ? 'Ocultar' : 'Mostrar'} Filtros
-                            </Button>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className="relative"
+                                >
+                                    {showFilters ? 'Ocultar' : 'Mostrar'} Filtros
+                                    {activeFiltersCount > 0 && (
+                                        <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                            {activeFiltersCount}
+                                        </span>
+                                    )}
+                                </Button>
+                                {hasActiveFilters && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={clearFilters}
+                                        disabled={isApplyingFilters}
+                                        className="text-red-600 hover:text-red-700"
+                                    >
+                                        {isApplyingFilters ? 'Limpando...' : 'Limpar Tudo'}
+                                    </Button>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>
@@ -272,27 +454,52 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {table.filters.map((filter: any) => (
-                                    <div key={filter.key} className="space-y-2">
+                                {table.filters.filter(filter => filter && typeof filter === 'object').map((filter: any, filterIndex: number) => (
+                                    <div key={generateUniqueKey('filter', filter.key, filterIndex)} className="space-y-2">
                                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            {filter.label}
+                                            {filter.label || 'Filtro'}
                                         </label>
                                         {renderFilter(
                                             filter,
                                             filters[filter.key],
-                                            (value) => handleFilterChange(filter.key, value)
+                                            (value) => handleFilterChange(filter.key, value),
+                                            filterIndex,
+                                            applyFilters
                                         )}
                                     </div>
                                 ))}
                             </div>
                             
-                            <div className="flex items-center gap-3 mt-6">
-                                <Button onClick={applyFilters}>
-                                    Aplicar Filtros
-                                </Button>
-                                <Button variant="outline" onClick={clearFilters}>
-                                    Limpar Filtros
-                                </Button>
+                            <div className="flex items-center justify-between mt-6">
+                                <div className="flex items-center gap-3">
+                                    <Button 
+                                        onClick={applyFilters}
+                                        disabled={isApplyingFilters}
+                                        className="min-w-[120px]"
+                                    >
+                                        {isApplyingFilters ? (
+                                            <>
+                                                <span className="animate-spin mr-2">⚪</span>
+                                                Aplicando...
+                                            </>
+                                        ) : (
+                                            'Aplicar Filtros'
+                                        )}
+                                    </Button>
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={clearFilters}
+                                        disabled={isApplyingFilters || !hasActiveFilters}
+                                    >
+                                        {isApplyingFilters ? 'Limpando...' : 'Limpar Filtros'}
+                                    </Button>
+                                </div>
+                                
+                                {hasActiveFilters && (
+                                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                                        {activeFiltersCount} filtro{activeFiltersCount !== 1 ? 's' : ''} ativo{activeFiltersCount !== 1 ? 's' : ''}
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -304,9 +511,9 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    {table?.columns?.map((column: any) => (
+                                    {table?.columns?.map((column: any, columnIndex: number) => (
                                         <TableHead 
-                                            key={column.key}
+                                            key={generateUniqueKey('header', column.key, columnIndex)}
                                             className={column.width ? `w-[${column.width}]` : ''}
                                             style={{ 
                                                 textAlign: column.alignment || 'left',
@@ -321,22 +528,22 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
                                             </div>
                                         </TableHead>
                                     ))}
-                                    <TableHead>Ações</TableHead>
+                                    <TableHead key="actions-header">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {table?.data?.map((row: any, index: number) => (
-                                    <TableRow key={row.id || index}>
-                                        {table.columns?.map((column: any) => (
+                                {table?.data?.map((row: any, rowIndex: number) => (
+                                    <TableRow key={generateUniqueKey('row', row.id, rowIndex)}>
+                                        {table.columns?.map((column: any, columnIndex: number) => (
                                             <TableCell 
-                                                key={column.key}
+                                                key={generateUniqueKey('cell', row.id, rowIndex, column.key, columnIndex)}
                                                 style={{ textAlign: column.alignment || 'left' }}
                                                 className={column.hidden ? 'hidden' : ''}
                                             >
                                                 {renderCellValue(row[column.key], column)}
                                             </TableCell>
                                         ))}
-                                        <TableCell>
+                                        <TableCell key={generateUniqueKey('actions', row.id, rowIndex)}>
                                             <div className="flex items-center gap-2">
                                                 {config?.can_edit && (
                                                     <Button

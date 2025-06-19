@@ -73,10 +73,12 @@ Route::middleware(['landlord.auth', 'disable.tenant.scoping'])
             ->name('landlord.logout.get');
 
         Route::get('/', [DashboardController::class, 'index'])
-            ->name('landlord.dashboard');
+            ->name('dashboard');
 
         // Tenant routes
         Route::resource('tenants', TenantController::class);
+        Route::get('tenants/test', [TenantController::class, 'test'])
+            ->name('tenants.test');
         Route::post('tenants/bulk-destroy', [TenantController::class, 'bulkDestroy'])
             ->name('tenants.bulk-destroy');
         Route::patch('tenants/{tenant}/toggle-status', [TenantController::class, 'toggleStatus'])
@@ -86,6 +88,8 @@ Route::middleware(['landlord.auth', 'disable.tenant.scoping'])
 
         // User routes
         Route::resource('users', UserController::class);
+        Route::get('users/test', [UserController::class, 'test'])
+            ->name('users.test');
         Route::post('users/bulk-destroy', [UserController::class, 'bulkDestroy'])
             ->name('users.bulk-destroy');
         Route::post('users/export', [UserController::class, 'export'])
