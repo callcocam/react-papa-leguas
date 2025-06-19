@@ -128,9 +128,10 @@ abstract class Column
     /**
      * Formatar o valor da coluna
      */
-    public function formatValue($row): mixed
+    public function formatValue($row, mixed $castedValue = null): mixed
     {
-        $value = $this->getValue($row);
+        // Usar valor com cast aplicado se fornecido, senão obter valor normal
+        $value = $castedValue !== null ? $castedValue : $this->getValue($row);
 
         // Aplicar callback de formatação personalizada se definido
         if ($this->formatCallback) {

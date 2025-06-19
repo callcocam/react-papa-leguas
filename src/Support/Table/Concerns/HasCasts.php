@@ -286,7 +286,7 @@ trait HasCasts
      */
     protected function registerDefaultCasts(): void
     {
-        // Este método será implementado quando criarmos os casts específicos
-        // Por enquanto, apenas define a estrutura
+        // Método será sobrescrito por HasColumns
+        // Mantém estrutura base para outras implementações
     }
 } 

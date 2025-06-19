@@ -3,9 +3,15 @@
 namespace Callcocam\ReactPapaLeguas\Support\Table\Concerns;
 
 use Callcocam\ReactPapaLeguas\Support\Table\Columns\Column;
+use Callcocam\ReactPapaLeguas\Support\Table\Casts\CurrencyCast;
+use Callcocam\ReactPapaLeguas\Support\Table\Casts\DateCast;
+use Callcocam\ReactPapaLeguas\Support\Table\Casts\StatusCast;
+use Callcocam\ReactPapaLeguas\Support\Table\Casts\ClosureCast;
 
 trait HasColumns
 {
+    use HasCasts;
+    
     protected array $columns = [];
 
     /**
@@ -22,6 +28,7 @@ trait HasColumns
     {
         $this->columns = $this->columns();
         $this->validateColumns();
+        $this->registerDefaultCasts();
     }
 
     /**
@@ -49,7 +56,13 @@ trait HasColumns
         foreach ($this->columns as $column) {
             if (!$column->isHidden()) {
                 $key = $column->getKey();
-                $formatted[$key] = $column->formatValue($row);
+                
+                // Aplicar casts automáticos antes da formatação da coluna
+                $value = $this->getColumnValue($row, $key);
+                $castedValue = $this->applyCastsToColumn($value, $key, $row);
+                
+                // Usar valor com cast aplicado
+                $formatted[$key] = $column->formatValue($row, $castedValue);
             }
         }
 
@@ -179,5 +192,118 @@ trait HasColumns
     public function countColumns(): int
     {
         return count($this->columns);
+    }
+
+    /**
+     * Registra casts padrão do sistema
+     */
+    protected function registerDefaultCasts(): void
+    {
+        // Registrar casts padrão ordenados por prioridade
+        $this->registerCasts([
+            DateCast::brazilian(),
+            CurrencyCast::brl(),
+            StatusCast::statusBadge(),
+        ]);
+    }
+
+    /**
+     * Aplica casts automáticos a uma coluna específica
+     */
+    protected function applyCastsToColumn(mixed $value, string $column, $row): mixed
+    {
+        // Preparar contexto para os casts
+        $context = [
+            'column' => $column,
+            'row' => $row,
+            'table' => $this,
+            'column_casts' => $this->getColumnCasts(),
+        ];
+
+        // Aplicar casts
+        return $this->applyCasts($value, $column, $context);
+    }
+
+    /**
+     * Obtém valor de uma coluna do row
+     */
+    protected function getColumnValue($row, string $key): mixed
+    {
+        if (is_array($row)) {
+            return $row[$key] ?? null;
+        }
+        
+        if (is_object($row)) {
+            // Tentar propriedade direta
+            if (property_exists($row, $key)) {
+                return $row->{$key};
+            }
+            
+            // Tentar método getter
+            $getter = 'get' . ucfirst($key);
+            if (method_exists($row, $getter)) {
+                return $row->{$getter}();
+            }
+            
+            // Tentar acessor mágico
+            if (method_exists($row, '__get')) {
+                return $row->{$key};
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Obtém configurações de casts por coluna
+     */
+    protected function getColumnCasts(): array
+    {
+        $casts = [];
+        
+        foreach ($this->columns as $column) {
+            $key = $column->getKey();
+            
+            // Detectar cast baseado no tipo da coluna
+            $columnType = $column->getType();
+            
+            switch ($columnType) {
+                case 'date':
+                    $casts[$key] = 'date';
+                    break;
+                case 'currency':
+                    $casts[$key] = 'currency';
+                    break;
+                case 'badge':
+                    $casts[$key] = 'status';
+                    break;
+                case 'boolean':
+                    $casts[$key] = 'status';
+                    break;
+            }
+        }
+        
+        return $casts;
+    }
+
+    /**
+     * Registra cast personalizado para uma coluna
+     */
+    public function setCastForColumn(string $column, string $castType): static
+    {
+        // Implementar se necessário para configuração manual
+        return $this;
+    }
+
+    /**
+     * Obtém informações sobre casts aplicados
+     */
+    public function getCastsInfo(): array
+    {
+        return [
+            'registered_casts' => count($this->getCasts()),
+            'column_casts' => $this->getColumnCasts(),
+            'cast_types' => array_map(fn($cast) => $cast->getType(), $this->getCasts()),
+        ];
     }
 }
