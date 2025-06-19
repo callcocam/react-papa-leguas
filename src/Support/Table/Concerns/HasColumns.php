@@ -2,13 +2,16 @@
 
 namespace Callcocam\ReactPapaLeguas\Support\Table\Concerns;
 
+use Callcocam\ReactPapaLeguas\Support\Table\Columns\Column;
+
 trait HasColumns
 {
-    protected $columns = [];
+    protected array $columns = [];
 
     /**
      * Define as colunas da tabela
      * Deve ser implementado pelas classes que usam este trait
+     * Deve retornar array de instâncias de Column
      */
     abstract protected function columns(): array;
 
@@ -18,19 +21,35 @@ trait HasColumns
     protected function bootHasColumns()
     {
         $this->columns = $this->columns();
+        $this->validateColumns();
     }
 
     /**
-     * Formatar uma linha de dados
+     * Validar se todas as colunas são instâncias de Column
+     */
+    protected function validateColumns(): void
+    {
+        foreach ($this->columns as $index => $column) {
+            if (!$column instanceof Column) {
+                $type = is_object($column) ? get_class($column) : gettype($column);
+                throw new \InvalidArgumentException(
+                    "Coluna no índice {$index} deve ser uma instância de Column, {$type} fornecido."
+                );
+            }
+        }
+    }
+
+    /**
+     * Formatar uma linha de dados usando as classes de coluna
      */
     protected function formatRow($row): array
     {
         $formatted = [];
         
         foreach ($this->columns as $column) {
-            $key = $column['key'] ?? $column['field'] ?? null;
-            if ($key) {
-                $formatted[$key] = $this->formatValue($row, $column, $key);
+            if (!$column->isHidden()) {
+                $key = $column->getKey();
+                $formatted[$key] = $column->formatValue($row);
             }
         }
 
@@ -38,91 +57,23 @@ trait HasColumns
     }
 
     /**
-     * Formatar um valor específico
+     * Obter configuração das colunas para serialização
      */
-    protected function formatValue($row, array $column, string $key)
+    public function getColumnsConfig(): array
     {
-        $value = data_get($row, $key);
-
-        // Se for um enum, obter o valor string
-        if (is_object($value) && enum_exists(get_class($value))) {
-            $enumValue = $value->value;
-            $enumLabel = method_exists($value, 'label') ? $value->label() : ucfirst($enumValue);
-            
-            // Para badges, usar métodos do enum se disponíveis
-            if (isset($column['type']) && $column['type'] === 'badge') {
-                return [
-                    'value' => $enumValue,
-                    'type' => 'badge',
-                    'variant' => method_exists($value, 'badgeVariant') ? $value->badgeVariant() : $this->getBadgeVariant($enumValue),
-                    'label' => $enumLabel
-                ];
-            }
-            
-            // Para outros tipos, usar o valor do enum
-            $value = $enumValue;
-        }
-
-        // Aplicar formatação baseada no tipo da coluna
-        if (isset($column['type'])) {
-            switch ($column['type']) {
-                case 'badge':
-                    return [
-                        'value' => $value,
-                        'type' => 'badge',
-                        'variant' => $this->getBadgeVariant($value),
-                        'label' => $this->getBadgeLabel($value)
-                    ];
-                case 'currency':
-                    return [
-                        'value' => $value,
-                        'type' => 'currency',
-                        'formatted' => 'R$ ' . number_format($value, 2, ',', '.')
-                    ];
-                case 'date':
-                    return [
-                        'value' => $value,
-                        'type' => 'date',
-                        'formatted' => $value ? $value->format('d/m/Y') : null
-                    ];
+        $config = [];
+        
+        foreach ($this->columns as $column) {
+            if (!$column->isHidden()) {
+                $config[] = $column->toArray();
             }
         }
 
-        return $value;
+        return $config;
     }
 
     /**
-     * Obter variante do badge baseado no valor
-     */
-    protected function getBadgeVariant($value): string
-    {
-        return match($value) {
-            'active', 'published' => 'success',
-            'inactive', 'draft' => 'secondary',
-            'archived' => 'warning',
-            'deleted' => 'destructive',
-            default => 'default'
-        };
-    }
-
-    /**
-     * Obter label do badge baseado no valor
-     */
-    protected function getBadgeLabel($value): string
-    {
-        return match($value) {
-            'active' => 'Ativo',
-            'inactive' => 'Inativo',
-            'published' => 'Publicado',
-            'draft' => 'Rascunho',
-            'archived' => 'Arquivado',
-            'deleted' => 'Excluído',
-            default => ucfirst($value)
-        };
-    }
-
-    /**
-     * Obter colunas configuradas
+     * Obter colunas configuradas (instâncias de Column)
      */
     public function getColumns(): array
     {
@@ -140,10 +91,10 @@ trait HasColumns
     /**
      * Obter coluna específica por key
      */
-    public function getColumn(string $key): ?array
+    public function getColumn(string $key): ?Column
     {
         foreach ($this->columns as $column) {
-            if (($column['key'] ?? $column['field'] ?? null) === $key) {
+            if ($column->getKey() === $key) {
                 return $column;
             }
         }
@@ -156,5 +107,77 @@ trait HasColumns
     public function hasColumn(string $key): bool
     {
         return $this->getColumn($key) !== null;
+    }
+
+    /**
+     * Obter colunas pesquisáveis
+     */
+    public function getSearchableColumns(): array
+    {
+        return array_filter($this->columns, fn($column) => $column->isSearchable());
+    }
+
+    /**
+     * Obter colunas ordenáveis
+     */
+    public function getSortableColumns(): array
+    {
+        return array_filter($this->columns, fn($column) => $column->isSortable());
+    }
+
+    /**
+     * Obter keys das colunas pesquisáveis
+     */
+    public function getSearchableColumnKeys(): array
+    {
+        return array_map(
+            fn($column) => $column->getKey(),
+            $this->getSearchableColumns()
+        );
+    }
+
+    /**
+     * Obter keys das colunas ordenáveis
+     */
+    public function getSortableColumnKeys(): array
+    {
+        return array_map(
+            fn($column) => $column->getKey(),
+            $this->getSortableColumns()
+        );
+    }
+
+    /**
+     * Verificar se uma coluna é pesquisável
+     */
+    public function isColumnSearchable(string $key): bool
+    {
+        $column = $this->getColumn($key);
+        return $column ? $column->isSearchable() : false;
+    }
+
+    /**
+     * Verificar se uma coluna é ordenável
+     */
+    public function isColumnSortable(string $key): bool
+    {
+        $column = $this->getColumn($key);
+        return $column ? $column->isSortable() : false;
+    }
+
+    /**
+     * Contar colunas visíveis
+     */
+    public function countVisibleColumns(): int
+    {
+        return count(array_filter($this->columns, fn($column) => !$column->isHidden()));
+    }
+
+    /**
+     * Contar total de colunas
+     */
+    public function countColumns(): int
+    {
+        return count($this->columns);
     }
 }

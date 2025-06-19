@@ -8,8 +8,7 @@
 
 namespace Callcocam\ReactPapaLeguas\Http\Controllers\Landlord;
 
-use App\Models\User;
-use App\Tables\UserTable;
+use Callcocam\ReactPapaLeguas\Tables\UserTable;
 use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToRoutes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

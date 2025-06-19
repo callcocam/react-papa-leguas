@@ -27,7 +27,22 @@ abstract class Table
      */
     public function __construct()
     {
+        // Chamar setUp se existir
+        if (method_exists($this, 'setUp')) {
+            $this->setUp();
+        }
+        
         $this->boot();
+    }
+
+    /**
+     * Método setUp para configuração da tabela
+     * Deve ser implementado pelas classes filhas
+     */
+    protected function setUp(): void
+    {
+        // Implementação padrão vazia
+        // Classes filhas devem sobrescrever este método
     }
 
     /**

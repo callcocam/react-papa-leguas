@@ -15,11 +15,9 @@ use Illuminate\Support\Facades\Log;
 
 trait InteractsWithTable
 {
-    use BelongsToRoutes;
+    use BelongsToRoutes, HasDataSource;
     
-    protected $model;
     protected $data;
-    protected $perPage = 15;
     protected $currentPage = 1;
 
     /**
@@ -48,32 +46,12 @@ trait InteractsWithTable
     }
 
     /**
-     * Define o modelo da tabela
+     * Define o modelo da tabela (delegado para HasDataSource)
      */
     public function setModel(string $modelClass): self
     {
-        $this->model = $modelClass;
+        $this->model($modelClass);
         return $this;
-    }
-
-    /**
-     * Obtém os dados da tabela
-     */
-    protected function getData(): Collection
-    {
-        try {
-            if ($this->model && class_exists($this->model)) {
-                $modelClass = $this->model;
-                return $modelClass::take($this->perPage)->get();
-            }
-        } catch (\Exception $e) {
-            Log::error('Erro ao obter dados da tabela: ' . $e->getMessage(), [
-                'model' => $this->model,
-                'exception' => $e
-            ]);
-        }
-
-        return collect([]);
     }
 
     /**
@@ -88,12 +66,12 @@ trait InteractsWithTable
             return [
                 'table' => [
                     'data' => $formattedData,
-                    'columns' => $this->getColumns(),
+                    'columns' => $this->getColumnsConfig(),
                     'filters' => $this->getFilters(),
                     'actions' => $this->getActions(),
                     'pagination' => [
                         'current_page' => $this->currentPage,
-                        'per_page' => $this->perPage,
+                        'per_page' => $this->getPerPage(),
                         'total' => $data->count(),
                         'last_page' => 1,
                     ],
@@ -103,10 +81,12 @@ trait InteractsWithTable
                         'searchable' => $this->isSearchable(),
                         'sortable' => $this->isSortable(),
                         'filterable' => $this->isFilterable(),
+                        'paginated' => $this->isPaginated(),
+                        'selectable' => $this->isSelectable(),
                     ]
                 ],
                 'config' => [
-                    'model_name' => $this->model ? class_basename($this->model) : 'Unknown',
+                    'model_name' => $this->getModelClass() ? class_basename($this->getModelClass()) : 'Unknown',
                     'page_title' => $this->getTitle(),
                     'page_description' => $this->getDescription(),
                     'route_prefix' => $this->getRoutePrefix(),
@@ -116,11 +96,16 @@ trait InteractsWithTable
                     'can_export' => true,
                     'can_bulk_delete' => true,
                 ],
-                'routes' => $this->getRouteNames()
+                'routes' => $this->getRouteNames(),
+                'capabilities' => [
+                    'searchable_columns' => $this->getSearchableColumns(),
+                    'sortable_columns' => $this->getSortableColumns(),
+                    'filterable_columns' => $this->getFilterableColumns(),
+                ]
             ];
         } catch (\Exception $e) {
             Log::error('Erro no método toArray da Table: ' . $e->getMessage(), [
-                'model' => $this->model,
+                'model' => $this->getModelClass(),
                 'exception' => $e
             ]);
             
@@ -138,6 +123,11 @@ trait InteractsWithTable
     abstract public function getColumns(): array;
 
     /**
+     * Obter configuração das colunas (implementado por HasColumns)
+     */
+    abstract public function getColumnsConfig(): array;
+
+    /**
      * Formatar linha (implementado por HasColumns)
      */
     abstract protected function formatRow($row): array;
@@ -147,27 +137,25 @@ trait InteractsWithTable
      */
     protected function getTitle(): string
     {
-        return class_basename($this->model) . 's';
+        $modelClass = $this->getModelClass();
+        if ($modelClass) {
+            return class_basename($modelClass) . 's';
+        }
+        
+        // Fallback para meta configurado
+        $meta = $this->getMeta();
+        return $meta['title'] ?? 'Tabela';
     }
 
     protected function getDescription(): string
     {
+        // Verificar se há descrição nos meta
+        $meta = $this->getMeta();
+        if (isset($meta['description'])) {
+            return $meta['description'];
+        }
+        
         return 'Gerencie ' . strtolower($this->getTitle());
-    }
-
-    protected function isSearchable(): bool
-    {
-        return true;
-    }
-
-    protected function isSortable(): bool
-    {
-        return true;
-    }
-
-    protected function isFilterable(): bool
-    {
-        return method_exists($this, 'getFilters') && count($this->getFilters()) > 0;
     }
 
     /**
