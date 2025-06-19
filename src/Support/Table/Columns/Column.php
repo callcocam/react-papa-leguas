@@ -9,6 +9,7 @@
 namespace Callcocam\ReactPapaLeguas\Support\Table\Columns;
 
 use Callcocam\ReactPapaLeguas\Support\Concerns\EvaluatesClosures;
+use Callcocam\ReactPapaLeguas\Support\Table\Casts\Contracts\CastInterface;
 use Closure;
 
 abstract class Column
@@ -25,6 +26,12 @@ abstract class Column
     protected ?Closure $formatCallback = null;
     protected ?Closure $valueCallback = null;
     protected array $attributes = [];
+    
+    /**
+     * Casts específicos da coluna
+     */
+    protected array $casts = [];
+    protected bool $disableAutoCasts = false;
 
     public function __construct(string $key, ?string $label = null)
     {
@@ -114,6 +121,46 @@ abstract class Column
     }
 
     /**
+     * Adicionar cast específico para esta coluna
+     */
+    public function cast(CastInterface $cast): static
+    {
+        $this->casts[] = $cast;
+        return $this;
+    }
+
+    /**
+     * Adicionar múltiplos casts para esta coluna
+     */
+    public function casts(array $casts): static
+    {
+        foreach ($casts as $cast) {
+            if ($cast instanceof CastInterface) {
+                $this->cast($cast);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Desabilitar casts automáticos para esta coluna
+     */
+    public function disableAutoCasts(bool $disable = true): static
+    {
+        $this->disableAutoCasts = $disable;
+        return $this;
+    }
+
+    /**
+     * Habilitar casts automáticos para esta coluna
+     */
+    public function enableAutoCasts(): static
+    {
+        $this->disableAutoCasts = false;
+        return $this;
+    }
+
+    /**
      * Obter o valor da coluna para uma linha específica
      */
     public function getValue($row): mixed
@@ -173,6 +220,8 @@ abstract class Column
             'width' => $this->width,
             'alignment' => $this->alignment,
             'attributes' => $this->attributes,
+            'casts_count' => count($this->casts),
+            'auto_casts_disabled' => $this->disableAutoCasts,
         ];
     }
 
@@ -225,5 +274,66 @@ abstract class Column
     public function getAttributes(): array
     {
         return $this->attributes;
+    }
+
+    /**
+     * Obter casts específicos da coluna
+     */
+    public function getCasts(): array
+    {
+        return $this->casts;
+    }
+
+    /**
+     * Verificar se casts automáticos estão desabilitados
+     */
+    public function isAutoCastsDisabled(): bool
+    {
+        return $this->disableAutoCasts;
+    }
+
+    /**
+     * Verificar se a coluna tem casts específicos
+     */
+    public function hasCasts(): bool
+    {
+        return !empty($this->casts);
+    }
+
+    /**
+     * Aplicar casts específicos da coluna a um valor
+     */
+    public function applyCasts(mixed $value, array $context = []): mixed
+    {
+        if (empty($this->casts)) {
+            return $value;
+        }
+
+        $result = $value;
+        
+        // Aplicar cada cast específico da coluna
+        foreach ($this->casts as $cast) {
+            if ($cast->canCast($result)) {
+                $result = $cast->cast($result, array_merge($context, [
+                    'column' => $this,
+                    'column_key' => $this->key,
+                ]));
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Obter configuração de casts para serialização
+     */
+    public function getCastsConfig(): array
+    {
+        return [
+            'has_casts' => $this->hasCasts(),
+            'casts_count' => count($this->casts),
+            'auto_casts_disabled' => $this->disableAutoCasts,
+            'cast_types' => array_map(fn($cast) => $cast->getType(), $this->casts),
+        ];
     }
 } 

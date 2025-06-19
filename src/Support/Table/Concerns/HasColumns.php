@@ -212,16 +212,33 @@ trait HasColumns
      */
     protected function applyCastsToColumn(mixed $value, string $column, $row): mixed
     {
+        // Obter instância da coluna
+        $columnInstance = $this->getColumn($column);
+        
+        if (!$columnInstance) {
+            return $value;
+        }
+
         // Preparar contexto para os casts
         $context = [
             'column' => $column,
+            'column_instance' => $columnInstance,
             'row' => $row,
             'table' => $this,
             'column_casts' => $this->getColumnCasts(),
         ];
 
-        // Aplicar casts
-        return $this->applyCasts($value, $column, $context);
+        // 1. Aplicar casts específicos da coluna primeiro
+        if ($columnInstance->hasCasts()) {
+            $value = $columnInstance->applyCasts($value, $context);
+        }
+
+        // 2. Aplicar casts automáticos apenas se não desabilitados
+        if (!$columnInstance->isAutoCastsDisabled()) {
+            $value = $this->applyCasts($value, $column, $context);
+        }
+
+        return $value;
     }
 
     /**
@@ -300,10 +317,19 @@ trait HasColumns
      */
     public function getCastsInfo(): array
     {
+        $columnCastsInfo = [];
+        
+        foreach ($this->getColumns() as $column) {
+            $key = $column->getKey();
+            $columnCastsInfo[$key] = $column->getCastsConfig();
+        }
+
         return [
             'registered_casts' => count($this->getCasts()),
             'column_casts' => $this->getColumnCasts(),
             'cast_types' => array_map(fn($cast) => $cast->getType(), $this->getCasts()),
+            'column_specific_casts' => $columnCastsInfo,
+            'total_column_casts' => array_sum(array_map(fn($col) => count($col->getCasts()), $this->getColumns())),
         ];
     }
 }
