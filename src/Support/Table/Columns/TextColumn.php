@@ -58,25 +58,41 @@ class TextColumn extends Column
      */
     protected function format(mixed $value, $row): mixed
     {
-        if (is_null($value) || $value === '') {
-            return $this->placeholder ?? '';
-        }
+        // Se o valor já foi processado por um cast e é um array, usar ele
+        if (is_array($value) && isset($value['formatted'])) {
+            // Valor já processado por cast - mesclar com configurações da coluna
+            $baseResult = $value;
+            $text = $baseResult['formatted'] ?? (string) ($baseResult['value'] ?? '');
+        } else {
+            // Valor simples - processar normalmente
+            if (is_null($value) || $value === '') {
+                return [
+                    'value' => null,
+                    'type' => 'text',
+                    'formatted' => $this->placeholder ?? '',
+                    'wrap' => $this->wrap,
+                    'copyable' => $this->copyable,
+                    'placeholder' => $this->placeholder
+                ];
+            }
 
-        $text = (string) $value;
+            $text = (string) $value;
+            $baseResult = ['value' => $value];
+        }
 
         // Aplicar limite de caracteres se definido
         if ($this->limit && mb_strlen($text) > $this->limit) {
             $text = mb_substr($text, 0, $this->limit) . $this->limitSuffix;
         }
 
-        return [
-            'value' => $value,
+        // Mesclar resultado base com configurações da coluna
+        return array_merge($baseResult, [
             'type' => 'text',
             'formatted' => $text,
             'wrap' => $this->wrap,
             'copyable' => $this->copyable,
             'placeholder' => $this->placeholder
-        ];
+        ]);
     }
 
     /**

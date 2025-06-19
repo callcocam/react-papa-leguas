@@ -61,13 +61,7 @@ class ClosureCast extends Cast
         return $cast;
     }
 
-    /**
-     * Cria cast com closure de transformação e verificação
-     */
-    public static function make(array $config = []): static
-    {
-        return new static($config);
-    }
+
 
     /**
      * Define closure de transformação

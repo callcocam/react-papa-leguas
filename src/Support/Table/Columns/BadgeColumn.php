@@ -112,32 +112,41 @@ class BadgeColumn extends Column
      */
     protected function format(mixed $value, $row): mixed
     {
+        // Se o valor já foi processado por um cast e é um array, usar ele
+        if (is_array($value) && isset($value['type']) && $value['type'] === 'badge') {
+            // Valor já processado por cast - apenas retornar
+            return $value;
+        }
+        
+        // Se é um array mas não é um badge, extrair o valor original
+        $originalValue = is_array($value) && isset($value['value']) ? $value['value'] : $value;
+        
         // Determinar variante
         $variant = $this->defaultVariant;
         if ($this->variantCallback) {
             $variant = $this->evaluate($this->variantCallback, [
-                'value' => $value,
+                'value' => $originalValue,
                 'row' => $row,
                 'column' => $this
             ]);
-        } elseif (isset($this->variants[$value])) {
-            $variant = $this->variants[$value];
+        } elseif (!is_array($originalValue) && isset($this->variants[$originalValue])) {
+            $variant = $this->variants[$originalValue];
         }
 
         // Determinar label
-        $label = $value;
+        $label = $originalValue;
         if ($this->labelCallback) {
             $label = $this->evaluate($this->labelCallback, [
-                'value' => $value,
+                'value' => $originalValue,
                 'row' => $row,
                 'column' => $this
             ]);
-        } elseif (isset($this->labels[$value])) {
-            $label = $this->labels[$value];
+        } elseif (!is_array($originalValue) && isset($this->labels[$originalValue])) {
+            $label = $this->labels[$originalValue];
         }
 
         return [
-            'value' => $value,
+            'value' => $originalValue,
             'type' => 'badge',
             'variant' => $variant,
             'label' => $label,

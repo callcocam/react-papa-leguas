@@ -58,12 +58,28 @@ class DateColumn extends Column
      */
     protected function format(mixed $value, $row): mixed
     {
-        if (is_null($value)) {
-            return $this->placeholder ?? '';
+        // Se o valor já foi processado por um cast e é um array, usar ele
+        if (is_array($value) && isset($value['type']) && $value['type'] === 'date') {
+            // Valor já processado por cast - apenas retornar
+            return $value;
+        }
+        
+        // Se é um array mas não é uma data, extrair o valor original
+        $originalValue = is_array($value) && isset($value['value']) ? $value['value'] : $value;
+        
+        if (is_null($originalValue)) {
+            return [
+                'value' => null,
+                'type' => 'date',
+                'formatted' => $this->placeholder ?? '',
+                'since' => null,
+                'timestamp' => null,
+                'iso' => null,
+            ];
         }
 
         try {
-            $date = Carbon::parse($value);
+            $date = Carbon::parse($originalValue);
             
             if ($this->timezone) {
                 $date = $date->setTimezone($this->timezone);
@@ -73,7 +89,7 @@ class DateColumn extends Column
             $since = $this->since ? $date->diffForHumans() : null;
 
             return [
-                'value' => $value,
+                'value' => $originalValue,
                 'type' => 'date',
                 'formatted' => $formatted,
                 'since' => $since,
@@ -81,7 +97,14 @@ class DateColumn extends Column
                 'iso' => $date->toISOString(),
             ];
         } catch (\Exception $e) {
-            return $this->placeholder ?? $value;
+            return [
+                'value' => $originalValue,
+                'type' => 'date',
+                'formatted' => $this->placeholder ?? (string) $originalValue,
+                'since' => null,
+                'timestamp' => null,
+                'iso' => null,
+            ];
         }
     }
 

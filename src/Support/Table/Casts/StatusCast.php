@@ -236,6 +236,37 @@ class StatusCast extends Cast
     }
 
     /**
+     * Converte valor para string de forma segura
+     */
+    protected function getStringValue(mixed $value): string
+    {
+        if ($value instanceof UnitEnum) {
+            if ($value instanceof BackedEnum) {
+                return (string) $value->value;
+            }
+            return $value->name;
+        }
+        
+        if (is_string($value)) {
+            return $value;
+        }
+        
+        if (is_numeric($value)) {
+            return (string) $value;
+        }
+        
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+        
+        if (is_null($value)) {
+            return '';
+        }
+        
+        return (string) $value;
+    }
+
+    /**
      * Obtém informações do status
      */
     protected function getStatusInfo(mixed $originalValue, mixed $normalizedValue): array
@@ -244,7 +275,7 @@ class StatusCast extends Cast
             'original_value' => $originalValue,
             'normalized_value' => $normalizedValue,
             'variant' => $this->getConfig('default_variant'),
-            'label' => $this->getConfig('default_label') ?? (string) $originalValue,
+            'label' => $this->getConfig('default_label') ?? $this->getStringValue($originalValue),
             'icon' => $this->getConfig('default_icon'),
             'color' => null,
         ];
@@ -262,17 +293,20 @@ class StatusCast extends Cast
 
         // Buscar por valor normalizado primeiro, depois original
         foreach ([$normalizedValue, $originalValue] as $searchValue) {
-            if (isset($variants[$searchValue])) {
-                $info['variant'] = $variants[$searchValue];
+            // Converter para string para usar como chave de array
+            $searchKey = $this->getStringValue($searchValue);
+            
+            if (isset($variants[$searchKey])) {
+                $info['variant'] = $variants[$searchKey];
             }
-            if (isset($labels[$searchValue])) {
-                $info['label'] = $labels[$searchValue];
+            if (isset($labels[$searchKey])) {
+                $info['label'] = $labels[$searchKey];
             }
-            if (isset($icons[$searchValue])) {
-                $info['icon'] = $icons[$searchValue];
+            if (isset($icons[$searchKey])) {
+                $info['icon'] = $icons[$searchKey];
             }
-            if (isset($colors[$searchValue])) {
-                $info['color'] = $colors[$searchValue];
+            if (isset($colors[$searchKey])) {
+                $info['color'] = $colors[$searchKey];
             }
         }
 
@@ -384,6 +418,11 @@ class StatusCast extends Cast
             return false;
         }
 
+        // Se o valor é um array (vindo de outro cast), não pode processar
+        if (is_array($value)) {
+            return false;
+        }
+
         // Verificar se é um enum
         if ($value instanceof UnitEnum) {
             return true;
@@ -395,10 +434,13 @@ class StatusCast extends Cast
         
         $normalizedValue = $this->normalizeValue($value);
         
-        // Verificar valor original e normalizado
+        // Verificar valor original e normalizado (apenas se não forem arrays)
         foreach ([$value, $normalizedValue] as $searchValue) {
-            if (isset($variants[$searchValue]) || isset($labels[$searchValue])) {
-                return true;
+            if (!is_array($searchValue)) {
+                $searchKey = $this->getStringValue($searchValue);
+                if (isset($variants[$searchKey]) || isset($labels[$searchKey])) {
+                    return true;
+                }
             }
         }
 

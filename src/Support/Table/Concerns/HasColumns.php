@@ -202,8 +202,8 @@ trait HasColumns
 
         // Preparar contexto para os casts
         $context = [
-            'column' => $column,
-            'column_instance' => $columnInstance,
+            'column' => $columnInstance,
+            'column_key' => $column,
             'row' => $row,
             'table' => $this,
             'column_casts' => $this->getColumnCasts(),
