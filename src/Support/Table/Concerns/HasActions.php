@@ -299,7 +299,7 @@ trait HasActions
     /**
      * Ação de edição padrão
      */
-    protected function editAction(string $route = null): RouteAction
+    protected function editAction(?string $route = null): RouteAction
     {
         $route = $route ?? $this->getActionRoutePrefix() . '.edit';
         
@@ -312,7 +312,7 @@ trait HasActions
     /**
      * Ação de visualização padrão
      */
-    protected function viewAction(string $route = null): RouteAction
+    protected function viewAction(?string $route = null): RouteAction
     {
         $route = $route ?? $this->getActionRoutePrefix() . '.show';
         
@@ -325,7 +325,7 @@ trait HasActions
     /**
      * Ação de exclusão padrão
      */
-    protected function deleteAction(string $route = null): RouteAction
+    protected function deleteAction(?string $route = null): RouteAction
     {
         $route = $route ?? $this->getActionRoutePrefix() . '.destroy';
         
@@ -339,7 +339,7 @@ trait HasActions
     /**
      * Ação de duplicação padrão
      */
-    protected function duplicateAction(string $route = null): RouteAction
+    protected function duplicateAction(?string $route = null): RouteAction
     {
         $route = $route ?? $this->getActionRoutePrefix() . '.duplicate';
         

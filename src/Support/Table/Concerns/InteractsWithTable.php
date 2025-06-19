@@ -63,14 +63,17 @@ trait InteractsWithTable
             // Usar paginação se habilitada
             if ($this->isPaginated()) {
                 $paginatedData = $this->getPaginatedData();
-                $formattedData = $paginatedData->getCollection()->map(fn($row) => $this->formatRow($row))->values();
+                $formattedData = $paginatedData->getCollection()->map(function($row) {
+                    // Tratar ações aqui 
+                    return $this->formatRow($row);
+                })->values();
                 
                 return [
                     'table' => [
                         'data' => $formattedData,
                         'columns' => $this->getColumnsConfig(),
                         'filters' => $this->getFiltersConfig(),
-                        'actions' => $this->getTableActions(),
+                        'actions' => [], // ✅ Ações agora são processadas por item no formatRow()
                         'pagination' => [
                             'current_page' => $paginatedData->currentPage(),
                             'per_page' => $paginatedData->perPage(),
@@ -118,7 +121,7 @@ trait InteractsWithTable
                         'data' => $formattedData,
                         'columns' => $this->getColumnsConfig(),
                         'filters' => $this->getFiltersConfig(),
-                        'actions' => $this->getTableActions(),
+                        'actions' => [], // ✅ Ações agora são processadas por item no formatRow()
                         'pagination' => [
                             'current_page' => 1,
                             'per_page' => $this->getPerPage(),

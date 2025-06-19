@@ -117,6 +117,11 @@ abstract class Action
     protected array $attributes = [];
 
     /**
+     * Contexto da ação (tabela, etc.)
+     */
+    protected array $context = [];
+
+    /**
      * Construtor da ação
      */
     public function __construct(string $key)
@@ -277,6 +282,23 @@ abstract class Action
     {
         $this->urlUsing = $callback;
         return $this;
+    }
+
+    /**
+     * Define o contexto da ação
+     */
+    public function setContext(array $context): static
+    {
+        $this->context = $context;
+        return $this;
+    }
+
+    /**
+     * Obtém o contexto da ação
+     */
+    public function getContext(): array
+    {
+        return $this->context;
     }
 
     /**

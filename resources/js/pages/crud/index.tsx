@@ -150,7 +150,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
                     data={table?.data || []}
                     columns={table?.columns || []}
                     filters={table?.filters || []}
-                    actions={actions}
+                    actions={[]} // ✅ Ações agora vêm dentro de cada item via _actions
                     loading={false}
                     error={error}
                     meta={table?.meta}

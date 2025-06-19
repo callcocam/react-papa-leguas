@@ -27,7 +27,7 @@ export default function TableBody({
             <UITableBody>
                 <TableRow>
                     <TableCell 
-                        colSpan={columns.length + (actions.length > 0 ? 1 : 0)} 
+                        colSpan={columns.length + 1} // +1 para coluna de ações (sempre presente)
                         className="text-center py-8"
                     >
                         <div className="flex items-center justify-center">
@@ -45,7 +45,7 @@ export default function TableBody({
             <UITableBody>
                 <TableRow>
                     <TableCell 
-                        colSpan={columns.length + (actions.length > 0 ? 1 : 0)} 
+                        colSpan={columns.length + 1} // +1 para coluna de ações (sempre presente)
                         className="text-center py-8 text-gray-500 dark:text-gray-400"
                     >
                         Nenhum registro encontrado
@@ -72,13 +72,14 @@ export default function TableBody({
                             />
                         </TableCell>
                     ))}
-                    {actions.length > 0 && (
+                    {/* ✅ USAR AÇÕES DO ITEM - vindas do backend via _actions */}
+                    {(row._actions && row._actions.length > 0) && (
                         <TableCell 
                             key={generateUniqueKey('actions', row.id, rowIndex)}
                             className="text-center"
                         >
                             <div className="flex items-center justify-center gap-2">
-                                {actions.map((action, actionIndex) => (
+                                {row._actions.map((action: any, actionIndex: number) => (
                                     <ActionRenderer
                                         key={generateUniqueKey('action', action.key, rowIndex, actionIndex)}
                                         action={action}

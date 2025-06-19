@@ -16,6 +16,7 @@ use Callcocam\ReactPapaLeguas\Support\Table\Filters\DateRangeFilter;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\DateCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\StatusCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\ClosureCast;
+use App\Models\User as UserModel;
 
 /**
  * Tabela de usuários com Sistema de Filtros Avançados
@@ -312,7 +313,7 @@ class UserTable extends Table
                 ->label('Visualizar Usuário')
                 ->icon('Eye')
                 ->tooltip('Ver detalhes completos do usuário')
-                ->variant('outline')
+                ->variant('default')
                 ->visible(function ($item, $context) {
                     // Verificação de segurança para evitar erro null
                     if (!$item) return true;
@@ -546,7 +547,7 @@ class UserTable extends Table
                 ->enabled(function ($item, $context) {
                     // Verificação de segurança para evitar erro null
                     if (!$item) return false;
-                    return auth()->user()->can('create', User::class);
+                    return auth()->user()->can('create', UserModel::class);
                 }),
         ];
     }

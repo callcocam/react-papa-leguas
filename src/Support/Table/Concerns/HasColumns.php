@@ -67,7 +67,79 @@ trait HasColumns
             }
         }
 
+        // ✅ PROCESSAR AÇÕES POR ITEM - Contexto correto com $row
+        $formatted['_actions'] = $this->getActionsForItem($row);
+
         return $formatted;
+    }
+
+    /**
+     * Obter ações específicas para um item
+     */
+    protected function getActionsForItem($item): array
+    {
+        // Verificar se o trait HasActions está sendo usado
+        if (!method_exists($this, 'getActions')) {
+            return [];
+        }
+
+        try {
+            $actions = [];
+            $context = ['table' => $this];
+
+            foreach ($this->getActions() as $action) {
+                // Definir contexto do item para a ação
+                $action->setContext($context);
+                
+                // Verificar visibilidade com o item específico
+                if ($action->isVisible($item, $context)) {
+                    $actionData = $action->toArray();
+                    
+                    // ✅ RESOLVER CLOSURES COM ITEM ESPECÍFICO
+                    $actionData = $this->resolveActionClosures($action, $item, $context, $actionData);
+                    
+                    $actions[] = $actionData;
+                }
+            }
+
+            return $actions;
+        } catch (\Exception $e) {
+            // Log do erro mas não quebrar a tabela
+            \Illuminate\Support\Facades\Log::warning('Erro ao processar ações para item: ' . $e->getMessage(), [
+                'item_id' => $item->id ?? 'unknown',
+                'exception' => $e
+            ]);
+            
+            return [];
+        }
+    }
+
+    /**
+     * Resolver closures das ações com contexto do item
+     */
+    protected function resolveActionClosures($action, $item, $context, array $actionData): array
+    {
+        // ✅ USAR MÉTODOS EXISTENTES DA CLASSE ACTION
+        
+        // Resolver label dinâmico
+        $actionData['label'] = $action->getLabel($item, $context);
+
+        // Resolver ícone dinâmico
+        $actionData['icon'] = $action->getIcon($item, $context);
+
+        // Resolver variante dinâmica
+        $actionData['variant'] = $action->getVariant($item, $context);
+
+        // Resolver URL dinâmica
+        $actionData['url'] = $action->getUrl($item, $context);
+
+        // Verificar se está habilitado
+        $actionData['enabled'] = $action->isEnabled($item, $context);
+
+        // Adicionar ID do item para referência
+        $actionData['item_id'] = $item->id ?? null;
+
+        return $actionData;
     }
 
     /**

@@ -56,11 +56,10 @@ export default function Headers({
                         </div>
                     </TableHead>
                 ))}
-                {actions.length > 0 && (
-                    <TableHead key="actions-header" className="text-center">
-                        Ações
-                    </TableHead>
-                )}
+                {/* ✅ SEMPRE MOSTRAR COLUNA DE AÇÕES - ações vêm por item */}
+                <TableHead key="actions-header" className="text-center">
+                    Ações
+                </TableHead>
             </TableRow>
         </TableHeader>
     );
