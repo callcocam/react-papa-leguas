@@ -81,8 +81,8 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
         if (table?.actions && Array.isArray(table.actions) && table.actions.length > 0) {
             console.log('🚀 Usando ações do backend:', table.actions);
             return table.actions;
-        }
-        
+}
+
         // 🔄 FALLBACK: Criar ações baseadas nas permissões (compatibilidade)
         console.log('⚠️ Fallback: Criando ações baseadas em config/routes');
         const actionList = [];
@@ -109,7 +109,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
                 confirmMessage: `Tem certeza que deseja excluir este ${config.model_name || 'item'}?`,
                 icon: '🗑️'
             });
-        }
+    }
         
         // Se tiver muitas ações, usar dropdown
         if (actionList.length > 2) {
@@ -124,7 +124,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
         
         return actionList;
     }, [table?.actions, config, routes]);
-    
+
     return (
         <AppLayout 
             breadcrumbs={breadcrumbs}

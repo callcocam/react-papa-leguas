@@ -113,11 +113,11 @@ class UserTable extends Table
                 ->cast(StatusCast::make()
                     ->formatType('badge')
                     ->variants([
-                        BaseStatus::Active->value => 'success',
-                        BaseStatus::Published->value => 'success',
-                        BaseStatus::Draft->value => 'secondary',
-                        BaseStatus::Inactive->value => 'secondary',
-                        BaseStatus::Archived->value => 'warning',
+                        BaseStatus::Active->value => 'default',
+                        BaseStatus::Published->value => 'default',
+                        BaseStatus::Draft->value => 'default',
+                        BaseStatus::Inactive->value => 'destructive',
+                        BaseStatus::Archived->value => 'default',
                         BaseStatus::Deleted->value => 'destructive',
                     ])
                     ->labels([

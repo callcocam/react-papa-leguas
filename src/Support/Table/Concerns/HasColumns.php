@@ -93,10 +93,11 @@ trait HasColumns
                 
                 // Verificar visibilidade com o item específico
                 if ($action->isVisible($item, $context)) {
-                    $actionData = $action->toArray();
+                    // ✅ CHAMADA DIRETA: toArray() resolve todas as closures com o contexto
+                    $actionData = $action->toArray($item, $context);
                     
-                    // ✅ RESOLVER CLOSURES COM ITEM ESPECÍFICO
-                    $actionData = $this->resolveActionClosures($action, $item, $context, $actionData);
+                    // Adicionar ID do item para referência no frontend
+                    $actionData['item_id'] = $item->id ?? null;
                     
                     $actions[] = $actionData;
                 }
@@ -112,34 +113,6 @@ trait HasColumns
             
             return [];
         }
-    }
-
-    /**
-     * Resolver closures das ações com contexto do item
-     */
-    protected function resolveActionClosures($action, $item, $context, array $actionData): array
-    {
-        // ✅ USAR MÉTODOS EXISTENTES DA CLASSE ACTION
-        
-        // Resolver label dinâmico
-        $actionData['label'] = $action->getLabel($item, $context);
-
-        // Resolver ícone dinâmico
-        $actionData['icon'] = $action->getIcon($item, $context);
-
-        // Resolver variante dinâmica
-        $actionData['variant'] = $action->getVariant($item, $context);
-
-        // Resolver URL dinâmica
-        $actionData['url'] = $action->getUrl($item, $context);
-
-        // Verificar se está habilitado
-        $actionData['enabled'] = $action->isEnabled($item, $context);
-
-        // Adicionar ID do item para referência
-        $actionData['item_id'] = $item->id ?? null;
-
-        return $actionData;
     }
 
     /**

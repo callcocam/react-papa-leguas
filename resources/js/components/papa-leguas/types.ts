@@ -8,6 +8,7 @@ export interface TableColumn {
     name?: string;
     key?: string;
     label?: string;
+    type?: string;
     renderAs?: string;
     width?: string;
     alignment?: 'left' | 'center' | 'right';

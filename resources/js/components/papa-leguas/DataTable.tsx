@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';   
 import { Card, CardContent } from '@/components/ui/card';
 import Filters from './components/Filters';
 import Table from './components/Table';

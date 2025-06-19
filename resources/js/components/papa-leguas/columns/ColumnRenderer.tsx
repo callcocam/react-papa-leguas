@@ -64,13 +64,22 @@ export default function ColumnRenderer({ column, item, value }: ColumnRendererPr
     if (!column || typeof column !== 'object') {
         console.warn('⚠️ Coluna inválida:', column);
         return null;
+    } 
+
+    // Prioridade 1: Usar `renderAs` se definido
+    // Prioridade 2: Usar `type` como fallback
+    // Prioridade 3: Usar 'text' como padrão
+    let type = column.renderAs || column.type; 
+
+    if(!type){
+        console.error('❌ ERRO: Renderer NÃO encontrado! Usando renderer padrão.');
+        console.log('Renderers disponíveis:', Object.keys(renderers));
+        type = 'text';
     }
-
-    // Define 'text' como o tipo padrão se nenhum for especificado
-    const type = column.renderAs || 'text';
-
-    // Seleciona o renderer apropriado, ou o texto como fallback
+    
+    // Seleciona o renderer apropriado
     const Renderer = renderers[type] || renderers.default;
+      
 
     return <Renderer value={value} item={item} column={column} />;
 } 

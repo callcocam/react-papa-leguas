@@ -1,5 +1,5 @@
 import React from 'react';
-import { type FilterRendererProps } from '../types';
+import { type FilterRendererProps } from '../types'; 
 
 // Importar os renderers específicos
 import TextFilterRenderer from './renderers/TextFilterRenderer';
@@ -36,7 +36,7 @@ const renderers: { [key: string]: React.FC<FilterRendererProps> } = {
     // Renderer padrão
     default: TextFilterRenderer,
     defaultFilterRenderer: TextFilterRenderer,
-};
+    };
 
 /**
  * Adiciona ou substitui um renderer de filtro
