@@ -65,6 +65,48 @@ interface CrudIndexProps {
 
 export default function CrudIndex({ table, routes, config, capabilities, error }: CrudIndexProps) {
     
+    // Criar ações baseadas nas permissões
+    const actions = React.useMemo(() => {
+        const actionList = [];
+        
+        if (config?.can_edit && routes?.edit) {
+            actionList.push({
+                key: 'edit',
+                label: 'Editar',
+                type: 'edit' as const,
+                variant: 'outline' as const,
+                url: (item: any) => routes.edit!(item.id),
+                icon: '✏️'
+            });
+        }
+        
+        if (config?.can_delete && routes?.destroy) {
+            actionList.push({
+                key: 'delete',
+                label: 'Excluir',
+                type: 'delete' as const,
+                variant: 'destructive' as const,
+                method: 'delete' as const,
+                url: (item: any) => routes.destroy!(item.id),
+                confirmMessage: `Tem certeza que deseja excluir este ${config.model_name || 'item'}?`,
+                icon: '🗑️'
+            });
+        }
+        
+        // Se tiver muitas ações, usar dropdown
+        if (actionList.length > 2) {
+            return [{
+                key: 'actions-dropdown',
+                label: 'Ações',
+                type: 'dropdown' as const,
+                actions: actionList,
+                icon: '⚙️'
+            }];
+        }
+        
+        return actionList;
+    }, [config, routes]);
+    
     return (
         <AppLayout 
             breadcrumbs={breadcrumbs}
@@ -90,6 +132,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
                     data={table?.data || []}
                     columns={table?.columns || []}
                     filters={table?.filters || []}
+                    actions={actions}
                     loading={false}
                     error={error}
                     meta={table?.meta}

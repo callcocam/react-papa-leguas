@@ -1,5 +1,13 @@
 import React from 'react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { type FilterRendererProps } from '../../types';
+import { filterValidOptions, hasValidOptions, getOptionLabel } from '../utils/filterUtils';
 
 /**
  * Renderizador de Filtro Boolean
@@ -14,23 +22,35 @@ export default function BooleanFilterRenderer({ filter, value, onChange }: Filte
     
     const options = filter.options || defaultOptions;
     
+    if (!hasValidOptions(options)) {
+        console.warn('⚠️ BooleanFilterRenderer: nenhuma opção válida encontrada', options);
+        return null;
+    }
+
+    const validOptions = filterValidOptions(options);
+    
+    const handleValueChange = (val: string) => {
+        // Converter para boolean se necessário
+        if (val === 'true') onChange(true);
+        else if (val === 'false') onChange(false);
+        else onChange('');
+    };
+
+    // Converter valor atual para string para o Select
+    const currentValue = value === true ? 'true' : value === false ? 'false' : '';
+
     return (
-        <select
-            value={value || ''}
-            onChange={(e) => {
-                const val = e.target.value;
-                // Converter para boolean se necessário
-                if (val === 'true') onChange(true);
-                else if (val === 'false') onChange(false);
-                else onChange('');
-            }}
-            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-        >
-            {Object.entries(options).map(([key, label]: [string, any], optionIndex: number) => (
-                <option key={`boolean-option-${key}-${optionIndex}`} value={key}>
-                    {typeof label === 'string' ? label : (label && label.label) || key}
-                </option>
-            ))}
-        </select>
+        <Select value={currentValue || undefined} onValueChange={handleValueChange}>
+            <SelectTrigger className="w-full">
+                <SelectValue placeholder={filter.placeholder || `Selecione ${filter.label || 'opção'}`} />
+            </SelectTrigger>
+            <SelectContent>
+                {validOptions.map(([key, label]: [string, any], optionIndex: number) => (
+                    <SelectItem key={`boolean-option-${key}-${optionIndex}`} value={key}>
+                        {getOptionLabel(label, key)}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
     );
 } 

@@ -93,9 +93,9 @@ class BooleanFilter extends Filter
     {
         $options = [];
 
-        if ($this->allowAll) {
-            $options[''] = $this->allLabel;
-        }
+        // if ($this->allowAll) {
+        //     $options[''] = $this->allLabel;
+        // }
 
         $options[(string) $this->trueValue] = $this->trueLabel;
         $options[(string) $this->falseValue] = $this->falseLabel;

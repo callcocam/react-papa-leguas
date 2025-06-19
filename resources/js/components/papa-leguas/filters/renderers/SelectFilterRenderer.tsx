@@ -1,23 +1,45 @@
 import React from 'react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { type FilterRendererProps } from '../../types';
+import { filterValidOptions, hasValidOptions, getOptionLabel } from '../utils/filterUtils';
 
 /**
  * Renderizador de Filtro Select/Dropdown
  * Usado para filtros com opções predefinidas
  */
 export default function SelectFilterRenderer({ filter, value, onChange }: FilterRendererProps) {
+    console.log(filter);
+    
+    if (!filter.options || typeof filter.options !== 'object') {
+        console.warn('⚠️ SelectFilterRenderer: opções inválidas ou ausentes', filter);
+        return null;
+    }
+
+    if (!hasValidOptions(filter.options)) {
+        console.warn('⚠️ SelectFilterRenderer: nenhuma opção válida encontrada', filter.options);
+        return null;
+    }
+
+    const validOptions = filterValidOptions(filter.options);
+
     return (
-        <select
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-        >
-            <option value="">{filter.placeholder || `Selecione ${filter.label || 'opção'}`}</option>
-            {filter.options && typeof filter.options === 'object' && Object.entries(filter.options).map(([key, label]: [string, any], optionIndex: number) => (
-                <option key={`select-option-${key}-${optionIndex}`} value={key}>
-                    {typeof label === 'string' ? label : (label && label.label) || key}
-                </option>
-            ))}
-        </select>
+        <Select value={value || undefined} onValueChange={onChange}>
+            <SelectTrigger className="w-full">
+                <SelectValue placeholder={filter.placeholder || `Selecione ${filter.label || 'opção'}`} />
+            </SelectTrigger>
+            <SelectContent>
+                {validOptions.map(([key, label]: [string, any], optionIndex: number) => (
+                    <SelectItem key={`select-option-${key}-${optionIndex}`} value={key}>
+                        {getOptionLabel(label, key)}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
     );
 } 

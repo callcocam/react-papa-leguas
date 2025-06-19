@@ -191,14 +191,21 @@ Criar um sistema de tabelas universal que:
 
 ---
 
-#### **Sistema Modular Papa Leguas - ✅ Core Implementado**
+#### **Sistema Modular Papa Leguas - ✅ Arquitetura Separada Implementada**
 
-**Arquitetura Modular Desenvolvida**:
+**Nova Arquitetura Modular - Componentes Separados**:
 ```
 papa-leguas/
-├── DataTable.tsx          # 🎯 Componente principal
+├── DataTable.tsx          # 🎯 Componente principal (orquestrador)
 ├── types.ts              # 📝 Interfaces TypeScript
 ├── index.tsx             # 🚪 Exports organizados
+├── components/           # 🧩 Componentes da tabela separados
+│   ├── Filters.tsx       # 🔍 Sistema de filtros
+│   ├── Headers.tsx       # 📋 Cabeçalhos da tabela
+│   ├── Table.tsx         # 🗂️ Tabela principal
+│   ├── TableBody.tsx     # 📄 Corpo da tabela
+│   ├── Pagination.tsx    # 📄 Paginação
+│   └── Resume.tsx        # 📊 Resumo/estatísticas
 ├── columns/              # 📊 Sistema de colunas
 │   ├── ColumnRenderer.tsx
 │   └── renderers/
@@ -210,7 +217,9 @@ papa-leguas/
 │   └── renderers/
 │       ├── TextFilterRenderer.tsx
 │       ├── SelectFilterRenderer.tsx
-│       └── BooleanFilterRenderer.tsx
+│       ├── BooleanFilterRenderer.tsx
+│       ├── DateFilterRenderer.tsx
+│       └── NumberFilterRenderer.tsx
 └── actions/              # ⚡ Sistema de ações
     ├── ActionRenderer.tsx
     └── renderers/
@@ -219,46 +228,121 @@ papa-leguas/
         └── DropdownActionRenderer.tsx
 ```
 
-**Componentes Implementados**:
-1. **DataTable Core** - Componente principal com integração dos renderers
-2. **Column Renderers**:
-   - ✅ `TextRenderer` - Texto simples e formatado
-   - ✅ `BadgeRenderer` - Status/badges com variantes
-   - ✅ `EmailRenderer` - Links mailto automáticos
-3. **Filter Renderers**:
-   - ✅ `TextFilterRenderer` - Filtros de texto com Enter para aplicar
-   - ✅ `SelectFilterRenderer` - Dropdowns com opções
-   - ✅ `BooleanFilterRenderer` - Filtros true/false com conversão automática
-4. **Action Renderers**:
-   - ✅ `ButtonActionRenderer` - Botões de ação com métodos HTTP
-   - ✅ `LinkActionRenderer` - Links navegáveis
-   - ✅ `DropdownActionRenderer` - Múltiplas ações em dropdown
-5. **Factories Pattern**:
-   - ✅ `ColumnRenderer` - Factory para seleção automática de column renderers
-   - ✅ `FilterRenderer` - Factory para seleção automática de filter renderers
-   - ✅ `ActionRenderer` - Factory para seleção automática de action renderers
-
-**Funcionalidades Core**:
-- ✅ **Renderização Inteligente** - Factory pattern com fallbacks
-- ✅ **Compatibilidade Backend** - Suporte a objetos formatados
-- ✅ **Keys Únicas** - Sistema robusto contra duplicatas
-- ✅ **Error Handling** - Fallbacks automáticos em caso de erro
-- ✅ **Tipagem Forte** - TypeScript com interfaces bem definidas
-- ✅ **Sistema de Filtros Completo** - Integração com Inertia.js
-- ✅ **Estados de Loading** - Feedback visual durante operações
-- ✅ **Sistema de Ações Completo** - Botões, links e dropdowns
-- ✅ **Integração HTTP** - GET, POST, PUT, DELETE via Inertia.js
-
-**Padrão Renderer Factory**:
+**Estrutura Implementada no DataTable**:
 ```typescript
-// Column renderers - Auto-seleção baseada em renderAs
-<ColumnRenderer column={{ renderAs: 'badge' }} value={data} />
+// No DataTable principal
+return (
+    <div className="space-y-6">
+        {/* Filtros */}
+        <Filters
+            filters={filters}
+            filterValues={filterValues}
+            showFilters={showFilters}
+            isApplyingFilters={isApplyingFilters}
+            onFilterChange={handleFilterChange}
+            onToggleFilters={() => setShowFilters(!showFilters)}
+            onApplyFilters={applyFilters}
+            onClearFilters={clearFilters}
+        />
 
-// Filter renderers - Auto-seleção baseada em type
-<FilterRenderer filter={{ type: 'select' }} value={filterValue} onChange={handleChange} />
+        {/* Tabela Principal */}
+        <Table
+            data={data}
+            columns={columns}
+            actions={actions}
+            loading={loading}
+            pagination={pagination}
+            onSort={handleSort}
+            onPageChange={handlePageChange}
+            sortColumn={sortColumn}
+            sortDirection={sortDirection}
+        />
 
-// Action renderers - Auto-seleção baseada em type
-<ActionRenderer action={{ type: 'delete' }} item={rowData} />
+        {/* Resumo/Estatísticas */}
+        <Resume
+            data={data}
+            columns={columns}
+            filters={filters}
+            pagination={pagination}
+            activeFiltersCount={activeFiltersCount}
+        />
+    </div>
+);
+```
+
+**Componentes Implementados**:
+
+1. **`<Filters />`** - Sistema de filtros completo
+   - ✅ Controles de show/hide filtros
+   - ✅ Badge com contador de filtros ativos
+   - ✅ Botões aplicar/limpar filtros
+   - ✅ Grid responsivo para filtros
+   - ✅ Estados de loading
+
+2. **`<Headers />`** - Cabeçalhos da tabela
+   - ✅ Renderização de colunas
+   - ✅ Sistema de ordenação clicável
+   - ✅ Indicadores visuais de ordenação (↑↓)
+   - ✅ Coluna de ações automática
+   - ✅ Hover effects
+
+3. **`<Table />`** - Tabela principal (wrapper)
+   - ✅ Integra Headers e TableBody
+   - ✅ Gerencia paginação
+   - ✅ Card wrapper
+   - ✅ Props para ordenação
+
+4. **`<TableBody />`** - Corpo da tabela
+   - ✅ Renderização de dados
+   - ✅ Estados de loading e vazio
+   - ✅ Integração com ColumnRenderer
+   - ✅ Integração com ActionRenderer
+   - ✅ Keys únicas
+
+5. **`<Pagination />`** - Sistema de paginação
+   - ✅ Navegação anterior/próximo
+   - ✅ Páginas numeradas
+   - ✅ Suporte a links do Laravel
+   - ✅ Navegação via URL
+   - ✅ Info de registros
+
+6. **`<Resume />`** - Resumo/estatísticas
+   - ✅ Cards com estatísticas
+   - ✅ Contadores dinâmicos
+   - ✅ Ícones visuais
+   - ✅ Grid responsivo
+   - ✅ Estatísticas de filtros ativos
+
+**Funcionalidades Avançadas Implementadas**:
+
+- ✅ **Sistema de Ordenação** - Clique nos headers para ordenar
+- ✅ **URL Persistence** - Filtros, ordenação e paginação na URL
+- ✅ **Estados de Loading** - Feedback visual em todas as operações
+- ✅ **Responsividade** - Grid adaptativo em todos os componentes
+- ✅ **Acessibilidade** - Labels, tooltips e navegação por teclado
+- ✅ **Error Handling** - Fallbacks seguros em todos os componentes
+- ✅ **TypeScript Completo** - Interfaces bem definidas para todos os componentes
+
+**Vantagens da Arquitetura Separada**:
+
+1. **Modularidade** - Cada componente tem responsabilidade única
+2. **Reutilização** - Componentes podem ser usados independentemente
+3. **Manutenibilidade** - Fácil localizar e modificar funcionalidades
+4. **Testabilidade** - Cada componente pode ser testado isoladamente
+5. **Flexibilidade** - Possível customizar ou substituir componentes específicos
+6. **Performance** - Re-renders otimizados por componente
+
+**Padrão de Uso Modular**:
+```typescript
+// Uso completo (recomendado)
+<DataTable data={data} columns={columns} filters={filters} actions={actions} />
+
+// Uso de componentes separados (customização avançada)
+<div>
+    <Filters {...filterProps} />
+    <Table {...tableProps} />
+    <Resume {...resumeProps} />
+</div>
 ```
 
 ---
@@ -268,20 +352,21 @@ papa-leguas/
 **Arquivo Atualizado**: `resources/js/pages/crud/index.tsx`
 
 **Implementação:**
-- ✅ **Substituição Completa** - Sistema antigo removido, DataTable modular implementado
+- ✅ **Arquitetura Separada** - Componentes modulares implementados
 - ✅ **Props Integradas** - `data`, `columns`, `filters`, `actions`, `error`, `meta` passados diretamente
 - ✅ **Compatibilidade** - Mantém estrutura de dados existente do backend
-- ✅ **Simplicidade** - Interface limpa e focada no essencial
+- ✅ **Simplicidade** - Interface limpa usando componentes separados
 - ✅ **Ações Automáticas** - Geração automática de ações baseada em permissões
 
 **Funcionalidades Ativas**:
-- ✅ **Renderização de Dados** - Todas as colunas renderizadas com ColumnRenderer
-- ✅ **Sistema de Filtros** - Filtros aplicados via FilterRenderer
+- ✅ **Renderização de Dados** - TableBody com ColumnRenderer
+- ✅ **Sistema de Filtros** - Componente Filters separado
 - ✅ **Sistema de Ações** - Ações automáticas baseadas em config/routes
+- ✅ **Ordenação** - Headers clicáveis com indicadores visuais
+- ✅ **Paginação** - Componente Pagination separado
+- ✅ **Resumo** - Componente Resume com estatísticas
 - ✅ **Estados de Loading/Erro** - Tratamento completo de estados
 - ✅ **Tipagem TypeScript** - Interfaces bem definidas
-- ✅ **Confirmações** - Diálogos de confirmação para ações destrutivas
-- ✅ **Dropdown Inteligente** - Agrupamento automático quando há muitas ações
 
 **Sistema de Ações Implementado**:
 ```typescript
@@ -295,4 +380,143 @@ if (actions.length > 2) return [{ type: 'dropdown', actions }];
 
 ---
 
-**Status**: 🟢 **Sistema Modular Completo** - DataTable com column, filter e action renderers totalmente integrados. Sistema de ações automático funcionando. Arquitetura modular pronta para extensões avançadas.
+**Status**: 🟢 **Sistema Modular Separado Completo** - DataTable com componentes totalmente separados (`<Filters />`, `<Headers />`, `<Table />`, `<Pagination />`, `<Resume />`). Arquitetura modular, reutilizável e extensível implementada conforme solicitado.
+
+**Filter Renderers**:
+- `TextFilterRenderer`: Filtros de texto com Enter para aplicar
+- `SelectFilterRenderer`: Dropdowns com opções usando shadcn/ui Select
+- `BooleanFilterRenderer`: Filtros true/false com conversão automática usando shadcn/ui Select
+- `DateFilterRenderer`: Filtros de data simples ou range de datas usando shadcn/ui Input
+- `NumberFilterRenderer`: Filtros numéricos simples ou range usando shadcn/ui Input
+- `FilterRenderer`: Factory pattern para seleção automática
+
+#### **Filtros shadcn/ui - ✅ Implementados**
+
+**Componentes shadcn/ui Integrados**:
+
+1. **`SelectFilterRenderer`** - shadcn/ui Select
+   - ✅ Componente `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue`
+   - ✅ Placeholder customizável
+   - ✅ Opções dinâmicas com fallback seguro
+   - ✅ Keys únicas para evitar conflitos React
+
+2. **`BooleanFilterRenderer`** - shadcn/ui Select
+   - ✅ Usa shadcn/ui Select para interface consistente
+   - ✅ Conversão automática de boolean para string e vice-versa
+   - ✅ Opções padrão: Todos, Sim, Não
+   - ✅ Opções customizáveis via props
+
+3. **`DateFilterRenderer`** - shadcn/ui Input + Label
+   - ✅ Suporte a data simples (`type: 'date'`)
+   - ✅ Suporte a range de datas (`type: 'date_range'`)
+   - ✅ Labels descritivas para data inicial/final
+   - ✅ Styling consistente com tema
+
+4. **`NumberFilterRenderer`** - shadcn/ui Input + Label
+   - ✅ Suporte a número simples (`type: 'number'`)
+   - ✅ Suporte a range numérico (`type: 'number_range'`)
+   - ✅ Labels descritivas para min/max
+   - ✅ Enter para aplicar filtros
+
+**Vantagens da Integração shadcn/ui**:
+- ✅ **Consistência Visual** - Todos os filtros seguem o mesmo design system
+- ✅ **Acessibilidade** - Componentes shadcn/ui já incluem ARIA labels
+- ✅ **Responsividade** - Design adaptativo automático
+- ✅ **Tema Dark/Light** - Suporte automático a temas
+- ✅ **Performance** - Componentes otimizados
+- ✅ **Manutenibilidade** - Atualizações centralizadas via shadcn/ui
+
+**Tipos de Filtros Suportados**:
+```typescript
+// Filtro de texto simples
+{ key: 'name', type: 'text', label: 'Nome' }
+
+// Filtro select com opções
+{ key: 'status', type: 'select', label: 'Status', options: { active: 'Ativo', inactive: 'Inativo' } }
+
+// Filtro boolean
+{ key: 'published', type: 'boolean', label: 'Publicado' }
+
+// Filtro de data simples
+{ key: 'created_at', type: 'date', label: 'Data de Criação' }
+
+// Filtro de range de datas
+{ key: 'period', type: 'date_range', label: 'Período' }
+
+// Filtro numérico simples
+{ key: 'price', type: 'number', label: 'Preço' }
+
+// Filtro de range numérico
+{ key: 'price_range', type: 'number_range', label: 'Faixa de Preço' }
+```
+
+---
+
+**Status**: 🟢 **Sistema Modular Separado Completo** - DataTable com componentes totalmente separados (`<Filters />`, `<Headers />`, `<Table />`, `<Pagination />`, `<Resume />`). Arquitetura modular, reutilizável e extensível implementada conforme solicitado.
+
+**Padrão Arquitetural Consistente**:
+- ✅ **Factory Pattern Unificado** - Tanto `ColumnRenderer` quanto `FilterRenderer` usam o mesmo padrão
+- ✅ **Mapeamento de Objetos** - Substituição de switch/case por object mapping para melhor performance
+- ✅ **Fallback Seguro** - Renderer padrão quando tipo não é encontrado
+- ✅ **Extensibilidade** - Fácil adição de novos renderers ao mapeamento
+- ✅ **Consistência de Código** - Mesmo padrão em toda a arquitetura
+
+**Vantagens do Padrão Unificado**:
+- **Performance** - Object lookup é mais rápido que switch/case
+- **Manutenibilidade** - Padrão consistente facilita manutenção
+- **Legibilidade** - Código mais limpo e organizado
+- **Extensibilidade** - Simples adicionar novos tipos de renderer
+
+#### **Correção Crítica shadcn/ui Select - ✅ Implementada**
+
+**Problema Identificado**: Erro "SelectItem must have a value prop that is not an empty string"
+
+**Causa**: Select do shadcn/ui não aceita `value=""` (string vazia)
+
+**Correção Aplicada**:
+```typescript
+// ❌ ANTES - Causava erro
+<Select value={value || ''} onValueChange={onChange}>
+
+// ✅ DEPOIS - Correto
+<Select value={value || undefined} onValueChange={onChange}>
+```
+
+**Componentes Corrigidos**:
+- ✅ `SelectFilterRenderer` - `value={value || undefined}`
+- ✅ `BooleanFilterRenderer` - `value={currentValue || undefined}`
+
+**Padrão shadcn/ui**:
+- ✅ **Valor Vazio**: Usar `undefined` ou não passar a prop
+- ✅ **Placeholder**: Usar `SelectValue` com `placeholder`
+- ✅ **Sem SelectItem Vazio**: O placeholder do SelectValue é suficiente
+
+#### **Tratamento de Valores Null - ✅ Implementado**
+
+**Problema Identificado**: Opções de filtros com valores `null` causavam erros
+
+**Solução Implementada**:
+- ✅ **Utilitários Compartilhados**: `filterUtils.ts` com funções reutilizáveis
+- ✅ **Filtro de Opções Válidas**: Remove valores `null`, `undefined`, `'null'`, `'undefined'`
+- ✅ **Validação Prévia**: Verifica se há opções válidas antes de renderizar
+- ✅ **Labels Seguros**: Extração segura de labels com fallbacks
+
+**Funções Utilitárias**:
+```typescript
+// Filtra opções válidas
+export const filterValidOptions = (options: Record<string, any>) => { ... }
+
+// Valida se há opções válidas
+export const hasValidOptions = (options: Record<string, any>): boolean => { ... }
+
+// Obtém label de forma segura
+export const getOptionLabel = (label: any, key: string): string => { ... }
+```
+
+**Componentes Atualizados**:
+- ✅ `SelectFilterRenderer` - Usa utilitários para filtrar opções null
+- ✅ `BooleanFilterRenderer` - Tratamento seguro de opções inválidas
+- ✅ **Error Handling** - Warnings no console para debugging
+- ✅ **Fallback Seguro** - Retorna `null` se não há opções válidas
+
+---

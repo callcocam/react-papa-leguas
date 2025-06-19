@@ -110,9 +110,9 @@ class SelectFilter extends Filter
         $options = [];
 
         // Adicionar opção vazia se permitido
-        if ($this->allowEmpty) {
-            $options[$this->emptyValue] = $this->emptyLabel;
-        }
+        // if ($this->allowEmpty) {
+        //     $options[$this->emptyValue] = $this->emptyLabel;
+        // }
 
         // Obter opções via callback se definido
         if ($this->optionsCallback) {
