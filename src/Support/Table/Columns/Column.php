@@ -41,7 +41,14 @@ abstract class Column
         $this->evaluationIdentifier = 'column';
     }
 
-
+    /**
+     * Definir label da coluna
+     */
+    public function label(string $label): static
+    {
+        $this->label = $label;
+        return $this;
+    }
 
     /**
      * Definir se a coluna é ordenável

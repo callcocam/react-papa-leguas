@@ -69,7 +69,7 @@ trait InteractsWithTable
                     'table' => [
                         'data' => $formattedData,
                         'columns' => $this->getColumnsConfig(),
-                        'filters' => $this->getFilters(),
+                        'filters' => $this->getFiltersConfig(),
                         'actions' => $this->getActions(),
                         'pagination' => [
                             'current_page' => $paginatedData->currentPage(),
@@ -117,7 +117,7 @@ trait InteractsWithTable
                     'table' => [
                         'data' => $formattedData,
                         'columns' => $this->getColumnsConfig(),
-                        'filters' => $this->getFilters(),
+                        'filters' => $this->getFiltersConfig(),
                         'actions' => $this->getActions(),
                         'pagination' => [
                             'current_page' => 1,
@@ -216,13 +216,38 @@ trait InteractsWithTable
     /**
      * Métodos padrão para traits opcionais
      */
-    protected function getFilters(): array
-    {
-        return method_exists($this, 'filters') ? $this->filters() : [];
-    }
-
     protected function getActions(): array
     {
         return method_exists($this, 'actions') ? $this->actions() : [];
+    }
+
+    /**
+     * Obter colunas filtráveis
+     */
+    protected function getFilterableColumns(): array
+    {
+        // Verificar se o trait HasFilters está sendo usado
+        if (method_exists($this, 'getVisibleFilters')) {
+            return collect($this->getVisibleFilters())->pluck('key')->toArray();
+        }
+        
+        // Fallback: retornar colunas que são marcadas como filtráveis
+        if (method_exists($this, 'getColumns')) {
+            return collect($this->getColumns())
+                ->filter(fn($column) => method_exists($column, 'isFilterable') && $column->isFilterable())
+                ->pluck('key')
+                ->toArray();
+        }
+        
+        return [];
+    }
+
+    /**
+     * Verificar se a tabela é filtrável
+     */
+    protected function isFilterable(): bool
+    {
+        // Verificar se há filtros disponíveis
+        return !empty($this->getFiltersConfig());
     }
 }
