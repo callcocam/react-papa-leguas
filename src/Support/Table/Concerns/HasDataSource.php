@@ -8,6 +8,10 @@
 
 namespace Callcocam\ReactPapaLeguas\Support\Table\Concerns;
 
+use Callcocam\ReactPapaLeguas\Support\Table\DataSources\Contracts\DataSourceInterface;
+use Callcocam\ReactPapaLeguas\Support\Table\DataSources\ModelSource;
+use Callcocam\ReactPapaLeguas\Support\Table\DataSources\CollectionSource;
+use Callcocam\ReactPapaLeguas\Support\Table\DataSources\ApiSource;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -15,8 +19,7 @@ use Illuminate\Support\Facades\Log;
 
 trait HasDataSource
 {
-    protected string $modelClass;
-    protected ?Closure $queryCallback = null;
+    protected ?DataSourceInterface $dataSource = null;
     protected bool $isSearchable = false;
     protected bool $isSortable = false;
     protected bool $isFilterable = false;
@@ -27,13 +30,33 @@ trait HasDataSource
     protected array $searchableColumns = [];
     protected array $sortableColumns = [];
     protected array $filterableColumns = [];
+    
+    // Propriedades para compatibilidade com código existente
+    protected ?string $modelClass = null;
+    protected ?Closure $queryCallback = null;
 
     /**
-     * Definir o modelo da tabela
+     * Definir fonte de dados personalizada
+     */
+    public function dataSource(DataSourceInterface $dataSource): static
+    {
+        $this->dataSource = $dataSource;
+        return $this;
+    }
+
+    /**
+     * Definir o modelo da tabela (cria ModelSource automaticamente)
      */
     public function model(string $modelClass): static
     {
         $this->modelClass = $modelClass;
+        $this->dataSource = new ModelSource($modelClass);
+        
+        // Aplicar query callback se já foi definido
+        if ($this->queryCallback) {
+            $this->dataSource->query($this->queryCallback);
+        }
+        
         return $this;
     }
 
@@ -43,6 +66,30 @@ trait HasDataSource
     public function query(Closure $callback): static
     {
         $this->queryCallback = $callback;
+        
+        // Se já temos uma fonte de dados do tipo ModelSource, aplicar a query
+        if ($this->dataSource instanceof ModelSource) {
+            $this->dataSource->query($callback);
+        }
+        
+        return $this;
+    }
+
+    /**
+     * Definir fonte de dados como Collection
+     */
+    public function collection(\Illuminate\Support\Collection|array|Closure $data, array $config = []): static
+    {
+        $this->dataSource = new CollectionSource($data, $config);
+        return $this;
+    }
+
+    /**
+     * Definir fonte de dados como API
+     */
+    public function api(string $baseUrl, array $config = []): static
+    {
+        $this->dataSource = new ApiSource($baseUrl, $config);
         return $this;
     }
 
@@ -102,51 +149,143 @@ trait HasDataSource
     }
 
     /**
-     * Obter query base
+     * Obter fonte de dados configurada
      */
-    protected function getBaseQuery(): Builder
+    public function getDataSource(): ?DataSourceInterface
     {
-        if (!isset($this->modelClass) || !class_exists($this->modelClass)) {
-            throw new \InvalidArgumentException("Modelo não definido ou não existe: " . ($this->modelClass ?? 'null'));
-        }
-
-        // Se há callback de query personalizada, usar ela
-        if ($this->queryCallback) {
-            $query = call_user_func($this->queryCallback);
-            
-            if (!$query instanceof Builder) {
-                throw new \InvalidArgumentException("Callback de query deve retornar uma instância de Builder");
-            }
-            
-            return $query;
-        }
-
-        // Senão, usar query padrão do modelo
-        return $this->modelClass::query();
+        return $this->dataSource;
     }
 
     /**
-     * Obter dados da tabela
+     * Obter dados da tabela usando a fonte de dados
      */
-    protected function getData(): Collection
+    protected function getData(): \Illuminate\Support\Collection
     {
         try {
-            $query = $this->getBaseQuery();
-
-            // Aplicar limite se não paginado
-            if (!$this->isPaginated) {
-                $query->limit($this->perPage);
+            if (!$this->dataSource) {
+                throw new \RuntimeException('Nenhuma fonte de dados configurada');
             }
 
-            return $query->get();
+            // Configurar busca se habilitada
+            if ($this->isSearchable && !empty($this->searchableColumns)) {
+                $search = request('search', '');
+                if ($search) {
+                    $this->dataSource->applySearch($search, $this->searchableColumns);
+                }
+            }
+
+            // Configurar filtros se habilitados
+            if ($this->isFilterable) {
+                $filters = request('filters', []);
+                if (!empty($filters)) {
+                    $this->dataSource->applyFilters($filters);
+                }
+            }
+
+            // Configurar ordenação se habilitada
+            if ($this->isSortable) {
+                $sortColumn = request('sort_column');
+                $sortDirection = request('sort_direction', 'asc');
+                if ($sortColumn) {
+                    $this->dataSource->applySorting($sortColumn, $sortDirection);
+                }
+            }
+
+            return $this->dataSource->getData();
         } catch (\Exception $e) {
             Log::error('Erro ao obter dados da tabela: ' . $e->getMessage(), [
-                'model' => $this->modelClass ?? 'undefined',
+                'data_source_type' => $this->dataSource?->getType() ?? 'undefined',
                 'exception' => $e
             ]);
 
             return collect([]);
         }
+    }
+
+    /**
+     * Obter dados paginados da tabela
+     */
+    protected function getPaginatedData(int $page = 1, int $perPage = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        try {
+            if (!$this->dataSource) {
+                throw new \RuntimeException('Nenhuma fonte de dados configurada');
+            }
+
+            $perPage = $perPage ?? $this->perPage;
+
+            // Aplicar mesmas configurações do getData()
+            if ($this->isSearchable && !empty($this->searchableColumns)) {
+                $search = request('search', '');
+                if ($search) {
+                    $this->dataSource->applySearch($search, $this->searchableColumns);
+                }
+            }
+
+            if ($this->isFilterable) {
+                $filters = request('filters', []);
+                if (!empty($filters)) {
+                    $this->dataSource->applyFilters($filters);
+                }
+            }
+
+            if ($this->isSortable) {
+                $sortColumn = request('sort_column');
+                $sortDirection = request('sort_direction', 'asc');
+                if ($sortColumn) {
+                    $this->dataSource->applySorting($sortColumn, $sortDirection);
+                }
+            }
+
+            return $this->dataSource->getPaginatedData($page, $perPage);
+        } catch (\Exception $e) {
+            Log::error('Erro ao obter dados paginados da tabela: ' . $e->getMessage(), [
+                'data_source_type' => $this->dataSource?->getType() ?? 'undefined',
+                'exception' => $e
+            ]);
+
+            // Retornar paginação vazia em caso de erro
+            return new \Illuminate\Pagination\LengthAwarePaginator(
+                collect([]),
+                0,
+                $perPage ?? $this->perPage,
+                $page,
+                ['path' => request()->url()]
+            );
+        }
+    }
+
+    /**
+     * Obter query base (compatibilidade com código existente)
+     * @deprecated Use getDataSource() instead
+     */
+    protected function getBaseQuery(): ?Builder
+    {
+        if ($this->dataSource instanceof ModelSource) {
+            // Para compatibilidade, retornar null se não for ModelSource
+            return null;
+        }
+        
+        // Fallback para método antigo se não há fonte de dados configurada
+        if (!$this->dataSource && $this->modelClass) {
+            if (!class_exists($this->modelClass)) {
+                throw new \InvalidArgumentException("Modelo não definido ou não existe: " . $this->modelClass);
+            }
+
+            if ($this->queryCallback) {
+                $query = call_user_func($this->queryCallback);
+                
+                if (!$query instanceof Builder) {
+                    throw new \InvalidArgumentException("Callback de query deve retornar uma instância de Builder");
+                }
+                
+                return $query;
+            }
+
+            return $this->modelClass::query();
+        }
+
+        return null;
     }
 
     /**
@@ -184,6 +323,33 @@ trait HasDataSource
     public function getModelClass(): ?string
     {
         return $this->modelClass ?? null;
+    }
+
+    /**
+     * Obter informações da fonte de dados
+     */
+    public function getDataSourceInfo(): array
+    {
+        if (!$this->dataSource) {
+            return [
+                'type' => 'none',
+                'configured' => false,
+                'available' => false,
+            ];
+        }
+
+        return [
+            'type' => $this->dataSource->getType(),
+            'configured' => true,
+            'available' => $this->dataSource->isAvailable(),
+            'supports' => [
+                'pagination' => $this->dataSource->supportsPagination(),
+                'search' => $this->dataSource->supportsSearch(),
+                'sorting' => $this->dataSource->supportsSorting(),
+                'filters' => $this->dataSource->supportsFilters(),
+            ],
+            'config' => $this->dataSource->getConfig(),
+        ];
     }
 
     public function isSearchable(): bool

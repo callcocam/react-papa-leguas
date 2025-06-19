@@ -60,51 +60,106 @@ trait InteractsWithTable
     public function toArray(): array
     {
         try {
-            $data = $this->getData();
-            $formattedData = $data->map(fn($row) => $this->formatRow($row))->values();
-
-            return [
-                'table' => [
-                    'data' => $formattedData,
-                    'columns' => $this->getColumnsConfig(),
-                    'filters' => $this->getFilters(),
-                    'actions' => $this->getActions(),
-                    'pagination' => [
-                        'current_page' => $this->currentPage,
-                        'per_page' => $this->getPerPage(),
-                        'total' => $data->count(),
-                        'last_page' => 1,
+            // Usar paginação se habilitada
+            if ($this->isPaginated()) {
+                $paginatedData = $this->getPaginatedData();
+                $formattedData = $paginatedData->getCollection()->map(fn($row) => $this->formatRow($row))->values();
+                
+                return [
+                    'table' => [
+                        'data' => $formattedData,
+                        'columns' => $this->getColumnsConfig(),
+                        'filters' => $this->getFilters(),
+                        'actions' => $this->getActions(),
+                        'pagination' => [
+                            'current_page' => $paginatedData->currentPage(),
+                            'per_page' => $paginatedData->perPage(),
+                            'total' => $paginatedData->total(),
+                            'last_page' => $paginatedData->lastPage(),
+                            'from' => $paginatedData->firstItem(),
+                            'to' => $paginatedData->lastItem(),
+                        ],
+                        'meta' => [
+                            'title' => $this->getTitle(),
+                            'description' => $this->getDescription(),
+                            'searchable' => $this->isSearchable(),
+                            'sortable' => $this->isSortable(),
+                            'filterable' => $this->isFilterable(),
+                            'paginated' => $this->isPaginated(),
+                            'selectable' => $this->isSelectable(),
+                        ]
                     ],
-                    'meta' => [
-                        'title' => $this->getTitle(),
-                        'description' => $this->getDescription(),
-                        'searchable' => $this->isSearchable(),
-                        'sortable' => $this->isSortable(),
-                        'filterable' => $this->isFilterable(),
-                        'paginated' => $this->isPaginated(),
-                        'selectable' => $this->isSelectable(),
-                    ]
-                ],
-                'config' => [
-                    'model_name' => $this->getModelClass() ? class_basename($this->getModelClass()) : 'Unknown',
-                    'page_title' => $this->getTitle(),
-                    'page_description' => $this->getDescription(),
-                    'route_prefix' => $this->getRoutePrefix(),
-                    'can_create' => true,
-                    'can_edit' => true,
-                    'can_delete' => true,
-                    'can_export' => true,
-                    'can_bulk_delete' => true,
-                ],
-                'routes' => $this->getRouteNames(),
-                'capabilities' => [
-                    'searchable_columns' => $this->getSearchableColumns(),
-                    'sortable_columns' => $this->getSortableColumns(),
-                    'filterable_columns' => $this->getFilterableColumns(),
-                ]
-            ];
+                    'config' => [
+                        'model_name' => $this->getModelClass() ? class_basename($this->getModelClass()) : 'Unknown',
+                        'page_title' => $this->getTitle(),
+                        'page_description' => $this->getDescription(),
+                        'route_prefix' => $this->getRoutePrefix(),
+                        'can_create' => true,
+                        'can_edit' => true,
+                        'can_delete' => true,
+                        'can_export' => true,
+                        'can_bulk_delete' => true,
+                    ],
+                    'routes' => $this->getRouteNames(),
+                    'capabilities' => [
+                        'searchable_columns' => $this->getSearchableColumns(),
+                        'sortable_columns' => $this->getSortableColumns(),
+                        'filterable_columns' => $this->getFilterableColumns(),
+                    ],
+                    'data_source' => $this->getDataSourceInfo(),
+                ];
+            } else {
+                // Modo sem paginação
+                $data = $this->getData();
+                $formattedData = $data->map(fn($row) => $this->formatRow($row))->values();
+
+                return [
+                    'table' => [
+                        'data' => $formattedData,
+                        'columns' => $this->getColumnsConfig(),
+                        'filters' => $this->getFilters(),
+                        'actions' => $this->getActions(),
+                        'pagination' => [
+                            'current_page' => 1,
+                            'per_page' => $this->getPerPage(),
+                            'total' => $data->count(),
+                            'last_page' => 1,
+                            'from' => 1,
+                            'to' => $data->count(),
+                        ],
+                        'meta' => [
+                            'title' => $this->getTitle(),
+                            'description' => $this->getDescription(),
+                            'searchable' => $this->isSearchable(),
+                            'sortable' => $this->isSortable(),
+                            'filterable' => $this->isFilterable(),
+                            'paginated' => $this->isPaginated(),
+                            'selectable' => $this->isSelectable(),
+                        ]
+                    ],
+                    'config' => [
+                        'model_name' => $this->getModelClass() ? class_basename($this->getModelClass()) : 'Unknown',
+                        'page_title' => $this->getTitle(),
+                        'page_description' => $this->getDescription(),
+                        'route_prefix' => $this->getRoutePrefix(),
+                        'can_create' => true,
+                        'can_edit' => true,
+                        'can_delete' => true,
+                        'can_export' => true,
+                        'can_bulk_delete' => true,
+                    ],
+                    'routes' => $this->getRouteNames(),
+                    'capabilities' => [
+                        'searchable_columns' => $this->getSearchableColumns(),
+                        'sortable_columns' => $this->getSortableColumns(),
+                        'filterable_columns' => $this->getFilterableColumns(),
+                    ],
+                    'data_source' => $this->getDataSourceInfo(),
+                ];
+            }
         } catch (\Exception $e) {
             Log::error('Erro no método toArray da Table: ' . $e->getMessage(), [
+                'data_source_type' => $this->getDataSource()?->getType() ?? 'undefined',
                 'model' => $this->getModelClass(),
                 'exception' => $e
             ]);
