@@ -54,7 +54,7 @@ trait BelongsToRoutes
     /**
      * Gerar nome de rota específico
      */
-    protected function getRouteName(string $action): string
+    protected function generateRouteName(string $action): string
     {
         return ReactPapaLeguas::generateRouteName(
             $action,
@@ -69,47 +69,47 @@ trait BelongsToRoutes
     
     public function getRouteNameIndex(): string
     {
-        return $this->getRouteName('index');
+        return $this->generateRouteName('index');
     }
 
     public function getRouteNameCreate(): string
     {
-        return $this->getRouteName('create');
+        return $this->generateRouteName('create');
     }
 
     public function getRouteNameStore(): string
     {
-        return $this->getRouteName('store');
+        return $this->generateRouteName('store');
     }
 
     public function getRouteNameShow(): string
     {
-        return $this->getRouteName('show');
+        return $this->generateRouteName('show');
     }
 
     public function getRouteNameEdit(): string
     {
-        return $this->getRouteName('edit');
+        return $this->generateRouteName('edit');
     }
 
     public function getRouteNameUpdate(): string
     {
-        return $this->getRouteName('update');
+        return $this->generateRouteName('update');
     }
 
     public function getRouteNameDestroy(): string
     {
-        return $this->getRouteName('destroy');
+        return $this->generateRouteName('destroy');
     }
 
     public function getRouteNameExport(): string
     {
-        return $this->getRouteName('export');
+        return $this->generateRouteName('export');
     }
 
     public function getRouteNameBulkDestroy(): string
     {
-        return $this->getRouteName('bulk_destroy');
+        return $this->generateRouteName('bulk_destroy');
     }
 
     /**
@@ -136,7 +136,7 @@ trait BelongsToRoutes
      */
     public function getCustomRouteName(string $action): string
     {
-        return $this->getRouteName($action);
+        return $this->generateRouteName($action);
     }
 
     /**

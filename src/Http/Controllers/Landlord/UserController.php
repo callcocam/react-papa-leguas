@@ -22,8 +22,7 @@ class UserController extends LandlordController
     
     public function __construct()
     {
-        parent::__construct();
-        
+         
         // Configurar prefixo de rotas personalizado
         $this->setRoutePrefix('landlord.users');
     }
