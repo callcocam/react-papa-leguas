@@ -9,12 +9,13 @@
 namespace Callcocam\ReactPapaLeguas\Support\Table\Columns;
 
 use Callcocam\ReactPapaLeguas\Support\Concerns\EvaluatesClosures;
+use Callcocam\ReactPapaLeguas\Support\Concerns\FactoryPattern;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\Contracts\CastInterface;
 use Closure;
 
 abstract class Column
 {
-    use EvaluatesClosures;
+    use EvaluatesClosures, FactoryPattern;
 
     protected string $key;
     protected string $label;
@@ -40,13 +41,7 @@ abstract class Column
         $this->evaluationIdentifier = 'column';
     }
 
-    /**
-     * Método estático para criar uma nova instância
-     */
-    public static function make(string $key, ?string $label = null): static
-    {
-        return new static($key, $label);
-    }
+
 
     /**
      * Definir se a coluna é ordenável

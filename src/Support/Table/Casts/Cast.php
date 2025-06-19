@@ -9,13 +9,14 @@
 namespace Callcocam\ReactPapaLeguas\Support\Table\Casts;
 
 use Callcocam\ReactPapaLeguas\Support\Concerns\EvaluatesClosures;
+use Callcocam\ReactPapaLeguas\Support\Concerns\FactoryPattern;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\Contracts\CastInterface;
 use Closure;
 use Illuminate\Support\Facades\Log;
 
 abstract class Cast implements CastInterface
 {
-    use EvaluatesClosures;
+    use EvaluatesClosures, FactoryPattern;
 
     /**
      * Configurações do cast
@@ -48,13 +49,7 @@ abstract class Cast implements CastInterface
         $this->config = array_merge($this->getDefaultConfig(), $config);
     }
 
-    /**
-     * Cria uma nova instância do cast
-     */
-    public static function make(array $config = []): static
-    {
-        return new static($config);
-    }
+
 
     /**
      * Define callback personalizado para casting

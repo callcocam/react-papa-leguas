@@ -124,9 +124,20 @@ abstract class DataSource implements DataSourceInterface
         $cacheKey = $this->generateCacheKey($method, $params);
         $this->cacheKey = $cacheKey;
 
-        return Cache::remember($cacheKey, $this->cacheTtl, function () use ($method, $params) {
+        try {
+            return Cache::remember($cacheKey, $this->cacheTtl, function () use ($method, $params) {
+                return $this->executeMethod($method, $params);
+            });
+        } catch (\Exception $e) {
+            Log::warning("Erro no cache da fonte {$this->getType()}, executando sem cache", [
+                'error' => $e->getMessage(),
+                'method' => $method,
+                'params' => $params,
+            ]);
+            
+            // Fallback: executar sem cache
             return $this->executeMethod($method, $params);
-        });
+        }
     }
 
     /**
@@ -282,6 +293,38 @@ abstract class DataSource implements DataSourceInterface
      * Verificar se a fonte está disponível (implementação padrão)
      */
     public function isAvailable(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Verificar se a fonte suporta paginação (implementação padrão)
+     */
+    public function supportsPagination(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Verificar se a fonte suporta busca (implementação padrão)
+     */
+    public function supportsSearch(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Verificar se a fonte suporta ordenação (implementação padrão)
+     */
+    public function supportsSorting(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Verificar se a fonte suporta filtros (implementação padrão)
+     */
+    public function supportsFilters(): bool
     {
         return true;
     }

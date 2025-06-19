@@ -99,37 +99,7 @@ class JsonSource extends DataSource
         return $this->getProcessedData()->count();
     }
 
-    /**
-     * Verificar se a fonte suporta paginação
-     */
-    public function supportsPagination(): bool
-    {
-        return true;
-    }
 
-    /**
-     * Verificar se a fonte suporta busca
-     */
-    public function supportsSearch(): bool
-    {
-        return true;
-    }
-
-    /**
-     * Verificar se a fonte suporta ordenação
-     */
-    public function supportsSorting(): bool
-    {
-        return true;
-    }
-
-    /**
-     * Verificar se a fonte suporta filtros
-     */
-    public function supportsFilters(): bool
-    {
-        return true;
-    }
 
     /**
      * Obter tipo da fonte de dados

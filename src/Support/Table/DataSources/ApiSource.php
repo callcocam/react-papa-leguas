@@ -105,13 +105,7 @@ class ApiSource extends DataSource
         return $this->getData()->count();
     }
 
-    /**
-     * Verificar se a fonte suporta paginação
-     */
-    public function supportsPagination(): bool
-    {
-        return true;
-    }
+
 
     /**
      * Verificar se a fonte suporta busca
