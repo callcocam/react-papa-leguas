@@ -51,25 +51,54 @@ trait HasColumns
      */
     protected function formatRow($row): array
     {
+        // 1. Get all required fields to build the base payload.
+        $requiredFields = $this->getAllRequiredFields();
         $formatted = [];
-        
-        foreach ($this->columns as $column) {
-            if (!$column->isHidden()) {
-                $key = $column->getKey();
-                
-                // Aplicar casts automáticos antes da formatação da coluna
-                $value = $this->getColumnValue($row, $key);
-                $castedValue = $this->applyCastsToColumn($value, $key, $row);
-                
-                // Usar valor com cast aplicado
-                $formatted[$key] = $column->formatValue($row, $castedValue);
-            }
+        foreach ($requiredFields as $field) {
+            // Using data_get/data_set to handle dot notation and build a nested array if needed
+            data_set($formatted, $field, data_get($row, $field));
         }
 
-        // ✅ PROCESSAR AÇÕES POR ITEM - Contexto correto com $row
+        // 2. Loop through visible columns to format their specific values,
+        // overwriting the raw data in the $formatted array.
+        foreach ($this->getVisibleColumns() as $column) {
+            $key = $column->getKey();
+            
+            // Get value from the original, full row object
+            $value = $this->getColumnValue($row, $key);
+            // Pass the original row for context
+            $castedValue = $this->applyCastsToColumn($value, $key, $row);
+            
+            // Overwrite the key in our payload with the fully processed value.
+            // We pass the full original row here too, so formatters can access any field.
+            $formatted[$key] = $column->formatValue($row, $castedValue);
+        }
+
+        // 3. Process actions for the item.
         $formatted['_actions'] = $this->getActionsForItem($row);
 
+        // 4. Return the complete data packet for the frontend.
         return $formatted;
+    }
+
+    /**
+     * Coleta todos os campos únicos requeridos por todas as colunas visíveis.
+     */
+    protected function getAllRequiredFields(): array
+    {
+        $fields = [];
+        foreach ($this->getVisibleColumns() as $column) {
+            $fields = array_merge($fields, $column->getRequiredFields());
+        }
+        return array_unique($fields);
+    }
+    
+    /**
+     * Obter apenas as colunas visíveis.
+     */
+    protected function getVisibleColumns(): array
+    {
+        return array_filter($this->columns, fn($column) => !$column->isHidden());
     }
 
     /**

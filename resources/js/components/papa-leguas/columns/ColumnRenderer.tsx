@@ -3,6 +3,7 @@ import { type RendererProps, type TableColumn } from '../types';
 import TextRenderer from './renderers/TextRenderer';
 import BadgeRenderer from './renderers/BadgeRenderer';
 import EmailRenderer from './renderers/EmailRenderer';
+import CompoundRenderer from './CompoundRenderer';
 
 // Mapeamento de tipos de renderização para componentes
 const renderers: { [key: string]: React.FC<RendererProps> } = {
@@ -19,6 +20,10 @@ const renderers: { [key: string]: React.FC<RendererProps> } = {
     email: EmailRenderer,
     emailRenderer: EmailRenderer,
     
+    // Renderer composto
+    compound: CompoundRenderer,
+    compoundRenderer: CompoundRenderer,
+
     // Renderer padrão
     default: TextRenderer,
     defaultRenderer: TextRenderer,

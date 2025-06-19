@@ -122,6 +122,16 @@ abstract class Column
         return $this;
     }
 
+    public function rendererOptions(array $options): static
+    {
+        return $this->attributes(['rendererOptions' => $options]);
+    }
+
+    public function renderAs(string $type): static
+    {
+        return $this->attributes(['renderAs' => $type]);
+    }
+
     /**
      * Adicionar cast específico para esta coluna
      */
@@ -216,6 +226,8 @@ abstract class Column
             'key' => $this->key,
             'label' => $this->label,
             'type' => $this->getType(),
+            'renderAs' => $this->attributes['renderAs'] ?? null,
+            'rendererOptions' => $this->attributes['rendererOptions'] ?? [],
             'sortable' => $this->sortable,
             'searchable' => $this->searchable,
             'hidden' => $this->hidden,
@@ -246,6 +258,16 @@ abstract class Column
     public function getLabel(): string
     {
         return $this->label;
+    }
+
+    /**
+     * Get all fields required by this column for rendering.
+     * By default, it's just the column's key.
+     * Can be overridden by complex columns to declare dependencies.
+     */
+    public function getRequiredFields(): array
+    {
+        return [$this->key];
     }
 
     public function isSortable(): bool

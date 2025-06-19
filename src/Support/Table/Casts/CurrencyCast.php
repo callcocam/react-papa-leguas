@@ -269,12 +269,12 @@ class CurrencyCast extends Cast
         if ($type !== 'currency') {
             return false;
         }
-
+        
         // REGRA 2: Só aplicar se o valor for numérico
         if (!is_numeric($this->toNumeric($value))) {
             return false;
         }
-
-        return true;
+        
+                    return true;
     }
 } 

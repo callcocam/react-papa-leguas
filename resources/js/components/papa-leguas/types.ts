@@ -14,6 +14,9 @@ export interface TableColumn {
     alignment?: 'left' | 'center' | 'right';
     sortable?: boolean;
     hidden?: boolean;
+    rendererOptions?: {
+        [key: string]: any;
+    };
 }
 
 export interface TableFilter {

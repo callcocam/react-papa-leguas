@@ -17,6 +17,7 @@ use Callcocam\ReactPapaLeguas\Support\Table\Casts\DateCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\StatusCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\ClosureCast;
 use App\Models\User as UserModel;
+use Callcocam\ReactPapaLeguas\Support\Table\Columns\CompoundColumn;
 
 /**
  * Tabela de usuários com Sistema de Filtros Avançados
@@ -41,6 +42,18 @@ class UserTable extends Table
         
         // Configurar fonte de dados
         $this->model(User::class)
+            ->query(function(){
+                // Garante que todos os campos necessários, incluindo o email, sejam selecionados.
+                return UserModel::query()->select([
+                    'id',
+                    'name',
+                    'email',
+                    'status',
+                    'email_verified_at',
+                    'created_at',
+                    'updated_at',
+                ]);
+            })
             ->searchable()
             ->sortable()
             ->filterable()
@@ -58,54 +71,62 @@ class UserTable extends Table
     protected function columns(): array
     {
         return [
-            TextColumn::make('id', 'ID')
-                ->sortable()
-                ->width('80px')
-                ->alignment('center'),
+            // TextColumn::make('id', 'ID')
+            //     ->sortable()
+            //     ->width('80px')
+            //     ->alignment('center'),
 
-            TextColumn::make('name', 'Nome')
+            CompoundColumn::make('name', 'Nome')
+                ->avatar('image_url')
+                ->title('name')
+                ->description('email')
                 ->searchable()
                 ->sortable()
-                ->copyable()
-                ->limit(50)
-                ->placeholder('Sem nome')
-                // Cast personalizado para transformação de texto
-                ->cast(ClosureCast::make()
-                    ->transform(function ($value, $context) {
-                        return [
-                            'value' => $value,
-                            'formatted' => ucwords(strtolower($value ?? '')),
-                            'initials' => $this->getInitials($value),
-                            'length' => strlen($value ?? ''),
-                            'type' => 'name',
-                        ];
-                    })
-                ),
+                ->alignment('left'), 
 
-            TextColumn::make('email', 'E-mail')
-                ->searchable()
-                ->sortable()
-                ->copyable()
-                // Cast personalizado para formatação de e-mail
-                ->cast(ClosureCast::make()
-                    ->transform(function ($value, $context) {
-                        if (!$value) return null;
+            // TextColumn::make('name', 'Nome')
+            //     ->searchable()
+            //     ->sortable()
+            //     ->copyable()
+            //     ->limit(50)
+            //     ->placeholder('Sem nome')
+            //     // Cast personalizado para transformação de texto
+            //     ->cast(ClosureCast::make()
+            //         ->transform(function ($value, $context) {
+            //             return [
+            //                 'value' => $value,
+            //                 'formatted' => ucwords(strtolower($value ?? '')),
+            //                 'initials' => $this->getInitials($value),
+            //                 'length' => strlen($value ?? ''),
+            //                 'type' => 'name',
+            //             ];
+            //         })
+            //     ),
+
+            // TextColumn::make('email', 'E-mail')
+            //     ->searchable()
+            //     ->sortable()
+            //     ->copyable()
+            //     // Cast personalizado para formatação de e-mail
+            //     ->cast(ClosureCast::make()
+            //         ->transform(function ($value, $context) {
+            //             if (!$value) return null;
                         
-                        $parts = explode('@', $value);
-                        $domain = $parts[1] ?? '';
+            //             $parts = explode('@', $value);
+            //             $domain = $parts[1] ?? '';
                         
-                        return [
-                            'value' => $value,
-                            'formatted' => $value,
-                            'domain' => $domain,
-                            'username' => $parts[0] ?? '',
-                            'type' => 'email',
-                            'copyable' => true,
-                            'mailto' => "mailto:{$value}",
-                            'is_business' => in_array($domain, ['gmail.com', 'yahoo.com', 'hotmail.com']) ? false : true,
-                        ];
-                    })
-                ),
+            //             return [
+            //                 'value' => $value,
+            //                 'formatted' => $value,
+            //                 'domain' => $domain,
+            //                 'username' => $parts[0] ?? '',
+            //                 'type' => 'email',
+            //                 'copyable' => true,
+            //                 'mailto' => "mailto:{$value}",
+            //                 'is_business' => in_array($domain, ['gmail.com', 'yahoo.com', 'hotmail.com']) ? false : true,
+            //             ];
+            //         })
+            //     ),
 
             BadgeColumn::make('status', 'Status')
                 ->sortable()
