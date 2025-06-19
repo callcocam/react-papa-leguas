@@ -3,24 +3,30 @@
 namespace Callcocam\ReactPapaLeguas\Tables;
 
 use App\Models\User;
+use Callcocam\ReactPapaLeguas\Enums\BaseStatus;
 use Callcocam\ReactPapaLeguas\Support\Table\Table;
 use Callcocam\ReactPapaLeguas\Support\Table\Columns\TextColumn;
 use Callcocam\ReactPapaLeguas\Support\Table\Columns\BadgeColumn;
 use Callcocam\ReactPapaLeguas\Support\Table\Columns\DateColumn;
 use Callcocam\ReactPapaLeguas\Support\Table\Columns\BooleanColumn;
+use Callcocam\ReactPapaLeguas\Support\Table\Filters\TextFilter;
+use Callcocam\ReactPapaLeguas\Support\Table\Filters\SelectFilter;
+use Callcocam\ReactPapaLeguas\Support\Table\Filters\BooleanFilter;
+use Callcocam\ReactPapaLeguas\Support\Table\Filters\DateRangeFilter;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\DateCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\StatusCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\ClosureCast;
 
 /**
- * Tabela de usuários com Sistema de Casts Avançado
+ * Tabela de usuários com Sistema de Filtros Avançados
  * 
  * FUNCIONALIDADES IMPLEMENTADAS:
  * ✅ Sistema de Casts Automático por tipo de coluna
  * ✅ Casts específicos para transformações personalizadas
+ * ✅ Sistema de Filtros Avançados com classes especializadas
  * ✅ Pipeline de transformação: Dados → Casts → Formatação → Frontend
  * ✅ Detecção automática baseada em padrões de dados
- * ✅ Configuração flexível por coluna
+ * ✅ Configuração flexível por coluna e filtro
  */
 class UserTable extends Table
 {
@@ -41,32 +47,12 @@ class UserTable extends Table
             ->selectable()
             ->meta([
                 'title' => 'Usuários Landlord',
-                'description' => 'Sistema de análise JSON para usuários via UserTable com colunas modernas e casts avançados',
+                'description' => 'Sistema avançado de usuários com filtros modernos e casts inteligentes',
             ]);
     }
 
     /**
      * Define as colunas da tabela usando o Sistema de Casts Avançado
-     * 
-     * SISTEMA DE CASTS AUTOMÁTICO E PERSONALIZADO:
-     * - DateColumn: Aplica DateCast automaticamente para campos de data
-     * - BadgeColumn: Aplica StatusCast automaticamente para status/enums
-     * - BooleanColumn: Aplica StatusCast automaticamente para valores booleanos
-     * - TextColumn: Permite casts personalizados via ->cast()
-     * 
-     * FUNCIONALIDADES AVANÇADAS:
-     * - ->cast(): Adiciona cast específico para a coluna
-     * - ->casts(): Adiciona múltiplos casts para a coluna
-     * - ->disableAutoCasts(): Desabilita casts automáticos
-     * - ->enableAutoCasts(): Reabilita casts automáticos
-     * 
-     * ORDEM DE APLICAÇÃO:
-     * 1. Casts específicos da coluna (->cast())
-     * 2. Casts automáticos (se não desabilitados)
-     * 3. Formatação da coluna (->formatUsing())
-     * 
-     * Os casts são aplicados ANTES da formatação da coluna,
-     * permitindo que a coluna trabalhe com dados já processados.
      */
     protected function columns(): array
     {
@@ -82,7 +68,7 @@ class UserTable extends Table
                 ->copyable()
                 ->limit(50)
                 ->placeholder('Sem nome')
-                // Exemplo: Cast personalizado para transformação de texto
+                // Cast personalizado para transformação de texto
                 ->cast(ClosureCast::make()
                     ->transform(function ($value, $context) {
                         return [
@@ -99,7 +85,7 @@ class UserTable extends Table
                 ->searchable()
                 ->sortable()
                 ->copyable()
-                // Exemplo: Cast personalizado para formatação de e-mail
+                // Cast personalizado para formatação de e-mail
                 ->cast(ClosureCast::make()
                     ->transform(function ($value, $context) {
                         if (!$value) return null;
@@ -121,38 +107,25 @@ class UserTable extends Table
                 ),
 
             BadgeColumn::make('status', 'Status')
-                ->variants([
-                    'active' => 'success',
-                    'inactive' => 'secondary',
-                    'draft' => 'warning',
-                    'published' => 'success',
-                    'archived' => 'secondary',
-                ])
-                ->labels([
-                    'active' => 'Ativo',
-                    'inactive' => 'Inativo',
-                    'draft' => 'Rascunho',
-                    'published' => 'Publicado',
-                    'archived' => 'Arquivado',
-                ])
                 ->sortable()
                 ->width('120px')
-                // Exemplo: Cast específico para status avançado
                 ->cast(StatusCast::make()
                     ->formatType('badge')
                     ->variants([
-                        'active' => 'success',
-                        'inactive' => 'secondary',
-                        'draft' => 'warning',
-                        'published' => 'success',
-                        'archived' => 'secondary',
+                        BaseStatus::Active->value => 'success',
+                        BaseStatus::Published->value => 'success',
+                        BaseStatus::Draft->value => 'secondary',
+                        BaseStatus::Inactive->value => 'secondary',
+                        BaseStatus::Archived->value => 'warning',
+                        BaseStatus::Deleted->value => 'destructive',
                     ])
                     ->labels([
-                        'active' => 'Ativo',
-                        'inactive' => 'Inativo',
-                        'draft' => 'Rascunho',
-                        'published' => 'Publicado',
-                        'archived' => 'Arquivado',
+                        BaseStatus::Active->value => 'Ativo',
+                        BaseStatus::Published->value => 'Publicado',
+                        BaseStatus::Draft->value => 'Rascunho',
+                        BaseStatus::Inactive->value => 'Inativo',
+                        BaseStatus::Archived->value => 'Arquivado',
+                        BaseStatus::Deleted->value => 'Excluído',
                     ])
                 ),
 
@@ -166,7 +139,6 @@ class UserTable extends Table
                 ->asBadge()
                 ->sortable()
                 ->width('140px')
-                // Exemplo: Cast específico para verificação de e-mail
                 ->cast(StatusCast::make()
                     ->formatType('badge')
                     ->variants([
@@ -192,19 +164,17 @@ class UserTable extends Table
                 ->since()
                 ->sortable()
                 ->width('150px')
-                // Exemplo: Cast específico para formatação brasileira
                 ->cast(DateCast::make()
                     ->format('d/m/Y H:i')
                     ->timezone('America/Sao_Paulo')
-                    ->showRelative(true, 30) // Mostrar tempo relativo para últimos 30 dias
+                    ->showRelative(true, 30)
                 ),
 
             DateColumn::make('updated_at', 'Atualizado em')
                 ->dateFormat('d/m/Y H:i')
                 ->since()
                 ->sortable()
-                ->hidden() // Oculto por padrão
-                // Exemplo: Desabilitar casts automáticos para controle manual
+                ->hidden()
                 ->disableAutoCasts(),
 
             DateColumn::make('email_verified_at', 'Verificado em')
@@ -212,11 +182,8 @@ class UserTable extends Table
                 ->since()
                 ->sortable()
                 ->width('150px')
-                // Exemplo: Cast condicional para data de verificação
                 ->cast(ClosureCast::when(
-                    // Condição: se o valor existe
                     fn($value) => !is_null($value),
-                    // Transformação: aplicar DateCast
                     function ($value, $context) {
                         $dateCast = DateCast::make()
                             ->format('d/m/Y H:i')
@@ -225,7 +192,6 @@ class UserTable extends Table
                         
                         $result = $dateCast->cast($value, $context);
                         
-                        // Adicionar informações extras
                         $result['verification_status'] = [
                             'type' => 'badge',
                             'variant' => 'success',
@@ -235,7 +201,6 @@ class UserTable extends Table
                         
                         return $result;
                     },
-                    // Fallback: se não há valor
                     function ($value, $context) {
                         return [
                             'value' => null,
@@ -253,38 +218,86 @@ class UserTable extends Table
     }
 
     /**
-     * Define os filtros da tabela
+     * Define os filtros da tabela usando Sistema de Filtros Avançados
      */
     protected function filters(): array
     {
         return [
-            [
-                'key' => 'status',
-                'label' => 'Status',
-                'type' => 'select',
-                'options' => [
-                    ['value' => 'active', 'label' => 'Ativo'],
-                    ['value' => 'inactive', 'label' => 'Inativo'],
-                    ['value' => 'draft', 'label' => 'Rascunho'],
-                    ['value' => 'published', 'label' => 'Publicado'],
-                    ['value' => 'archived', 'label' => 'Arquivado'],
-                ]
-            ],
-            [
-                'key' => 'email_verified',
-                'label' => 'E-mail Verificado',
-                'type' => 'select',
-                'options' => [
-                    ['value' => '1', 'label' => 'Verificado'],
-                    ['value' => '0', 'label' => 'Não Verificado'],
-                ]
-            ],
-            [
-                'key' => 'search',
-                'label' => 'Buscar',
-                'type' => 'text',
-                'placeholder' => 'Buscar usuários...'
-            ]
+            TextFilter::make('search')
+                ->label('Buscar Usuário')
+                ->placeholder('Digite nome ou e-mail...')
+                ->searchColumns(['name', 'email'])
+                ->operator('LIKE')
+                ->caseSensitive(false)
+                ->minLength(2),
+
+            SelectFilter::make('status')
+                ->label('Status')
+                ->placeholder('Selecione um status')
+                ->options([
+                    BaseStatus::Active->value => 'Ativo',
+                    BaseStatus::Published->value => 'Publicado',
+                    BaseStatus::Draft->value => 'Rascunho',
+                    BaseStatus::Inactive->value => 'Inativo',
+                    BaseStatus::Archived->value => 'Arquivado',
+                    BaseStatus::Deleted->value => 'Excluído',
+                ]),
+
+            BooleanFilter::make('email_verified')
+                ->label('E-mail Verificado')
+                ->labels('Verificado', 'Não Verificado', 'Todos')
+                ->allowAll(true)
+                ->queryUsing(function ($query, $value) {
+                    if ($value === true || $value === 1) {
+                        $query->whereNotNull('email_verified_at');
+                    } elseif ($value === false || $value === 0) {
+                        $query->whereNull('email_verified_at');
+                    }
+                }),
+
+            BooleanFilter::make('active_status')
+                ->label('Situação Geral')
+                ->activeInactive()
+                ->allowAll(true)
+                ->queryUsing(function ($query, $value) {
+                    if ($value === true || $value === 1) {
+                        $query->whereIn('status', [BaseStatus::Active->value, BaseStatus::Published->value]);
+                    } elseif ($value === false || $value === 0) {
+                        $query->whereNotIn('status', [BaseStatus::Active->value, BaseStatus::Published->value]);
+                    }
+                }),
+
+            DateRangeFilter::make('created_at')
+                ->label('Data de Criação')
+                ->brazilian()
+                ->dateOnly(),
+
+            DateRangeFilter::make('email_verified_at')
+                ->label('Data de Verificação')
+                ->brazilian()
+                ->dateOnly()
+                ->queryUsing(function ($query, $value, $filter) {
+                    $startDate = $filter->getStartDate();
+                    $endDate = $filter->getEndDate();
+                    
+                    if ($startDate || $endDate) {
+                        $query->whereNotNull('email_verified_at');
+                        
+                        if ($startDate) {
+                            $start = $filter->parseDate($startDate, true);
+                            if ($start) {
+                                $query->where('email_verified_at', '>=', $start);
+                            }
+                        }
+                        
+                        if ($endDate) {
+                            $end = $filter->parseDate($endDate, false);
+                            if ($end) {
+                                $query->where('email_verified_at', '<=', $end);
+                            }
+                        }
+                    }
+                }),
         ];
     }
 
@@ -324,9 +337,6 @@ class UserTable extends Table
                     'label' => 'Reenviar Verificação',
                     'icon' => 'mail',
                     'variant' => 'secondary',
-                    // 'condition' => function($row) {
-                    //     return is_null($row->email_verified_at);
-                    // }
                 ],
                 [
                     'key' => 'delete',
