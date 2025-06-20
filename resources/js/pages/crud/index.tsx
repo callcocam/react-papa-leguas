@@ -25,6 +25,7 @@ interface CrudIndexProps {
         filters?: any[];
         actions?: any;
         pagination?: any;
+        route_execute_action?: string;
         meta?: {
             title?: string;
             description?: string;
@@ -69,6 +70,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
     React.useEffect(() => {
         console.log('📊 DEBUG - Dados do Backend:');
         console.log('table?.actions:', table?.actions);
+        console.log('table?.route_execute_action:', table?.route_execute_action);
         console.log('table?.data:', table?.data?.length, 'items');
         console.log('table?.columns:', table?.columns?.length, 'columns');
         console.log('config:', config);

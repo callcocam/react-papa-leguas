@@ -123,11 +123,10 @@ packages/callcocam/react-papa-leguas/src/Support/Table/
 - ✅ Implementar meta-dados para colunas (width, align, sortable, etc.)
 - ✅ Implementar `BadgeColumn.php` para badges de status
 - ✅ Implementar `CurrencyColumn.php` para formatação monetária
-- ✅ **Implementar Colunas Editáveis (Backend)**:
-    - ✅ **`EditableColumn.php`**: Nova classe de coluna que herda de `TextColumn`.
-    - ✅ **Integração com Ações**: Gera uma `CallbackAction` dinamicamente para cada coluna editável.
-    - ✅ **`updateUsing(Closure)`**: Método para definir a lógica de atualização segura no backend.
-    - ⏳ **(Frontend)**: Implementar o `EditableColumnRenderer.tsx` para interagir com o backend.
+- ✅ **Implementar Colunas Editáveis (Completo)**:
+    - ✅ **Backend**: `EditableColumn.php` com integração segura via `CallbackAction`.
+    - ✅ **Frontend**: `EditableCell.tsx` e `EditPopover.tsx` para renderização e edição.
+    - ✅ **Arquitetura**: `TableContext` e `useActionProcessor` para estado reativo.
 
 ### **3. SISTEMA DE CASTS**
 - ✅ Criar interface/classe base `Cast.php`

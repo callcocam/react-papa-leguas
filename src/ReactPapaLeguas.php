@@ -32,6 +32,32 @@ class ReactPapaLeguas {
     }
 
     /**
+     * Procura e retorna o nome completo da classe de uma tabela com base na sua chave.
+     * Ex: 'user-table' -> 'App\Tables\UserTable'
+     * Procura em múltiplos namespaces.
+     */
+    public static function getTableClass(string $tableKey): ?string
+    {
+        // Converte a chave kebab-case para StudlyCase (user-table -> UserTable)
+        $className = Str::studly($tableKey);
+
+        // Namespaces para procurar, em ordem de prioridade.
+        $namespaces = [
+            config('react-papa-leguas.tables.namespace', 'App\\Tables'), // 1. Namespace da aplicação do usuário
+            'Callcocam\\ReactPapaLeguas\\Tables',                         // 2. Namespace interno do pacote
+        ];
+        
+        foreach ($namespaces as $namespace) {
+            $fullClassName = "{$namespace}\\{$className}";
+            if (class_exists($fullClassName)) {
+                return $fullClassName; // Retorna a primeira classe encontrada
+            }
+        }
+
+        return null; // Retorna null se não encontrar em nenhum local
+    }
+
+    /**
      * Extrair nome base de uma classe (UserTable, User, UserController → User)
      */
     public static function extractBaseName(string $className): string
@@ -100,7 +126,8 @@ class ReactPapaLeguas {
             'update',
             'destroy',
             'export',
-            'bulk_destroy'
+            'bulk_destroy',
+            'execute'
         ];
     }
 
@@ -114,8 +141,7 @@ class ReactPapaLeguas {
         
         foreach ($actions as $action) {
             $routes[$action] = self::generateRouteName($action, $classOrModel, $customPrefix);
-        }
-        
+        } 
         return $routes;
     }
 

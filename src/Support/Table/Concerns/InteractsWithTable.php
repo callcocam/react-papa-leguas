@@ -1,4 +1,5 @@
 <?php
+
 /**
  * InteractsWithTable
  *
@@ -7,18 +8,22 @@
  * @license MIT
  * @link    https://github.com/callcocam/react-papa-leguas
  */
+
 namespace Callcocam\ReactPapaLeguas\Support\Table\Concerns;
 
 use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToRoutes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 trait InteractsWithTable
 {
     use BelongsToRoutes, HasDataSource;
-    
+
     protected $data;
     protected $currentPage = 1;
+    protected $routeExecuteAction = 'api.landlord.actions.execute';
 
     /**
      * Boot method - inicializa todos os traits
@@ -71,11 +76,11 @@ trait InteractsWithTable
             // Usar paginação se habilitada
             if ($this->isPaginated()) {
                 $paginatedData = $this->getPaginatedData();
-                $formattedData = $paginatedData->getCollection()->map(function($row) {
+                $formattedData = $paginatedData->getCollection()->map(function ($row) {
                     // Tratar ações aqui 
                     return $this->formatRow($row);
                 })->values();
-                
+
                 return [
                     'table' => [
                         'data' => $formattedData,
@@ -91,6 +96,7 @@ trait InteractsWithTable
                             'to' => $paginatedData->lastItem(),
                         ],
                         'meta' => [
+                            'key' => $this->getKey(),
                             'title' => $this->getTitle(),
                             'description' => $this->getDescription(),
                             'searchable' => $this->isSearchable(),
@@ -130,6 +136,7 @@ trait InteractsWithTable
                         'columns' => $this->getColumnsConfig(),
                         'filters' => $this->getFiltersConfig(),
                         'actions' => [], // ✅ Ações agora são processadas por item no formatRow()
+                        'route_execute_action' => $this->getRouteExecuteAction(),
                         'pagination' => [
                             'current_page' => 1,
                             'per_page' => $this->getPerPage(),
@@ -139,6 +146,7 @@ trait InteractsWithTable
                             'to' => $data->count(),
                         ],
                         'meta' => [
+                            'key' => $this->getKey(),
                             'title' => $this->getTitle(),
                             'description' => $this->getDescription(),
                             'searchable' => $this->isSearchable(),
@@ -174,15 +182,24 @@ trait InteractsWithTable
                 'model' => $this->getModelClass(),
                 'exception' => $e
             ]);
-            
+
             throw $e; // Re-throw para que o controller possa capturar
         }
     }
 
     /**
+     * Gera uma chave única para a tabela, baseada no nome da classe.
+     * Ex: UserTable se torna 'user-table'
+     */
+    public function getKey(): string
+    {
+        return Str::kebab(class_basename($this));
+    }
+
+    /**
      * Métodos que devem ser implementados pelos traits ou classes
      */
-    
+
     /**
      * Obter colunas (implementado por HasColumns)
      */
@@ -207,7 +224,7 @@ trait InteractsWithTable
         if ($modelClass) {
             return class_basename($modelClass) . 's';
         }
-        
+
         // Fallback para meta configurado
         $meta = $this->getMeta();
         return $meta['title'] ?? 'Tabela';
@@ -220,8 +237,23 @@ trait InteractsWithTable
         if (isset($meta['description'])) {
             return $meta['description'];
         }
-        
+
         return 'Gerencie ' . strtolower($this->getTitle());
+    }
+
+    public function routeExecuteAction(string $routeExecuteAction): self
+    {
+        $this->routeExecuteAction = $routeExecuteAction;
+        return $this;
+    }
+
+    public function getRouteExecuteAction(): string
+    {
+        if (Route::has($this->routeExecuteAction)) {
+            return route($this->routeExecuteAction, ['actionKey' => 'name']);
+        }
+
+        return $this->routeExecuteAction;
     }
 
     /**
@@ -233,7 +265,7 @@ trait InteractsWithTable
         if (method_exists($this, 'getActionsConfig')) {
             return $this->getActionsConfig();
         }
-        
+
         // Fallback: usar método actions() se existir
         return method_exists($this, 'actions') ? $this->actions() : [];
     }
@@ -247,7 +279,7 @@ trait InteractsWithTable
         if (method_exists($this, 'getVisibleFilters')) {
             return collect($this->getVisibleFilters())->pluck('key')->toArray();
         }
-        
+
         // Fallback: retornar colunas que são marcadas como filtráveis
         if (method_exists($this, 'getColumns')) {
             return collect($this->getColumns())
@@ -255,7 +287,7 @@ trait InteractsWithTable
                 ->pluck('key')
                 ->toArray();
         }
-        
+
         return [];
     }
 
@@ -277,7 +309,7 @@ trait InteractsWithTable
         if (method_exists($this, 'getActionsCount')) {
             return $this->getActionsCount() > 0;
         }
-        
+
         // Fallback: verificar se há ações
         return !empty($this->getTableActions());
     }
@@ -291,7 +323,7 @@ trait InteractsWithTable
         if (method_exists($this, 'getVisibleActions')) {
             return collect($this->getVisibleActions())->pluck('key')->toArray();
         }
-        
+
         return [];
     }
 }

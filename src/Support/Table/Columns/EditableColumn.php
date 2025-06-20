@@ -10,10 +10,20 @@ namespace Callcocam\ReactPapaLeguas\Support\Table\Columns;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class EditableColumn extends TextColumn
 {
+    protected string $view = 'react-papa-leguas::columns.editable-column';
     protected ?Closure $updateCallback = null;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->type('editable-text'); // Define o tipo da coluna como 'editable'
+        $this->renderAs('editable-text'); // Define o renderAs como 'editable-text'
+    }
 
     /**
      * Define a lógica que será executada para atualizar o valor.
@@ -63,9 +73,11 @@ class EditableColumn extends TextColumn
      */
     public function toArray(): array
     {
-        return array_merge(parent::toArray(), [
-            'isEditable' => $this->hasUpdateCallback(),
-            'updateActionKey' => $this->getKey(), // Usamos a chave da coluna como identificador da ação
-        ]);
+        $data = parent::toArray();
+
+        // Garante que o tipo seja sempre 'editable' no JSON final
+        $data['type'] = 'editable';
+
+        return $data;
     }
 } 

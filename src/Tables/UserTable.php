@@ -18,6 +18,8 @@ use Callcocam\ReactPapaLeguas\Support\Table\Casts\StatusCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\ClosureCast;
 use App\Models\User as UserModel;
 use Callcocam\ReactPapaLeguas\Support\Table\Columns\CompoundColumn;
+use Callcocam\ReactPapaLeguas\Support\Table\Columns\EditableColumn;
+use Illuminate\Support\Str;
 
 /**
  * Tabela de usuários com Sistema de Filtros Avançados
@@ -39,10 +41,10 @@ class UserTable extends Table
     {
         // Definir prefixo personalizado das rotas
         $this->setRoutePrefix('landlord.users');
-        
+
         // Configurar fonte de dados
         $this->model(User::class)
-            ->query(function(){
+            ->query(function () {
                 // Garante que todos os campos necessários, incluindo o email, sejam selecionados.
                 return UserModel::query()->select([
                     'id',
@@ -76,14 +78,23 @@ class UserTable extends Table
             //     ->width('80px')
             //     ->alignment('center'),
 
-            CompoundColumn::make('name', 'Nome')
-                ->avatar('image_url')
-                ->title('name')
-                ->description('email')
-                ->searchable()
+            // CompoundColumn::make('name', 'Nome')
+            //     ->avatar('image_url')
+            //     ->title('name')
+            //     ->description('email')
+            //     ->searchable()
+            //     ->sortable()
+            //     ->alignment('left'),
+            EditableColumn::make('name', 'Nome')
                 ->sortable()
-                ->alignment('left'), 
-
+                ->searchable()
+                ->updateUsing(function (User $record, $value) {
+                    $record->update([
+                        'name' => $value,
+                        'slug' => Str::slug($value),
+                    ]);
+                    return true;
+                }),
             // TextColumn::make('name', 'Nome')
             //     ->searchable()
             //     ->sortable()
@@ -103,52 +114,53 @@ class UserTable extends Table
             //         })
             //     ),
 
-            // TextColumn::make('email', 'E-mail')
-            //     ->searchable()
-            //     ->sortable()
-            //     ->copyable()
-            //     // Cast personalizado para formatação de e-mail
-            //     ->cast(ClosureCast::make()
-            //         ->transform(function ($value, $context) {
-            //             if (!$value) return null;
-                        
-            //             $parts = explode('@', $value);
-            //             $domain = $parts[1] ?? '';
-                        
-            //             return [
-            //                 'value' => $value,
-            //                 'formatted' => $value,
-            //                 'domain' => $domain,
-            //                 'username' => $parts[0] ?? '',
-            //                 'type' => 'email',
-            //                 'copyable' => true,
-            //                 'mailto' => "mailto:{$value}",
-            //                 'is_business' => in_array($domain, ['gmail.com', 'yahoo.com', 'hotmail.com']) ? false : true,
-            //             ];
-            //         })
-            //     ),
+            TextColumn::make('email', 'E-mail')
+                ->searchable()
+                ->sortable()
+                ->copyable()
+                // Cast personalizado para formatação de e-mail
+                ->cast(ClosureCast::make()
+                    ->transform(function ($value, $context) {
+                        if (!$value) return null;
+
+                        $parts = explode('@', $value);
+                        $domain = $parts[1] ?? '';
+
+                        return [
+                            'value' => $value,
+                            'formatted' => $value,
+                            'domain' => $domain,
+                            'username' => $parts[0] ?? '',
+                            'type' => 'email',
+                            'copyable' => true,
+                            'mailto' => "mailto:{$value}",
+                            'is_business' => in_array($domain, ['gmail.com', 'yahoo.com', 'hotmail.com']) ? false : true,
+                        ];
+                    })
+                ),
 
             BadgeColumn::make('status', 'Status')
                 ->sortable()
                 ->width('120px')
-                ->cast(StatusCast::make()
-                    ->formatType('badge')
-                    ->variants([
-                        BaseStatus::Active->value => 'default',
-                        BaseStatus::Published->value => 'default',
-                        BaseStatus::Draft->value => 'default',
-                        BaseStatus::Inactive->value => 'destructive',
-                        BaseStatus::Archived->value => 'default',
-                        BaseStatus::Deleted->value => 'destructive',
-                    ])
-                    ->labels([
-                        BaseStatus::Active->value => 'Ativo',
-                        BaseStatus::Published->value => 'Publicado',
-                        BaseStatus::Draft->value => 'Rascunho',
-                        BaseStatus::Inactive->value => 'Inativo',
-                        BaseStatus::Archived->value => 'Arquivado',
-                        BaseStatus::Deleted->value => 'Excluído',
-                    ])
+                ->cast(
+                    StatusCast::make()
+                        ->formatType('badge')
+                        ->variants([
+                            BaseStatus::Active->value => 'default',
+                            BaseStatus::Published->value => 'default',
+                            BaseStatus::Draft->value => 'default',
+                            BaseStatus::Inactive->value => 'destructive',
+                            BaseStatus::Archived->value => 'default',
+                            BaseStatus::Deleted->value => 'destructive',
+                        ])
+                        ->labels([
+                            BaseStatus::Active->value => 'Ativo',
+                            BaseStatus::Published->value => 'Publicado',
+                            BaseStatus::Draft->value => 'Rascunho',
+                            BaseStatus::Inactive->value => 'Inativo',
+                            BaseStatus::Archived->value => 'Arquivado',
+                            BaseStatus::Deleted->value => 'Excluído',
+                        ])
                 ),
 
             BooleanColumn::make('email_verified_at', 'E-mail Verificado')
@@ -161,24 +173,25 @@ class UserTable extends Table
                 ->asBadge()
                 ->sortable()
                 ->width('140px')
-                ->cast(StatusCast::make()
-                    ->formatType('badge')
-                    ->variants([
-                        true => 'success',
-                        1 => 'success',
-                        'verified' => 'success',
-                        false => 'warning',
-                        0 => 'warning',
-                        'unverified' => 'warning',
-                    ])
-                    ->labels([
-                        true => 'Verificado',
-                        1 => 'Verificado',
-                        'verified' => 'Verificado',
-                        false => 'Não Verificado',
-                        0 => 'Não Verificado',
-                        'unverified' => 'Não Verificado',
-                    ])
+                ->cast(
+                    StatusCast::make()
+                        ->formatType('badge')
+                        ->variants([
+                            true => 'success',
+                            1 => 'success',
+                            'verified' => 'success',
+                            false => 'warning',
+                            0 => 'warning',
+                            'unverified' => 'warning',
+                        ])
+                        ->labels([
+                            true => 'Verificado',
+                            1 => 'Verificado',
+                            'verified' => 'Verificado',
+                            false => 'Não Verificado',
+                            0 => 'Não Verificado',
+                            'unverified' => 'Não Verificado',
+                        ])
                 ),
 
             DateColumn::make('created_at', 'Criado em')
@@ -186,10 +199,11 @@ class UserTable extends Table
                 ->since()
                 ->sortable()
                 ->width('150px')
-                ->cast(DateCast::make()
-                    ->format('d/m/Y H:i')
-                    ->timezone('America/Sao_Paulo')
-                    ->showRelative(true, 30)
+                ->cast(
+                    DateCast::make()
+                        ->format('d/m/Y H:i')
+                        ->timezone('America/Sao_Paulo')
+                        ->showRelative(true, 30)
                 ),
 
             DateColumn::make('updated_at', 'Atualizado em')
@@ -211,16 +225,16 @@ class UserTable extends Table
                             ->format('d/m/Y H:i')
                             ->timezone('America/Sao_Paulo')
                             ->showRelative(true);
-                        
+
                         $result = $dateCast->cast($value, $context);
-                        
+
                         $result['verification_status'] = [
                             'type' => 'badge',
                             'variant' => 'success',
                             'label' => 'Verificado',
                             'icon' => 'shield-check'
                         ];
-                        
+
                         return $result;
                     },
                     function ($value, $context) {
@@ -301,17 +315,17 @@ class UserTable extends Table
                 ->queryUsing(function ($query, $value, $filter) {
                     $startDate = $filter->getStartDate();
                     $endDate = $filter->getEndDate();
-                    
+
                     if ($startDate || $endDate) {
                         $query->whereNotNull('email_verified_at');
-                        
+
                         if ($startDate) {
                             $start = $filter->parseDate($startDate, true);
                             if ($start) {
                                 $query->where('email_verified_at', '>=', $start);
                             }
                         }
-                        
+
                         if ($endDate) {
                             $end = $filter->parseDate($endDate, false);
                             if ($end) {
@@ -358,14 +372,14 @@ class UserTable extends Table
             $this->callbackAction('toggle_verification')
                 ->labelUsing(function ($item, $context) {
                     if (!$item) return 'Verificação';
-                    return $item->email_verified_at 
-                        ? 'Desmarcar Verificação' 
+                    return $item->email_verified_at
+                        ? 'Desmarcar Verificação'
                         : 'Marcar como Verificado';
                 })
                 ->iconUsing(function ($item, $context) {
                     if (!$item) return 'Shield';
-                    return $item->email_verified_at 
-                        ? 'ShieldX' 
+                    return $item->email_verified_at
+                        ? 'ShieldX'
                         : 'ShieldCheck';
                 })
                 ->variantUsing(function ($item, $context) {
@@ -381,7 +395,7 @@ class UserTable extends Table
                             'reload' => false
                         ];
                     }
-                    
+
                     if ($item->email_verified_at) {
                         // Remover verificação
                         $item->update(['email_verified_at' => null]);
@@ -406,14 +420,14 @@ class UserTable extends Table
             $this->callbackAction('toggle_status')
                 ->labelUsing(function ($item, $context) {
                     if (!$item) return 'Alterar Status';
-                    return $item->status === 'active' 
-                        ? 'Desativar Usuário' 
+                    return $item->status === 'active'
+                        ? 'Desativar Usuário'
                         : 'Ativar Usuário';
                 })
                 ->iconUsing(function ($item, $context) {
                     if (!$item) return 'User';
-                    return $item->status === 'active' 
-                        ? 'UserX' 
+                    return $item->status === 'active'
+                        ? 'UserX'
                         : 'UserCheck';
                 })
                 ->variantUsing(function ($item, $context) {
@@ -433,15 +447,15 @@ class UserTable extends Table
                             'reload' => false
                         ];
                     }
-                    
+
                     $newStatus = $item->status === 'active' ? 'inactive' : 'active';
                     $item->update(['status' => $newStatus]);
-                    
+
                     return [
                         'success' => true,
-                        'message' => "Usuário {$item->name} foi " . 
-                                   ($newStatus === 'active' ? 'ativado' : 'desativado') . 
-                                   ' com sucesso!',
+                        'message' => "Usuário {$item->name} foi " .
+                            ($newStatus === 'active' ? 'ativado' : 'desativado') .
+                            ' com sucesso!',
                         'reload' => true
                     ];
                 }),
@@ -496,11 +510,11 @@ class UserTable extends Table
                             'reload' => false
                         ];
                     }
-                    
+
                     try {
                         // Simular envio de e-mail de verificação
                         // $item->sendEmailVerificationNotification();
-                        
+
                         return [
                             'success' => true,
                             'message' => "E-mail de verificação reenviado para {$item->email}!",
@@ -552,13 +566,13 @@ class UserTable extends Table
                             'reload' => false
                         ];
                     }
-                    
+
                     $newUser = $item->replicate();
                     $newUser->name = $item->name . ' (Cópia)';
                     $newUser->email = 'copy_' . time() . '_' . $item->email;
                     $newUser->email_verified_at = null;
                     $newUser->save();
-                    
+
                     return [
                         'success' => true,
                         'message' => "Usuário duplicado com sucesso! Novo ID: {$newUser->id}",
@@ -579,14 +593,14 @@ class UserTable extends Table
     private function getInitials(?string $name): string
     {
         if (!$name) return '';
-        
+
         $words = explode(' ', trim($name));
         $initials = '';
-        
+
         foreach (array_slice($words, 0, 2) as $word) {
             $initials .= strtoupper(substr($word, 0, 1));
         }
-        
+
         return $initials;
     }
-} 
+}

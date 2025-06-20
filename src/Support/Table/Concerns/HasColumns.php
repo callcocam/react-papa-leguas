@@ -88,7 +88,7 @@ trait HasColumns
      */
     protected function getAllRequiredFields(): array
     {
-        $fields = [];
+        $fields[] = 'id';
         foreach ($this->getVisibleColumns() as $column) {
             $fields = array_merge($fields, $column->getRequiredFields());
         }

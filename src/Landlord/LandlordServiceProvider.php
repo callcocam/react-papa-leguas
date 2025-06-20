@@ -38,8 +38,9 @@ class LandlordServiceProvider extends ServiceProvider
 
     public function bootTenant()
     {
-        if (app()->runningInConsole()) {
-            return false;
+        // Ignora a lógica de tenant para console e rotas de API
+        if ($this->app->runningInConsole() || request()->is('api/*')) {
+            return;
         }
         
         // Always skip tenant resolution for landlord routes
@@ -144,11 +145,7 @@ class LandlordServiceProvider extends ServiceProvider
         // For API requests, return JSON response
         if (request()->expectsJson()) {
             if ($totalTenants === 0) {
-                abort(404, [
-                    'message' => 'Nenhum tenant cadastrado no sistema',
-                    'action' => 'Cadastre o primeiro tenant para começar',
-                    'redirect_url' => url('/landlord/login')
-                ]);
+                abort(404, 'Nenhum tenant cadastrado no sistema. Por favor, cadastre o primeiro tenant para começar.');
             } else {
                 abort(404, "Nenhuma empresa cadastrada para o domínio: {$host}");
             }

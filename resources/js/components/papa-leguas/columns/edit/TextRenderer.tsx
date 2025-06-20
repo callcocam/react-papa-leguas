@@ -1,6 +1,6 @@
 import React from 'react'; 
-import { type TableColumn } from '../types';
-import { getColumnRenderers } from './renderers';
+import { type TableColumn } from '../../types';
+import { getColumnRenderers } from '../renderers';
 
 export interface ColumnRendererProps {
     column: TableColumn;
@@ -8,7 +8,7 @@ export interface ColumnRendererProps {
     value: any;
 }
 
-export default function ColumnRenderer({ column, item, value }: ColumnRendererProps) {
+export default function TextRenderer({ column, item, value }: ColumnRendererProps) {
     // Verificação de segurança
     if (!column || typeof column !== 'object') {
         console.warn('⚠️ Coluna inválida:', column);

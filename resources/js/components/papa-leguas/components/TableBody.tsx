@@ -1,8 +1,9 @@
 import React from 'react';
 import { TableBody as UITableBody, TableCell, TableRow } from '@/components/ui/table';
 import ActionRenderer from '../actions/ActionRenderer';
-import { type TableColumn, type TableAction, type TableConfig } from '../types';
-import EditableCell from '../columns/EditableCell';
+import { type TableColumn, type TableAction } from '../types';
+import ColumnRenderer from '../columns/ColumnRenderer';
+import get from 'lodash/get';
 
 // Utilitário para gerar keys únicos
 const generateUniqueKey = (...parts: (string | number | undefined)[]): string => {
@@ -14,7 +15,6 @@ interface TableBodyProps {
     columns: TableColumn[];
     actions: TableAction[];
     loading?: boolean;
-    config: TableConfig;
 }
 
 export default function TableBody({
@@ -22,7 +22,6 @@ export default function TableBody({
     columns,
     actions,
     loading = false,
-    config
 }: TableBodyProps) {
     if (loading) {
         return (
@@ -61,19 +60,23 @@ export default function TableBody({
         <UITableBody>
             {data.map((row, rowIndex) => (
                 <TableRow key={generateUniqueKey('row', row.id, rowIndex)}>
-                    {columns.map((column, columnIndex) => (
-                        <TableCell 
-                            key={generateUniqueKey('cell', row.id, rowIndex, column.key, columnIndex)}
-                            style={{ textAlign: column.alignment || 'left' }}
-                            className={`${column.hidden ? 'hidden' : ''} p-0`}
-                        >
-                            <EditableCell
-                                item={row}
-                                column={column}
-                                config={config}
-                            />
-                        </TableCell>
-                    ))}
+                    {columns.map((column, columnIndex) => {
+                        const value = column.key ? get(row, column.key, null) : null;
+                        
+                        return (
+                            <TableCell 
+                                key={generateUniqueKey('cell', row.id, rowIndex, column.key, columnIndex)}
+                                style={{ textAlign: column.alignment || 'left' }}
+                                className={`${column.hidden ? 'hidden' : ''} p-0`}
+                            >
+                                <ColumnRenderer
+                                    item={row}
+                                    column={column}
+                                    value={value}
+                                />
+                            </TableCell>
+                        );
+                    })}
                     {/* ✅ USAR AÇÕES DO ITEM - vindas do backend via _actions */}
                     {(row._actions && row._actions.length > 0) && (
                         <TableCell 

@@ -38,7 +38,7 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasConfigFile('shinobi')
             ->hasConfigFile('tenant')
-            ->hasRoutes('web', 'api', 'landlord')
+            ->hasRoutes('web', 'api')
             ->hasViews()
             ->hasMigrations([
                 'create_users_table',

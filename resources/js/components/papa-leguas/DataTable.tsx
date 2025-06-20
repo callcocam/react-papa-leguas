@@ -195,7 +195,7 @@ export default function DataTable({
     }
 
     return (
-        <TableProvider initialData={data}>
+        <TableProvider initialData={data} meta={meta}>
             <div className="space-y-6">
                 {/* Filtros */}
                 <Filters

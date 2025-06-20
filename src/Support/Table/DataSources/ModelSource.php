@@ -65,9 +65,6 @@ class ModelSource extends DataSource
     {
         return $this->buildQuery()->count();
     }
-
-
-
     /**
      * Obter tipo da fonte de dados
      */
@@ -250,5 +247,14 @@ class ModelSource extends DataSource
             'query_sql' => $this->baseQuery ? $this->baseQuery->toSql() : null,
             'query_bindings' => $this->baseQuery ? $this->baseQuery->getBindings() : [],
         ]);
+    }
+
+    /**
+     * Retorna o construtor de query configurado.
+     * Método público para consistência com outras fontes de dados.
+     */
+    public function getBuilder(): Builder
+    {
+        return $this->buildQuery();
     }
 }

@@ -1,49 +1,52 @@
 import { useState } from 'react';
-import { TableAction, PapaLeguasTableProps } from '../types';
+import axios from 'axios';
 
-interface ActionPayload {
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+axios.defaults.withCredentials = true;
+axios.defaults.withXSRFToken = true;
+
+interface UseActionProcessorPayload {
+    table: string;
     actionKey: string;
-    item: any;
+    item: { id: any };
     data?: Record<string, any>;
 }
 
 export const useActionProcessor = () => {
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
-    const processAction = async (payload: ActionPayload) => {
+
+    const processAction = async (payload: UseActionProcessorPayload) => {
         setIsLoading(true);
-        setError(null);
-
+        console.log('payload:', payload.table);
         try {
-            const response = await fetch(`/api/actions/${payload.actionKey}/execute`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
-                },
-                body: JSON.stringify({
+            const response = await axios.post(
+                `/api/${payload.table}/actions/${payload.actionKey}/execute`,
+                {
                     item_id: payload.item.id,
                     data: payload.data,
-                }),
-            });
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                }
+            );
 
-            const result = await response.json();
+            return response.data;
 
-            if (!response.ok) {
-                throw new Error(result.message || 'Falha ao processar a ação.');
-            }
-            
-            return { success: true, ...result };
-
-        } catch (err: any) {
-            setError(err.message);
-            return { success: false, message: err.message };
+        } catch (error: any) {
+            console.error('Erro ao processar a ação:', error);
+            const message = error.response?.data?.message || error.message || 'Falha ao processar a ação.';
+            return {
+                success: false,
+                message,
+            };
         } finally {
             setIsLoading(false);
         }
     };
 
-    return { processAction, isLoading, error };
+    return { processAction, isLoading };
 }; 
