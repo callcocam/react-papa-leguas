@@ -125,8 +125,9 @@ packages/callcocam/react-papa-leguas/src/Support/Table/
 - ✅ Implementar `CurrencyColumn.php` para formatação monetária
 - ✅ **Implementar Colunas Editáveis (Completo)**:
     - ✅ **Backend**: `EditableColumn.php` com integração segura via `CallbackAction`.
-    - ✅ **Frontend**: `EditableCell.tsx` e `EditPopover.tsx` para renderização e edição.
-    - ✅ **Arquitetura**: `TableContext` e `useActionProcessor` para estado reativo.
+    - ✅ **Lógica de Atualização**: O método `updateUsing(Closure)` define a lógica de salvamento no backend.
+    - ✅ **Frontend**: `EditableCell.tsx`, `EditPopover.tsx`, e um sistema de `EditRenderer` para renderizar o editor correto (ex: `TextEditor.tsx`).
+    - ✅ **Arquitetura Reativa**: `TableContext` e `useActionProcessor` para um estado reativo que atualiza a UI sem recarregar a página.
 
 ### **3. SISTEMA DE CASTS**
 - ✅ Criar interface/classe base `Cast.php`

@@ -60,8 +60,7 @@ const EditableCell: React.FC<EditableCellProps> = ({ item, column }) => {
             actionKey: column.key,
             item: { id: item.id },
             data: { value: currentValue },
-        });
-
+        }); 
         if (result?.success) {
             setIsEditing(false);
             // Atualiza o estado localmente para evitar recarregar a página
@@ -93,7 +92,7 @@ const EditableCell: React.FC<EditableCellProps> = ({ item, column }) => {
         <Popover open={isEditing} onOpenChange={setIsEditing}>
             <PopoverTrigger asChild>
                 <div className="cursor-pointer w-full h-full p-2 -m-2 hover:bg-muted/50 rounded-md transition-colors">
-                    <TextRenderer value={rawValue} item={item} column={column} />
+                    <TextRenderer value={getEditableValue(currentValue)} item={item} column={column} />
                 </div>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-4" onOpenAutoFocus={(e) => e.preventDefault()}>

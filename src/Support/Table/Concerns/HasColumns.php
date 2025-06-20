@@ -414,7 +414,7 @@ trait HasColumns
 
                         try {
                             $success = $column->executeUpdate($item, $newValue);
-                            return ['success' => $success];
+                            return ['success' => $success, 'value' => $newValue, 'message' => 'Valor atualizado com sucesso!'];
                         } catch (\Exception $e) {
                             return ['success' => false, 'message' => $e->getMessage()];
                         }
