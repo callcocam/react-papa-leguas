@@ -72,6 +72,12 @@ abstract class Action
     protected ?string $tooltip = null;
 
     /**
+     * Se o label deve ser exibido junto com o ícone.
+     * O padrão é false (apenas ícone).
+     */
+    protected bool $showLabel = false;
+
+    /**
      * Mensagem de confirmação
      */
     protected ?string $confirmationMessage = null;
@@ -232,6 +238,15 @@ abstract class Action
     public function tooltip(string $tooltip): static
     {
         $this->tooltip = $tooltip;
+        return $this;
+    }
+
+    /**
+     * Configura a ação para exibir o label ao lado do ícone.
+     */
+    public function showLabel(bool $show = true): static
+    {
+        $this->showLabel = $show;
         return $this;
     }
 
@@ -491,6 +506,7 @@ abstract class Action
             'group' => $this->getGroup(),
             'order' => $this->getOrder(),
             'tooltip' => $this->tooltip,
+            'showLabel' => $this->showLabel,
             'enabled' => $this->isEnabled($item, $context),
             'attributes' => $this->attributes,
             'confirmation' => null,

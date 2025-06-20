@@ -49,6 +49,7 @@ export interface TableAction {
     size?: 'sm' | 'md' | 'lg';
     icon?: string | React.ReactNode;
     disabled?: boolean;
+    hidden?: boolean;
     className?: string;
     tooltip?: string;
     confirmation?: {
@@ -62,6 +63,8 @@ export interface TableAction {
     data?: Record<string, any>;
     mode?: 'modal' | 'slideover';
     modal_title?: string;
+    width?: string;
+    showLabel?: boolean;
 }
 
 export interface ActionRendererProps {

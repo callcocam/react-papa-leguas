@@ -8,39 +8,45 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { type ActionRendererProps } from '../../types';
+import { cn } from '@/lib/utils';
 
 /**
- * Renderizador de Ação Link
- * Cria um botão de ícone que funciona como um link e exibe um tooltip.
+ * Renderiza uma ação como um link, geralmente para navegação.
+ * Usa o componente Link do Inertia para navegação SPA.
  */
 export default function LinkActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
-    const url = typeof action.url === 'function' ? action.url(item) : (action.url || '#');
+    if (action.hidden) {
+        return null;
+    }
 
-    const handleClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-    };
+    const { disabled, variant = 'ghost', label, tooltip, showLabel } = action;
+
+    // Resolve a URL, seja ela uma string ou uma função
+    const finalUrl = typeof action.url === 'function' ? action.url(item) : (action.url || '#');
 
     return (
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button
-                        variant={action.variant || 'ghost'}
-                        size="icon"
-                        onClick={handleClick}
-                        disabled={action.disabled}
-                        className={action.className}
                         asChild
+                        variant={variant}
+                        size={showLabel ? 'sm' : 'icon'}
+                        disabled={disabled}
+                        className={showLabel ? 'h-auto text-xs px-2 py-1.5' : 'h-8 w-8'}
                     >
-                        <Link href={url}>
-                            {IconComponent && <IconComponent className="h-4 w-4" />}
-                            <span className="sr-only">{action.label}</span>
+                        <Link href={finalUrl}>
+                            {IconComponent && <IconComponent className={cn('h-4 w-4', showLabel && 'mr-2')} />}
+                            {showLabel && <span>{label}</span>}
+                            {!showLabel && <span className="sr-only">{label}</span>}
                         </Link>
                     </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                    <p>{action.tooltip || action.label}</p>
-                </TooltipContent>
+                {tooltip && (
+                    <TooltipContent>
+                        <p>{tooltip}</p>
+                    </TooltipContent>
+                )}
             </Tooltip>
         </TooltipProvider>
     );

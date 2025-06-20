@@ -13,6 +13,7 @@ import {
     SheetTitle,
     SheetDescription,
 } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 
 type ModalMode = 'modal' | 'slideover';
 
@@ -21,6 +22,7 @@ type ModalOptions = {
     description?: string;
     content: ReactNode;
     mode?: ModalMode;
+    width?: string;
 };
 
 type ModalContextType = {
@@ -57,12 +59,12 @@ export function ModalProvider({ children }: { children: ReactNode }) {
         if (options.mode === 'slideover') {
             return (
                 <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-                    <SheetContent className="sm:max-w-xl">
+                    <SheetContent className={cn('sm:max-w-xl', options.width)}>
                         <SheetHeader>
                             <SheetTitle>{options.title}</SheetTitle>
-                            {options.description && (
-                                <SheetDescription>{options.description}</SheetDescription>
-                            )}
+                            <SheetDescription>
+                                {options.description}
+                            </SheetDescription>
                         </SheetHeader>
                         <div className="py-4">{options.content}</div>
                     </SheetContent>
@@ -73,12 +75,12 @@ export function ModalProvider({ children }: { children: ReactNode }) {
         // Padrão é 'modal'
         return (
             <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-                <DialogContent>
+                <DialogContent className={cn('sm:max-w-md', options.width)}>
                     <DialogHeader>
                         <DialogTitle>{options.title}</DialogTitle>
-                        {options.description && (
-                            <DialogDescription>{options.description}</DialogDescription>
-                        )}
+                        <DialogDescription>
+                            {options.description}
+                        </DialogDescription>
                     </DialogHeader>
                     <div>{options.content}</div>
                 </DialogContent>

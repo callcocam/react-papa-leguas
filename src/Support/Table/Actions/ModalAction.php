@@ -20,6 +20,12 @@ class ModalAction extends CallbackAction
     protected ?string $modalTitle = null;
 
     /**
+     * A largura do modal/slide-over (classe CSS).
+     * Ex: 'max-w-md', 'max-w-xl', 'w-1/3'
+     */
+    protected ?string $width = null;
+
+    /**
      * Define o modo de exibição.
      */
     public function mode(string $mode): static
@@ -37,6 +43,15 @@ class ModalAction extends CallbackAction
     public function modalTitle(string $title): static
     {
         $this->modalTitle = $title;
+        return $this;
+    }
+
+    /**
+     * Define a largura do modal (classe CSS).
+     */
+    public function width(string $width): static
+    {
+        $this->width = $width;
         return $this;
     }
 
@@ -61,6 +76,7 @@ class ModalAction extends CallbackAction
 
         $array['mode'] = $this->mode;
         $array['modal_title'] = $this->modalTitle;
+        $array['width'] = $this->width;
         
         return $array;
     }

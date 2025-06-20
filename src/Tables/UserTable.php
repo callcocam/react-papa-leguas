@@ -388,6 +388,16 @@ class UserTable extends Table
                     return auth()->user()->can('update', $item);
                 }),
 
+            // ✅ AÇÃO DE MODAL - Abrir formulário de edição em um modal
+            $this->modalAction('edit_user_modal')
+                ->label('Editar no Modal')
+                ->icon('FilePenLine')
+                ->tooltip('Editar usuário em um modal')
+                ->mode('slideover') // ou 'slideover'
+                ->modalTitle('Editar Detalhes do Usuário')
+                ->width('max-w-4xl')
+                ->showLabel(),
+
             // ✅ AÇÃO DE CALLBACK - Alternar status de verificação de e-mail
             $this->callbackAction('email_verified_at')
                 ->labelUsing(function ($item, $context) {

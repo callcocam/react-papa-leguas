@@ -1,9 +1,5 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { type ActionRendererProps } from '../../types';
-import { useActionProcessor } from '../../hooks/useActionProcessor';
-import { TableContext } from '../../contexts/TableContext';
-import { router } from '@inertiajs/react';
 import {
     Tooltip,
     TooltipContent,
@@ -11,71 +7,53 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useConfirmationDialog } from '../../contexts/ConfirmationDialogContext';
+import { type ActionRendererProps } from '../../types';
+import { cn } from '@/lib/utils';
+import { useActionProcessor } from '../ActionRenderer';
 
 /**
- * Renderizador de Ação Callback
- * Usado para ações customizadas que executam callbacks no backend
+ * Renderiza uma ação que dispara um callback no backend,
+ * potencialmente com um diálogo de confirmação.
  */
 export default function CallbackActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
-    const context = useContext(TableContext);
-    const { processAction, isLoading } = useActionProcessor();
     const { confirm } = useConfirmationDialog();
+    const { executeAction } = useActionProcessor();
 
-    const executeAction = async () => {
-        try {
-            // Executar callback customizado do frontend se fornecido
-            if (action.onClick) {
-                action.onClick(item);
-                return;
-            }
+    if (action.hidden) {
+        return null;
+    }
 
-            // Garantir que temos as informações necessárias
-            if (!context.meta?.key) {
-                console.error("❌ A chave da tabela (meta.key) não foi encontrada no contexto.");
-                alert("Erro de configuração: Chave da tabela ausente.");
-                return;
-            }
+    const {
+        disabled,
+        variant = 'ghost',
+        label,
+        tooltip,
+        showLabel,
+        confirmation,
+        className,
+    } = action;
 
-            // Usar o hook para processar a ação no backend
-            const result = await processAction({
-                table: context.meta.key,
-                actionKey: action.key,
-                item: item,
-                data: action.data || {},
-            });
-
-            if (result && result.success) {
-                // Ao sucesso, simplesmente recarrega os dados da página via Inertia
-                router.visit(window.location.href, { 
-                    preserveScroll: true,
-                });
-                
-            } else {
-                // Erro - mostrar mensagem de erro
-                const errorMessage = result?.message || 'Erro ao executar ação';
-                console.error('❌ Erro na execução da ação:', errorMessage);
-                alert(errorMessage);
-            }
-        } catch (error) {
-            console.error('❌ Erro ao executar callback:', error);
-            alert('Erro interno ao executar ação');
-        }
+    // A função que efetivamente executa a ação no backend
+    const runAction = () => {
+        executeAction(action, item);
     };
 
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
 
-        if (action.confirmation) {
+        if (confirmation) {
+            // Se a confirmação for necessária, usa o hook do diálogo
             confirm({
-                title: action.confirmation.title || 'Confirmação',
-                message: action.confirmation.message,
-                confirmText: action.confirmation.confirm_text,
-                cancelText: action.confirmation.cancel_text,
-                confirmVariant: action.confirmation.confirm_variant || action.variant,
-                onConfirm: executeAction,
+                title: confirmation.title || 'Você tem certeza?',
+                message: confirmation.message,
+                confirmText: confirmation.confirm_text,
+                cancelText: confirmation.cancel_text,
+                confirmVariant: confirmation.confirm_variant,
+                onConfirm: runAction,
             });
         } else {
-            executeAction();
+            // Caso contrário, executa a ação diretamente
+            runAction();
         }
     };
 
@@ -84,19 +62,25 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button
-                        variant={action.variant || 'ghost'}
-                        size="icon"
+                        variant={variant}
+                        size={showLabel ? 'sm' : 'icon'}
                         onClick={handleClick}
-                        disabled={action.disabled || isLoading}
-                        className={action.className}
+                        disabled={disabled}
+                        className={cn(
+                            showLabel ? 'h-8 px-2 text-xs' : '',
+                            className
+                        )}
                     >
-                        {IconComponent && <IconComponent className="h-4 w-4" />}
-                        <span className="sr-only">{action.label}</span>
+                        {IconComponent && <IconComponent className={cn('h-4 w-4', showLabel && 'mr-2')} />}
+                        {showLabel && <span>{label}</span>}
+                        {!showLabel && <span className="sr-only">{label}</span>}
                     </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                    <p>{action.tooltip || action.label}</p>
-                </TooltipContent>
+                {tooltip && (
+                    <TooltipContent>
+                        <p>{tooltip}</p>
+                    </TooltipContent>
+                )}
             </Tooltip>
         </TooltipProvider>
     );
