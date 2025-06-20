@@ -8,10 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Loader2, X, Check } from 'lucide-react';
 import get from 'lodash/get';
 import { TableContext, TableContextProps } from '../../contexts/TableContext';
-import { useActionProcessor } from '../../hooks/useActionProcessor';
-import ColumnEditRenderer from '../edit/ColumnEditRenderer';
+import { useActionProcessor } from '../../hooks/useActionProcessor'; 
 import { TableColumn } from '../../types';
 import TextEditor from '../edit/renderers/TextEditor';
+import ColumnEditRenderer from '../edit/ColumnEditRenderer';
 
 // Helper para extrair o valor de texto para edição
 const getEditableValue = (value: any): string => {
@@ -92,7 +92,7 @@ const EditableTextRenderer: React.FC<EditableCellProps> = ({ item, column }) => 
         <Popover open={isEditing} onOpenChange={setIsEditing}>
             <PopoverTrigger asChild>
                 <div className="cursor-pointer w-full h-full p-2 -m-2 hover:bg-muted/50 rounded-md transition-colors">
-                    <ColumnEditRenderer value={getEditableValue(currentValue)} item={item} column={column} />
+                    <ColumnEditRenderer value={rawValue} item={item} column={column} />
                 </div>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-4" onOpenAutoFocus={(e) => e.preventDefault()}>
