@@ -4,9 +4,10 @@ import TextRenderer from './renderers/TextRenderer';
 import BadgeRenderer from './renderers/BadgeRenderer';
 import EmailRenderer from './renderers/EmailRenderer';
 import CompoundRenderer from './CompoundRenderer';
+import EditableCell from './EditableCell';
 
 // Mapeamento de tipos de renderização para componentes
-const renderers: { [key: string]: React.FC<RendererProps> } = {
+const renderers: { [key: string]: React.FC<any> } = {
     // Renderers de texto
     text: TextRenderer,
     textRenderer: TextRenderer,
@@ -23,6 +24,9 @@ const renderers: { [key: string]: React.FC<RendererProps> } = {
     // Renderer composto
     compound: CompoundRenderer,
     compoundRenderer: CompoundRenderer,
+
+    // Renderer para edição inline
+    'editable-text': EditableCell,
 
     // Renderer padrão
     default: TextRenderer,
@@ -58,7 +62,7 @@ export function hasColumnRenderer(type: string): boolean {
     return type in renderers;
 }
 
-interface ColumnRendererProps {
+export interface ColumnRendererProps {
     column: TableColumn;
     item: any;
     value: any;

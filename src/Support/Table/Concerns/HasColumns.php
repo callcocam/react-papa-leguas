@@ -7,6 +7,8 @@ use Callcocam\ReactPapaLeguas\Support\Table\Concerns\HasCasts;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\CurrencyCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\DateCast;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\StatusCast;
+use Callcocam\ReactPapaLeguas\Support\Table\Columns\EditableColumn;
+use Callcocam\ReactPapaLeguas\Support\Table\Actions\CallbackAction;
 
 trait HasColumns
 {
@@ -385,5 +387,41 @@ trait HasColumns
             'column_specific_casts' => $columnCastsInfo,
             'total_column_casts' => array_sum(array_map(fn($col) => count($col->getCasts()), $this->getColumns())),
         ];
+    }
+
+    /**
+     * Gera ações de callback para todas as colunas editáveis.
+     */
+    public function getEditableColumnActions(): array
+    {
+        $actions = [];
+
+        /** @var Column $column */
+        foreach ($this->getColumns() as $column) {
+            if ($column instanceof EditableColumn && $column->hasUpdateCallback()) {
+                
+                $actionKey = $column->getKey();
+
+                $actions[$actionKey] = CallbackAction::make($actionKey)
+                    ->hidden() // Ação não precisa ser visível na UI
+                    ->callback(function ($item, $context) use ($column) {
+                        $newValue = data_get($context, 'data.value');
+                        
+                        // Validar se o valor foi recebido
+                        if ($newValue === null) {
+                            return ['success' => false, 'message' => 'Nenhum valor recebido.'];
+                        }
+
+                        try {
+                            $success = $column->executeUpdate($item, $newValue);
+                            return ['success' => $success];
+                        } catch (\Exception $e) {
+                            return ['success' => false, 'message' => $e->getMessage()];
+                        }
+                    });
+            }
+        }
+
+        return $actions;
     }
 }

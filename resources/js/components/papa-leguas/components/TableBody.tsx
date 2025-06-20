@@ -1,8 +1,8 @@
 import React from 'react';
 import { TableBody as UITableBody, TableCell, TableRow } from '@/components/ui/table';
-import ColumnRenderer from '../columns/ColumnRenderer';
 import ActionRenderer from '../actions/ActionRenderer';
-import { type TableColumn, type TableAction } from '../types';
+import { type TableColumn, type TableAction, type TableConfig } from '../types';
+import EditableCell from '../columns/EditableCell';
 
 // Utilitário para gerar keys únicos
 const generateUniqueKey = (...parts: (string | number | undefined)[]): string => {
@@ -14,13 +14,15 @@ interface TableBodyProps {
     columns: TableColumn[];
     actions: TableAction[];
     loading?: boolean;
+    config: TableConfig;
 }
 
 export default function TableBody({
     data,
     columns,
     actions,
-    loading = false
+    loading = false,
+    config
 }: TableBodyProps) {
     if (loading) {
         return (
@@ -63,12 +65,12 @@ export default function TableBody({
                         <TableCell 
                             key={generateUniqueKey('cell', row.id, rowIndex, column.key, columnIndex)}
                             style={{ textAlign: column.alignment || 'left' }}
-                            className={column.hidden ? 'hidden' : ''}
+                            className={`${column.hidden ? 'hidden' : ''} p-0`}
                         >
-                            <ColumnRenderer
-                                column={column}
-                                value={row[column.key || column.name || '']}
+                            <EditableCell
                                 item={row}
+                                column={column}
+                                config={config}
                             />
                         </TableCell>
                     ))}

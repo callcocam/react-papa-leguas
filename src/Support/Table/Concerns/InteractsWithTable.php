@@ -43,6 +43,14 @@ trait InteractsWithTable
                 $this->{$method}();
             }
         }
+
+        // Integração de Colunas Editáveis com Ações
+        if (method_exists($this, 'getEditableColumnActions') && property_exists($this, 'actions')) {
+            $editableActions = $this->getEditableColumnActions();
+            if (!empty($editableActions)) {
+                $this->actions = array_merge($this->actions, $editableActions);
+            }
+        }
     }
 
     /**

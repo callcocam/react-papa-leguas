@@ -1,7 +1,7 @@
 import React from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '../../../../../../../../resources/js/components/ui/popover';
-import { Input } from '../../../../../../../../resources/js/components/ui/input';
-import { Button } from '../../../../../../../../resources/js/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Check, X, Loader2 } from 'lucide-react';
 
 interface EditPopoverProps {

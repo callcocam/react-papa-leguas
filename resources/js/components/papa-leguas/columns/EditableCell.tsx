@@ -1,70 +1,69 @@
-import React, { useState, useEffect } from 'react';
-import { Column, DataItem, TableConfig } from '@rpl/components/papa-leguas/types';
-import ColumnRenderer from '@rpl/components/papa-leguas/columns/ColumnRenderer';
-import { EditPopover } from '@rpl/components/papa-leguas/columns/edit/EditPopover';
+import React, { useState, useEffect, useContext } from 'react';
+import { TableColumn } from '../types';
+import ColumnRenderer, { ColumnRendererProps } from './ColumnRenderer';
+import { EditPopover } from './edit/EditPopover';
 import get from 'lodash/get';
+import { TableContext } from '../contexts/TableContext';
+import { useActionProcessor } from '../hooks/useActionProcessor';
+
+// Tipos locais para este componente
+type DataItem = Record<string, any>;
 
 interface EditableCellProps {
     item: DataItem;
-    column: Column;
-    config: TableConfig;
+    column: TableColumn;
 }
 
-const EditableCell: React.FC<EditableCellProps> = ({ item, column, config }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const initialValue = get(item, column.key, '');
+const EditableCell: React.FC<EditableCellProps> = ({ item, column }) => {
+    const { tableData, setTableData } = useContext(TableContext);
+    const { processAction, isLoading } = useActionProcessor();
+    
+    const initialValue = column.key ? get(item, column.key, '') : '';
     const [currentValue, setCurrentValue] = useState(initialValue);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
-        setCurrentValue(initialValue);
-    }, [initialValue]);
+        // Garante que o valor seja atualizado se o item mudar externamente
+        setCurrentValue(column.key ? get(item, column.key, '') : '');
+    }, [item, column.key]);
     
     const handleUpdate = async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/papaleguas/table/update', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
-                },
-                body: JSON.stringify({
-                    model: config.model,
-                    key: item.id,
-                    field: column.key,
-                    value: currentValue,
-                }),
-            });
+        if (!column.key) return;
 
-            const result = await response.json();
+        const actionKey = column.key; // A chave da ação é a mesma da coluna
+        
+        const result = await processAction({
+            actionKey,
+            item,
+            data: { value: currentValue }, // Enviamos o novo valor no payload
+        });
 
-            if (!response.ok) {
-                throw new Error(result.message || 'Falha ao atualizar');
-            }
-            
+        if (result?.success) {
             setIsEditing(false);
-            // Recarregar a página é uma solução simples mas eficaz por enquanto.
-            // Uma solução mais sofisticada poderia atualizar o estado no Inertia.
-            window.location.reload(); 
-
-        } catch (error) {
-            console.error("Erro ao atualizar:", error);
-            if (error instanceof Error) {
-                alert(error.message);
+            // Atualiza o estado localmente para evitar recarregar a página
+            if (tableData && setTableData && column.key) {
+                const updatedData = tableData.map(d => {
+                    if (d.id === item.id) {
+                        return { ...d, [column.key as string]: result.value ?? currentValue };
+                    }
+                    return d;
+                });
+                setTableData(updatedData);
             }
-            // Reverter ao valor inicial em caso de erro
+        } else {
+            // Em caso de erro, reverte para o valor original
             setCurrentValue(initialValue);
-        } finally {
-            setIsLoading(false);
+            alert(result?.message || 'Falha ao atualizar o valor.');
         }
     };
 
-    if (!column.editable) {
-        return <div className="p-2 -m-2"><ColumnRenderer item={item} column={column} /></div>;
-    }
+    const columnRendererProps: ColumnRendererProps = {
+        item,
+        column,
+        value: column.key ? get(item, column.key) : '',
+    };
 
+    // O popover de edição agora é o container principal
     return (
         <EditPopover
             isEditing={isEditing}
@@ -76,11 +75,14 @@ const EditableCell: React.FC<EditableCellProps> = ({ item, column, config }) => 
             title={`Editar ${column.label}`}
         >
             <div 
-                onClick={() => !isEditing && setIsEditing(true)} 
+                onClick={(e) => {
+                    e.stopPropagation(); // Impede que o clique se propague para a linha
+                    if (!isEditing) setIsEditing(true)
+                }} 
                 className="cursor-pointer w-full h-full p-2 -m-2 hover:bg-muted/50 rounded-md transition-colors"
             >
-                {/* Renderiza o valor atual, que pode ter sido alterado no popover */}
-                <ColumnRenderer item={{...item, [column.key]: currentValue}} column={column} />
+                {/* Renderizamos o valor que está sendo editado */}
+                <ColumnRenderer {...columnRendererProps} value={currentValue} />
             </div>
         </EditPopover>
     );
