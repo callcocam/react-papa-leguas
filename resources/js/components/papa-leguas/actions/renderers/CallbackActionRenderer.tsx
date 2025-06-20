@@ -10,6 +10,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useConfirmationDialog } from '../../contexts/ConfirmationDialogContext';
 
 /**
  * Renderizador de Ação Callback
@@ -18,17 +19,10 @@ import {
 export default function CallbackActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
     const context = useContext(TableContext);
     const { processAction, isLoading } = useActionProcessor();
+    const { confirm } = useConfirmationDialog();
 
-    const handleClick = async (e: React.MouseEvent) => {
-        e.stopPropagation();
+    const executeAction = async () => {
         try {
-            // Confirmação se necessária
-            if (action.confirmation) {
-                if (!confirm(action.confirmation.message)) {
-                    return;
-                }
-            }
-
             // Executar callback customizado do frontend se fornecido
             if (action.onClick) {
                 action.onClick(item);
@@ -54,9 +48,6 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
                 // Ao sucesso, simplesmente recarrega os dados da página via Inertia
                 router.visit(window.location.href, { 
                     preserveScroll: true,
-                    onSuccess: () => {
-                        // Opcional: mostrar notificação de sucesso
-                    }
                 });
                 
             } else {
@@ -68,6 +59,23 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
         } catch (error) {
             console.error('❌ Erro ao executar callback:', error);
             alert('Erro interno ao executar ação');
+        }
+    };
+
+    const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        if (action.confirmation) {
+            confirm({
+                title: action.confirmation.title || 'Confirmação',
+                message: action.confirmation.message,
+                confirmText: action.confirmation.confirm_text,
+                cancelText: action.confirmation.cancel_text,
+                confirmVariant: action.confirmation.confirm_variant || action.variant,
+                onConfirm: executeAction,
+            });
+        } else {
+            executeAction();
         }
     };
 

@@ -82,6 +82,21 @@ abstract class Action
     protected ?string $confirmationTitle = null;
 
     /**
+     * Texto do botão de confirmação
+     */
+    protected ?string $confirmationConfirmText = null;
+
+    /**
+     * Texto do botão de cancelamento
+     */
+    protected ?string $confirmationCancelText = null;
+
+    /**
+     * Variante do botão de confirmação
+     */
+    protected ?string $confirmationConfirmVariant = null;
+
+    /**
      * Closure para determinar visibilidade
      */
     protected ?Closure $visibleUsing = null;
@@ -223,10 +238,18 @@ abstract class Action
     /**
      * Define mensagem de confirmação
      */
-    public function requiresConfirmation(string $message, ?string $title = null): static
-    {
+    public function requiresConfirmation(
+        string $message,
+        ?string $title = null,
+        ?string $confirmText = null,
+        ?string $cancelText = null,
+        ?string $confirmVariant = null
+    ): static {
         $this->confirmationMessage = $message;
         $this->confirmationTitle = $title;
+        $this->confirmationConfirmText = $confirmText;
+        $this->confirmationCancelText = $cancelText;
+        $this->confirmationConfirmVariant = $confirmVariant;
         return $this;
     }
 
@@ -448,7 +471,7 @@ abstract class Action
     abstract public function getType(): string;
 
     /**
-     * Serializa a ação para array
+     * Serializa a ação para um array
      */
     public function toArray($item = null, array $context = []): array
     {
@@ -456,26 +479,34 @@ abstract class Action
             return [];
         }
 
-        return [
-            'key' => $this->key,
+        $array = [
+            'key' => $this->getKey(),
+            'item_id' => $item->id ?? null,
             'type' => $this->getType(),
             'label' => $this->getLabel($item, $context),
             'icon' => $this->getIcon($item, $context),
             'variant' => $this->getVariant($item, $context),
             'size' => $this->size,
-            'position' => $this->position,
-            'group' => $this->group,
-            'order' => $this->order,
+            'position' => $this->getPosition(),
+            'group' => $this->getGroup(),
+            'order' => $this->getOrder(),
             'tooltip' => $this->tooltip,
-            'url' => $this->getUrl($item, $context),
-            'method' => $this->getMethod(),
             'enabled' => $this->isEnabled($item, $context),
-            'confirmation' => $this->confirmationMessage ? [
+            'attributes' => $this->attributes,
+            'confirmation' => null,
+        ];
+
+        if ($this->confirmationMessage) {
+            $array['confirmation'] = [
                 'message' => $this->confirmationMessage,
                 'title' => $this->confirmationTitle,
-            ] : null,
-            'attributes' => $this->attributes,
-        ];
+                'confirm_text' => $this->confirmationConfirmText,
+                'cancel_text' => $this->confirmationCancelText,
+                'confirm_variant' => $this->confirmationConfirmVariant,
+            ];
+        }
+
+        return $array;
     }
 
     /**

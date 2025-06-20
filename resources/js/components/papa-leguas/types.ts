@@ -52,8 +52,11 @@ export interface TableAction {
     className?: string;
     tooltip?: string;
     confirmation?: {
-        message: string;
         title?: string;
+        message: string;
+        confirm_text?: string;
+        cancel_text?: string;
+        confirm_variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
     };
     renderAs?: string;
     data?: Record<string, any>;

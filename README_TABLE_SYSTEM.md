@@ -180,7 +180,9 @@ packages/callcocam/react-papa-leguas/src/Support/Table/
 - ⏳ Implementar Bulk Actions (excluir em lote, etc.)
 - ✅ Adicionar ações condicionais
 - ✅ Suporte a ações customizadas via closures
-- ✅ Implementar confirmações e validações
+- ✅ Implementar confirmações e validações.
+    - **Diálogo Customizado**: Substituição do `window.confirm` por um `AlertDialog` (shadcn/ui) totalmente customizável pelo backend (título, mensagem, texto dos botões, variante do botão de confirmação).
+    - **Arquitetura Reutilizável**: Sistema global com Context API (`ConfirmationDialogProvider`) e um hook (`useConfirmationDialog`) para acionar o diálogo de qualquer parte da aplicação.
 
 ### **9. EXPORTAÇÃO E IMPORTAÇÃO**
 - ⏳ Suporte a exportação CSV
@@ -189,6 +191,10 @@ packages/callcocam/react-papa-leguas/src/Support/Table/
 - ⏳ Aplicar formatação na exportação
 - ⏳ Implementar importação de dados
 - ⏳ Validação de dados importados
+- ✅ **Visibilidade/Habilitação Condicional**: Sistema de closures para controle dinâmico
+- ✅ **Confirmações Customizáveis**: Sistema de confirmação para ações destrutivas, permitindo customizar via backend o título, mensagem, textos de botão e cor do botão de confirmação.
+- ✅ **Agrupamento e Ordenação**: Organização avançada das ações
+- ✅ **Serialização Otimizada**: Conversão para JSON otimizada para frontend
 
 ### **10. FRONTEND AGNÓSTICO**
 - ✅ Gerar estrutura JSON para qualquer frontend
@@ -265,6 +271,7 @@ packages/callcocam/react-papa-leguas/src/Support/Table/
 - ✅ **API para Callbacks**: Endpoint `/api/actions/{key}/execute` com CSRF protection
 - ✅ **Funções de Extensão**: `addActionRenderer`, `removeActionRenderer`, etc.
 - ✅ **Hook `useActionProcessor`**: Para execução programática de ações
+- ✅ **Hook `useConfirmationDialog`**: Para acionar o diálogo de confirmação de forma elegante e centralizada.
 
 **Exemplo Implementado**:
 - ✅ **ProductTable**: 9 tipos diferentes de ações demonstrando todas as funcionalidades
