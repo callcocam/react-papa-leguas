@@ -20,6 +20,7 @@ export interface TableColumn {
     renderAs?: string;
     rendererOptions?: Record<string, any>;
     options?: { value: string; label: string }[];
+    fetchUrl?: string;
 }
 
 export interface TableFilter {

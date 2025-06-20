@@ -20,6 +20,7 @@ class EditableColumn extends TextColumn
     protected string $view = 'react-papa-leguas::columns.editable-column';
     protected ?Closure $updateCallback = null;
     protected array $options = [];
+    protected ?string $fetchUrl = null;
 
     protected function setUp(): void
     {
@@ -84,7 +85,10 @@ class EditableColumn extends TextColumn
 
         if (!empty($this->getOptions())) {
             $data['options'] = $this->getOptions();
-            // $data['renderAs'] = 'editable-select';
+        }
+
+        if ($this->fetchUrl) {
+            $data['fetchUrl'] = $this->fetchUrl;
         }
 
         return $data;
@@ -99,6 +103,17 @@ class EditableColumn extends TextColumn
         } else {
             $this->renderAs('editable-text');
         }
+
+        return $this;
+    }
+
+    /**
+     * Define uma URL de API para buscar as opções dinamicamente.
+     */
+    public function fetchOptionsFrom(string $url): static
+    {
+        $this->fetchUrl = $url;
+        $this->renderAs('editable-select');
 
         return $this;
     }

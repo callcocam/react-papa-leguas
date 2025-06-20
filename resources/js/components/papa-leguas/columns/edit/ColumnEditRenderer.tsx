@@ -6,7 +6,7 @@ import TextRenderer from '../renderers/TextRenderer';
 import BadgeRenderer from '../renderers/BadgeRenderer';
 import CompoundRenderer from '../renderers/CompoundRenderer';
 import EmailRenderer from '../renderers/EmailRenderer';
-import { getColumnRenderers } from '../renderers';
+// import { getColumnRenderers } from '../renderers';
 
 /**
  * Renderizador de exibição para células editáveis.
@@ -18,12 +18,11 @@ export default function ColumnEditRenderer({ value, item, column }: RendererProp
     // Determina o tipo de renderização, com 'text' como padrão.
     let renderType = column.renderAs || column.type || 'text';
     
-    const renderers = getColumnRenderers();
-
-    console.log('renderers:', renderers);
-    if (renderType.startsWith('editable-')) {
-      renderType = 'text';
-    } 
+    // const renderers = getColumnRenderers();
+ 
+    // if (renderType.startsWith('editable-')) {
+    //   renderType = 'text';
+    // } 
     // Despacha para o componente de renderização apropriado.
     switch (renderType) {
         case 'badge':
