@@ -67,7 +67,7 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
                         onClick={handleClick}
                         disabled={disabled}
                         className={cn(
-                            showLabel ? 'h-8 px-2 text-xs' : '',
+                            showLabel ? 'h-auto text-xs px-2 py-1.5' : 'h-8 w-8',
                             className
                         )}
                     >
