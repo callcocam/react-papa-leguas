@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { type ActionRendererProps } from '../../types';
 import { useActionProcessor } from '../../hooks/useActionProcessor';
 import { TableContext } from '../../contexts/TableContext';
+import { router } from '@inertiajs/react';
 
 /**
  * Renderizador de Ação Callback
@@ -43,21 +44,9 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
             });
 
             if (result && result.success) {
-                // Sucesso - pode mostrar notificação ou recarregar página
-                console.log('✅ Ação executada com sucesso:', result.message, action.key);
-
-                // Se o backend mandar o item atualizado, atualizamos o estado
-                if (result.item && context.setTableData) {
-                    context.setTableData(prevData =>
-                        prevData.map(row =>
-                            row.id === result.item.id ? result.item : row
-                        )
-                    );
-                }
-                // Se o backend explicitamente pedir reload, fazemos
-                else if (result.reload === true) {
-                    window.location.reload();
-                }
+                // Ao sucesso, simplesmente recarrega os dados da página via Inertia
+                router.visit(window.location.href, { preserveScroll: true });
+                
             } else {
                 // Erro - mostrar mensagem de erro
                 const errorMessage = result?.message || 'Erro ao executar ação';

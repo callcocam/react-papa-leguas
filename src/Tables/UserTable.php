@@ -149,7 +149,20 @@ class UserTable extends Table
                     ->updateUsing(function (User $record, $value) {
                         $record->update(['status' => $value]);
                         return true;
-                    }),
+                    })->cast(
+                        StatusCast::make()
+                            ->formatType('badge')
+                            ->variants([
+                                'published' => 'success',
+                                'draft' => 'default',
+                                'archived' => 'secondary',
+                            ])
+                            ->labels([
+                                'published' => 'Publicado',
+                                'draft' => 'Rascunho',
+                                'archived' => 'Arquivado',
+                            ])
+                    ),
                 // BadgeColumn::make('status', 'Status')
             //     ->sortable()
             //     ->width('120px')
@@ -360,7 +373,7 @@ class UserTable extends Table
                     // Verificação de segurança para evitar erro null
                     if (!$item) return true;
                     // Visível para todos os usuários ativos
-                    return $item->status === 'active';
+                    return in_array($item->status, ['active', 'published']);
                 }),
 
             // ✅ AÇÃO DE EDIÇÃO - RouteAction com habilitação condicional
@@ -399,29 +412,20 @@ class UserTable extends Table
                         return [
                             'success' => false,
                             'message' => 'Item não encontrado!',
-                            'reload' => false
                         ];
                     }
 
                     if ($item->email_verified_at) {
-                        // Remover verificação
-                        $item->update(['email_verified_at' => null]); 
-                        $item = $item->fresh();
+                        $item->update(['email_verified_at' => null]);
                         return [
                             'success' => true,
                             'message' => 'Verificação de e-mail removida com sucesso!',
-                            'reload' => false,
-                            'item' => $this->formatRow($item->toArray()),
                         ];
                     } else {
-                        // Marcar como verificado
                         $item->update(['email_verified_at' => now()]);
-                        $item = $item->fresh();
                         return [
                             'success' => true,
                             'message' => 'E-mail marcado como verificado!',
-                            'reload' => false,
-                            'item' => $this->formatRow($item->toArray()),
                         ];
                     }
                 })
@@ -431,19 +435,19 @@ class UserTable extends Table
             $this->callbackAction('toggle_status')
                 ->labelUsing(function ($item, $context) {
                     if (!$item) return 'Alterar Status';
-                    return $item->status === 'active'
+                    return in_array($item->status, ['active', 'published'])
                         ? 'Desativar Usuário'
                         : 'Ativar Usuário';
                 })
                 ->iconUsing(function ($item, $context) {
                     if (!$item) return 'User';
-                    return $item->status === 'active'
+                    return in_array($item->status, ['active', 'published'])
                         ? 'UserX'
                         : 'UserCheck';
                 })
                 ->variantUsing(function ($item, $context) {
                     if (!$item) return 'secondary';
-                    return $item->status === 'active' ? 'secondary' : 'success';
+                    return in_array($item->status, ['active', 'published']) ? 'secondary' : 'success';
                 })
                 ->tooltip('Alternar status ativo/inativo do usuário')
                 ->requiresConfirmation(
@@ -455,11 +459,10 @@ class UserTable extends Table
                         return [
                             'success' => false,
                             'message' => 'Item não encontrado!',
-                            'reload' => false
                         ];
                     }
 
-                    $newStatus = $item->status === 'active' ? 'inactive' : 'active';
+                    $newStatus = in_array($item->status, ['active', 'published']) ? 'draft' : 'published';
                     $item->update(['status' => $newStatus]);
 
                     return [
@@ -467,8 +470,6 @@ class UserTable extends Table
                         'message' => "Usuário {$item->name} foi " .
                             ($newStatus === 'active' ? 'ativado' : 'desativado') .
                             ' com sucesso!',
-                        'reload' => false,
-                        'item' => $item->fresh(),
                     ];
                 }),
 
@@ -485,9 +486,9 @@ class UserTable extends Table
                 ->openInNewTab(false)
                 ->visible(function ($item, $context) {
                     // Verificação de segurança para evitar erro null
-                    if (!$item) return false;
-                    // Visível apenas se o e-mail estiver verificado
-                    return !is_null($item->email_verified_at);
+                    if (!$item) return true;
+                    // Visível para usuários ativos ou publicados com e-mail verificado
+                    return in_array($item->status, ['active', 'published']) && !is_null($item->email_verified_at);
                 }),
 
             // ✅ AÇÃO DE URL - Ver perfil do usuário no site
@@ -505,7 +506,7 @@ class UserTable extends Table
                     // Verificação de segurança para evitar erro null
                     if (!$item) return false;
                     // Visível apenas para usuários ativos
-                    return $item->status === 'active';
+                    return in_array($item->status, ['active', 'published']);
                 }),
 
             // ✅ AÇÃO DE CALLBACK - Reenviar e-mail de verificação

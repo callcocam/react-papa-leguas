@@ -122,13 +122,28 @@ class RouteAction extends Action
                 'action' => $this,
             ]) ?? $this->parameters;
         }
-
-        // Se tem item e parâmetros vazios, usa o ID do item
+        // Se tem item e parâmetros vazios, tenta inferir o parâmetro da rota a partir do modelo.
         if ($item && empty($this->parameters)) {
-            if (is_object($item) && isset($item->id)) {
-                return ['id' => $item->id];
+            $record = is_array($item) ? (object) $item : $item;
+            if (isset($this->context['model']) && is_object($record)) {
+                $modelClass = $this->context['model'];
+                $model = new $modelClass();
+
+                // Determina o nome do parâmetro da rota (ex: 'user' para o model User)
+                $parameterName = strtolower(class_basename($modelClass));
+
+                // Obtém o valor da chave da rota (normalmente o ID)
+                $routeKeyValue = $record->{$model->getRouteKeyName()};
+
+                return [$parameterName => $routeKeyValue];
+            }
+            // Fallback para o comportamento antigo se o modelo não estiver no contexto
+            if (is_object($record) && isset($record->id)) {
+                $parameterName = strtolower(class_basename($record));
+                return [$parameterName => $record->id];
             } elseif (is_array($item) && isset($item['id'])) {
-                return ['id' => $item['id']];
+                $parameterName = strtolower(class_basename($item));
+                return [$parameterName => $item['id']];
             }
         }
 
@@ -155,6 +170,7 @@ class RouteAction extends Action
 
         try {
             $parameters = $this->getParameters($item, $context);
+
             return route($this->route, $parameters);
         } catch (\Exception $e) {
             // Log do erro se necessário
@@ -193,7 +209,7 @@ class RouteAction extends Action
         $array['route'] = $this->route ?? null;
         $array['parameters'] = $this->getParameters($item, $context);
         $array['open_in_new_tab'] = $this->openInNewTab;
-
+        
         return $array;
     }
-} 
+}
