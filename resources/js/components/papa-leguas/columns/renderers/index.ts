@@ -4,7 +4,7 @@ import TextRenderer from './TextRenderer';
 import BadgeRenderer from './BadgeRenderer';
 import EmailRenderer from './EmailRenderer';
 import CompoundRenderer from './CompoundRenderer'; 
-import EditSelectRender from './EditSelectRender';
+import EditableSelectRender from './EditableSelectRender'; 
 import EditableTextRenderer from './EditableTextRenderer';
 
 // O tipo 'any' aqui é uma solução pragmática para a dependência circular.
@@ -32,8 +32,8 @@ const baseRenderers: { [key: string]: React.FC<any> } = {
     status: BadgeRenderer,
 
     // Renderers de select
-    'editable-select': EditSelectRender,
-    editableSelect: EditSelectRender,
+    'editable-select': EditableSelectRender,
+    editableSelect: EditableSelectRender,
     
     // Renderers de email
     email: EmailRenderer,
