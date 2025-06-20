@@ -4,6 +4,12 @@ import { type ActionRendererProps } from '../../types';
 import { useActionProcessor } from '../../hooks/useActionProcessor';
 import { TableContext } from '../../contexts/TableContext';
 import { router } from '@inertiajs/react';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 /**
  * Renderizador de Ação Callback
@@ -13,11 +19,12 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
     const context = useContext(TableContext);
     const { processAction, isLoading } = useActionProcessor();
 
-    const handleClick = async () => {
+    const handleClick = async (e: React.MouseEvent) => {
+        e.stopPropagation();
         try {
             // Confirmação se necessária
-            if (action.confirmMessage) {
-                if (!confirm(action.confirmMessage)) {
+            if (action.confirmation) {
+                if (!confirm(action.confirmation.message)) {
                     return;
                 }
             }
@@ -45,7 +52,12 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
 
             if (result && result.success) {
                 // Ao sucesso, simplesmente recarrega os dados da página via Inertia
-                router.visit(window.location.href, { preserveScroll: true });
+                router.visit(window.location.href, { 
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        // Opcional: mostrar notificação de sucesso
+                    }
+                });
                 
             } else {
                 // Erro - mostrar mensagem de erro
@@ -59,31 +71,25 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
         }
     };
 
-    // Definir variante baseada no tipo de ação
-    let variant: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" = 'outline';
-    
-    if (action.variant) {
-        variant = action.variant;
-    } else if (action.type === 'delete') {
-        variant = 'destructive';
-    } else if (action.type === 'primary') {
-        variant = 'default';
-    }
-
-    // Mapear tamanhos válidos para o Button
-    const buttonSize = action.size === 'md' ? 'sm' : (action.size || 'sm');
-
     return (
-        <Button
-            variant={variant}
-            size={buttonSize}
-            onClick={handleClick}
-            disabled={action.disabled || isLoading}
-            className={action.className}
-            title={action.tooltip || action.label}
-        >
-            {IconComponent && <IconComponent className="mr-1" />}
-            <span>{action.label}</span>
-        </Button>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant={action.variant || 'ghost'}
+                        size="icon"
+                        onClick={handleClick}
+                        disabled={action.disabled || isLoading}
+                        className={action.className}
+                    >
+                        {IconComponent && <IconComponent className="h-4 w-4" />}
+                        <span className="sr-only">{action.label}</span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{action.tooltip || action.label}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     );
 } 

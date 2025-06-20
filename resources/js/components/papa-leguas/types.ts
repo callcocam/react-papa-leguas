@@ -51,7 +51,10 @@ export interface TableAction {
     disabled?: boolean;
     className?: string;
     tooltip?: string;
-    confirmMessage?: string;
+    confirmation?: {
+        message: string;
+        title?: string;
+    };
     renderAs?: string;
     data?: Record<string, any>;
 }

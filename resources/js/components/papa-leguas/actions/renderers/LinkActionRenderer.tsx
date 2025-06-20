@@ -1,25 +1,47 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { type ActionRendererProps } from '../../types';
 
 /**
  * Renderizador de Ação Link
- * Usado para ações que são links navegáveis
+ * Cria um botão de ícone que funciona como um link e exibe um tooltip.
  */
 export default function LinkActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
-    // URL pode ser string ou função
-    const url = typeof action.url === 'function' ? action.url(item) : action.url || '#';
-    
-    const className = `inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 hover:underline ${action.className || ''}`;
- console.log(url, action.label, action)
+    const url = typeof action.url === 'function' ? action.url(item) : (action.url || '#');
+
+    const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+    };
+
     return (
-        <Link
-            href={url}
-            className={className}
-            title={action.tooltip || action.label}
-        >
-            {IconComponent && <IconComponent className="mr-1" />}
-            <span>{action.label}</span>
-        </Link>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant={action.variant || 'ghost'}
+                        size="icon"
+                        onClick={handleClick}
+                        disabled={action.disabled}
+                        className={action.className}
+                        asChild
+                    >
+                        <Link href={url}>
+                            {IconComponent && <IconComponent className="h-4 w-4" />}
+                            <span className="sr-only">{action.label}</span>
+                        </Link>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{action.tooltip || action.label}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     );
 } 
