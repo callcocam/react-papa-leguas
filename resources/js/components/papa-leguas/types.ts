@@ -18,6 +18,7 @@ export interface TableColumn {
     hidden?: boolean;
     type?: string;
     renderAs?: string;
+    rendererOptions?: Record<string, any>;
     options?: { value: string; label: string }[];
 }
 

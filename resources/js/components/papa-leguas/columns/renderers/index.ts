@@ -3,7 +3,7 @@ import { RendererProps } from '../../types';
 import TextRenderer from './TextRenderer';
 import BadgeRenderer from './BadgeRenderer';
 import EmailRenderer from './EmailRenderer';
-import CompoundRenderer from '../CompoundRenderer'; 
+import CompoundRenderer from './CompoundRenderer'; 
 import EditSelectRender from './EditSelectRender';
 import EditableTextRenderer from './EditableTextRenderer';
 

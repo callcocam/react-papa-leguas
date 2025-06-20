@@ -1,5 +1,5 @@
 import React from 'react';
-import { type RendererProps } from '../types';
+import { type RendererProps } from '../../types';
 import { icons } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
