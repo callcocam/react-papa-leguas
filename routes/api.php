@@ -41,7 +41,7 @@ Route::prefix('api')
                 }
 
                 // Executa a ação
-                $result = $action->execute($item, $request->input('data', []));
+                $result = $action->execute($item, $request->input());
 
                 return response()->json($result);
 
