@@ -5,7 +5,7 @@ export interface RendererProps {
 }
 
 export interface TableMeta {
-    key: string;
+    key?: string;
     title?: string;
     description?: string;
 }

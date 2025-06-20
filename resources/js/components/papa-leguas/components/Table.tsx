@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Table as UITable } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import Headers from './Headers';
 import TableBody from './TableBody';
 import Pagination from './Pagination';
 import { type TableColumn, type TableAction } from '../types';
+import { TableContext, TableContextProps } from '../contexts/TableContext';
 
 interface TableProps {
-    data: any[];
     columns: TableColumn[];
     actions: TableAction[];
     loading?: boolean;
@@ -19,7 +19,6 @@ interface TableProps {
 }
 
 export default function Table({
-    data,
     columns,
     actions,
     loading = false,
@@ -29,6 +28,9 @@ export default function Table({
     sortColumn,
     sortDirection
 }: TableProps) {
+
+    const { tableData } = useContext(TableContext) as TableContextProps;
+
     return (
         <Card>
             <CardContent className="p-0">
@@ -41,7 +43,7 @@ export default function Table({
                         sortDirection={sortDirection}
                     />
                     <TableBody
-                        data={data}
+                        data={tableData || []}
                         columns={columns}
                         actions={actions}
                         loading={loading}

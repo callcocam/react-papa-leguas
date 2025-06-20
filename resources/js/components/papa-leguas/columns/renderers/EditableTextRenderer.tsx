@@ -42,14 +42,14 @@ const EditableTextRenderer: React.FC<EditableCellProps> = ({ item, column }) => 
     const [currentValue, setCurrentValue] = useState(() => getEditableValue(rawValue));
     const [isEditing, setIsEditing] = useState(false);
 
+    // Este useEffect sincroniza o estado interno se o valor mudar externamente (ex: após salvar).
+    // Ele depende do valor derivado `getEditableValue(rawValue)`, que é uma string.
+    // Isso evita loops de renderização e não interfere na digitação do usuário.
     useEffect(() => {
-        // Garante que o valor de edição seja atualizado se o item mudar externamente
-        const newRawValue = column.key ? get(item, column.key, '') : '';
-        setCurrentValue(getEditableValue(newRawValue));
-    }, [item, column.key]);
+        setCurrentValue(getEditableValue(rawValue));
+    }, [getEditableValue(rawValue)]);
 
     const handleUpdate = async () => {
-        console.log('item:', item, 'column:', column, 'meta:', meta);
         if (!column.key || !meta?.key || !item?.id) {
             console.error("Dados incompletos para a ação (coluna, tabela ou id do item). Ação cancelada.");
             return;
@@ -61,18 +61,23 @@ const EditableTextRenderer: React.FC<EditableCellProps> = ({ item, column }) => 
             item: { id: item.id },
             data: { value: currentValue },
         });
+        
         if (result?.success) {
             setIsEditing(false);
             // Atualiza o estado localmente para evitar recarregar a página
             if (tableData && setTableData && column.key) {
                 const updatedData = tableData.map((d: DataItem) => {
+                    // Se o resultado da ação já contiver os dados atualizados, use-os.
+                    if (result.data && result.data.id === d.id) {
+                        return result.data;
+                    }
+                    // Senão, monte o objeto manualmente (lógica de fallback).
                     if (d.id === item.id) {
                         const newStringValue = result.value ?? currentValue;
-                        // Para manter a reatividade, criamos um novo objeto de valor para a célula
                         const newValueForCell = {
                             ...(typeof rawValue === 'object' ? rawValue : {}),
                             value: newStringValue,
-                            formatted: newStringValue,
+                            formatted: newStringValue, // Atualiza o valor formatado também
                         };
                         return { ...d, [column.key as string]: newValueForCell };
                     }
@@ -83,7 +88,6 @@ const EditableTextRenderer: React.FC<EditableCellProps> = ({ item, column }) => 
         } else {
             // Em caso de erro, reverte para o valor original
             setCurrentValue(getEditableValue(rawValue));
-            console.log('result:', result?.message);
             // alert(result?.message || 'Falha ao atualizar o valor.');
         }
     };

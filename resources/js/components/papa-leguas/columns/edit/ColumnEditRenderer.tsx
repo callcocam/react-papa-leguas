@@ -6,6 +6,7 @@ import TextRenderer from '../renderers/TextRenderer';
 import BadgeRenderer from '../renderers/BadgeRenderer';
 import CompoundRenderer from '../renderers/CompoundRenderer';
 import EmailRenderer from '../renderers/EmailRenderer';
+import { getColumnRenderers } from '../renderers';
 
 /**
  * Renderizador de exibição para células editáveis.
@@ -15,8 +16,14 @@ import EmailRenderer from '../renderers/EmailRenderer';
  */
 export default function ColumnEditRenderer({ value, item, column }: RendererProps) {
     // Determina o tipo de renderização, com 'text' como padrão.
-    const renderType = column.renderAs || column.type || 'text';
+    let renderType = column.renderAs || column.type || 'text';
+    
+    const renderers = getColumnRenderers();
 
+    console.log('renderers:', renderers);
+    if (renderType.startsWith('editable-')) {
+      renderType = 'text';
+    } 
     // Despacha para o componente de renderização apropriado.
     switch (renderType) {
         case 'badge':
@@ -31,6 +38,6 @@ export default function ColumnEditRenderer({ value, item, column }: RendererProp
         case 'editable-select':
         case 'text':
         default:
-            return <TextRenderer value={value} item={item} column={column} />;
+            return <TextRenderer value={value} item={item} column={column}  />;
     }
 } 

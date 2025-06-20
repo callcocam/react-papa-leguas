@@ -211,7 +211,6 @@ export default function DataTable({
 
                 {/* Tabela Principal */}
                 <Table
-                    data={data}
                     columns={columns}
                     actions={actions}
                     loading={loading}
