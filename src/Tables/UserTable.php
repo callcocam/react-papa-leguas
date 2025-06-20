@@ -78,23 +78,23 @@ class UserTable extends Table
             //     ->width('80px')
             //     ->alignment('center'),
 
-            CompoundColumn::make('name', 'Nome')
-                ->avatar('image_url')
-                ->title('name')
-                ->description('email')
-                ->searchable()
-                ->sortable()
-                ->alignment('left'),
-            // EditableColumn::make('name', 'Nome')
-            //     ->sortable()
+            // CompoundColumn::make('name', 'Nome')
+            //     ->avatar('image_url')
+            //     ->title('name')
+            //     ->description('email')
             //     ->searchable()
-            //     ->updateUsing(function (User $record, $value) {
-            //         $record->update([
-            //             'name' => $value,
-            //             'slug' => Str::slug($value),
-            //         ]);
-            //         return true;
-            //     }),
+            //     ->sortable()
+            //     ->alignment('left'),
+            EditableColumn::make('name', 'Nome')
+                ->sortable()
+                ->searchable()
+                ->updateUsing(function (User $record, $value) {
+                    $record->update([
+                        'name' => $value,
+                        'slug' => Str::slug($value),
+                    ]);
+                    return true;
+                }),
             // TextColumn::make('name', 'Nome')
             //     ->searchable()
             //     ->sortable()

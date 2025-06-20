@@ -10,8 +10,8 @@ import { TableColumn } from '../types';
 import get from 'lodash/get';
 import { TableContext, TableContextProps } from '../contexts/TableContext';
 import { useActionProcessor } from '../hooks/useActionProcessor';
-import TextRenderer from './renderers/TextRenderer';
 import EditRenderer from './edit/EditRenderer';
+import ColumnEditRenderer from './edit/ColumnEditRenderer'; 
 
 // Helper para extrair o valor de texto para edição
 const getEditableValue = (value: any): string => {
@@ -92,7 +92,7 @@ const EditableCell: React.FC<EditableCellProps> = ({ item, column }) => {
         <Popover open={isEditing} onOpenChange={setIsEditing}>
             <PopoverTrigger asChild>
                 <div className="cursor-pointer w-full h-full p-2 -m-2 hover:bg-muted/50 rounded-md transition-colors">
-                    <TextRenderer value={getEditableValue(currentValue)} item={item} column={column} />
+                    <ColumnEditRenderer value={getEditableValue(currentValue)} item={item} column={column} />
                 </div>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-4" onOpenAutoFocus={(e) => e.preventDefault()}>
