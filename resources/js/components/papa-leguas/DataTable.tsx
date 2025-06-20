@@ -7,6 +7,7 @@ import Resume from './components/Resume';
 import { type PapaLeguasTableProps } from './types';
 import { TableProvider } from './contexts/TableContext';
 import { ConfirmationDialogProvider } from './contexts/ConfirmationDialogContext';
+import { ModalProvider } from './contexts/ModalContext';
 
 export default function DataTable({ 
     data = [], 
@@ -198,40 +199,42 @@ export default function DataTable({
     return (
         <TableProvider initialData={data} meta={meta}>
             <ConfirmationDialogProvider>
-                <div className="space-y-6">
-                    {/* Filtros */}
-                    <Filters
-                        filters={filters}
-                        filterValues={filterValues}
-                        showFilters={showFilters}
-                        isApplyingFilters={isApplyingFilters}
-                        onFilterChange={handleFilterChange}
-                        onToggleFilters={() => setShowFilters(!showFilters)}
-                        onApplyFilters={applyFilters}
-                        onClearFilters={clearFilters}
-                    />
+                <ModalProvider>
+                    <div className="space-y-6">
+                        {/* Filtros */}
+                        <Filters
+                            filters={filters}
+                            filterValues={filterValues}
+                            showFilters={showFilters}
+                            isApplyingFilters={isApplyingFilters}
+                            onFilterChange={handleFilterChange}
+                            onToggleFilters={() => setShowFilters(!showFilters)}
+                            onApplyFilters={applyFilters}
+                            onClearFilters={clearFilters}
+                        />
 
-                    {/* Tabela Principal */}
-                    <Table
-                        columns={columns}
-                        actions={actions}
-                        loading={loading}
-                        pagination={(meta as any)?.pagination}
-                        onSort={handleSort}
-                        onPageChange={handlePageChange}
-                        sortColumn={sortColumn}
-                        sortDirection={sortDirection}
-                    />
+                        {/* Tabela Principal */}
+                        <Table
+                            columns={columns}
+                            actions={actions}
+                            loading={loading}
+                            pagination={(meta as any)?.pagination}
+                            onSort={handleSort}
+                            onPageChange={handlePageChange}
+                            sortColumn={sortColumn}
+                            sortDirection={sortDirection}
+                        />
 
-                    {/* Resumo/Estatísticas */}
-                    <Resume
-                        data={data}
-                        columns={columns}
-                        filters={filters}
-                        pagination={(meta as any)?.pagination}
-                        activeFiltersCount={activeFiltersCount}
-                    />
-                </div>
+                        {/* Resumo/Estatísticas */}
+                        <Resume
+                            data={data}
+                            columns={columns}
+                            filters={filters}
+                            pagination={(meta as any)?.pagination}
+                            activeFiltersCount={activeFiltersCount}
+                        />
+                    </div>
+                </ModalProvider>
             </ConfirmationDialogProvider>
         </TableProvider>
     );

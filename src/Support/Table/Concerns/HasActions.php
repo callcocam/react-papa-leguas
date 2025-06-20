@@ -6,6 +6,7 @@ use Callcocam\ReactPapaLeguas\Support\Table\Actions\Action;
 use Callcocam\ReactPapaLeguas\Support\Table\Actions\RouteAction;
 use Callcocam\ReactPapaLeguas\Support\Table\Actions\UrlAction;
 use Callcocam\ReactPapaLeguas\Support\Table\Actions\CallbackAction;
+use Callcocam\ReactPapaLeguas\Support\Table\Actions\ModalAction;
 
 /**
  * Trait para gerenciar ações de tabela
@@ -289,7 +290,12 @@ trait HasActions
      */
     protected function callbackAction(string $key): CallbackAction
     {
-        return CallbackAction::make($key);
+        return $this->actions[$key] = CallbackAction::make($key);
+    }
+
+    protected function modalAction(string $key): ModalAction
+    {
+        return $this->actions[$key] = ModalAction::make($key);
     }
 
     /**

@@ -4,6 +4,7 @@ import ButtonActionRenderer from './renderers/ButtonActionRenderer';
 import LinkActionRenderer from './renderers/LinkActionRenderer';
 import DropdownActionRenderer from './renderers/DropdownActionRenderer';
 import CallbackActionRenderer from './renderers/CallbackActionRenderer';
+import ModalActionRenderer from './renderers/ModalActionRenderer';
 import { icons } from 'lucide-react';
 
 const iconMap: { [key: string]: React.ElementType } = icons;
@@ -26,6 +27,9 @@ const renderers: { [key: string]: React.FC<ActionRendererProps> } = {
     callback: CallbackActionRenderer,
     callbackActionRenderer: CallbackActionRenderer,
     custom: CallbackActionRenderer,
+    
+    // Renderer de Modal
+    modal: ModalActionRenderer,
     
     // Renderers para tipos específicos (compatibilidade)
     edit: ButtonActionRenderer,
@@ -100,11 +104,8 @@ export default function ActionRenderer({ action, item }: ActionRendererComponent
 export const useActionProcessor = () => {
     const executeAction = async (action: TableAction, item: any) => {
         try {
-            // Se tem confirmação, solicitar confirmação primeiro
-            if (action.confirmMessage) {
-                const confirmed = window.confirm(action.confirmMessage);
-                if (!confirmed) return;
-            }
+            // A confirmação agora é tratada pelo renderer da ação.
+            // Esta verificação foi removida para evitar duplicação e erros.
 
             // Executar onClick se fornecido
             if (action.onClick) {

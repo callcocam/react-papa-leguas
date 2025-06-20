@@ -178,9 +178,10 @@ packages/callcocam/react-papa-leguas/src/Support/Table/
 - ✅ Implementar Header Actions (criar, exportar, etc.)
 - ✅ Implementar Row Actions (editar, excluir, visualizar)
 - ⏳ Implementar Bulk Actions (excluir em lote, etc.)
+- ⏳ Implementar Modal/Slide-over Actions (para edição em formulário)
 - ✅ Adicionar ações condicionais
 - ✅ Suporte a ações customizadas via closures
-- ✅ Implementar confirmações e validações.
+- ✅ Implementar confirmações e validações:
     - **Diálogo Customizado**: Substituição do `window.confirm` por um `AlertDialog` (shadcn/ui) totalmente customizável pelo backend (título, mensagem, texto dos botões, variante do botão de confirmação).
     - **Arquitetura Reutilizável**: Sistema global com Context API (`ConfirmationDialogProvider`) e um hook (`useConfirmationDialog`) para acionar o diálogo de qualquer parte da aplicação.
 

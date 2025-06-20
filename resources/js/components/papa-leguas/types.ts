@@ -60,6 +60,8 @@ export interface TableAction {
     };
     renderAs?: string;
     data?: Record<string, any>;
+    mode?: 'modal' | 'slideover';
+    modal_title?: string;
 }
 
 export interface ActionRendererProps {
