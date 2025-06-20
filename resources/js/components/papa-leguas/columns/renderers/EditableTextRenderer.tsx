@@ -6,12 +6,12 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Loader2, X, Check } from 'lucide-react';
-import { TableColumn } from '../types';
 import get from 'lodash/get';
-import { TableContext, TableContextProps } from '../contexts/TableContext';
-import { useActionProcessor } from '../hooks/useActionProcessor';
-import EditRenderer from './edit/EditRenderer';
-import ColumnEditRenderer from './edit/ColumnEditRenderer'; 
+import { TableContext, TableContextProps } from '../../contexts/TableContext';
+import { useActionProcessor } from '../../hooks/useActionProcessor';
+import ColumnEditRenderer from '../edit/ColumnEditRenderer';
+import { TableColumn } from '../../types';
+import TextEditor from '../edit/renderers/TextEditor';
 
 // Helper para extrair o valor de texto para edição
 const getEditableValue = (value: any): string => {
@@ -31,10 +31,10 @@ interface EditableCellProps {
     column: TableColumn;
 }
 
-const EditableCell: React.FC<EditableCellProps> = ({ item, column }) => {
+const EditableTextRenderer: React.FC<EditableCellProps> = ({ item, column }) => {
     const { tableData, setTableData, meta } = useContext(TableContext) as TableContextProps;
     const { processAction, isLoading } = useActionProcessor();
-    
+
     // O valor bruto (rawValue) pode ser um objeto { value, formatted, ... }
     const rawValue = column.key ? get(item, column.key, '') : '';
 
@@ -47,7 +47,7 @@ const EditableCell: React.FC<EditableCellProps> = ({ item, column }) => {
         const newRawValue = column.key ? get(item, column.key, '') : '';
         setCurrentValue(getEditableValue(newRawValue));
     }, [item, column.key]);
-    
+
     const handleUpdate = async () => {
         console.log('item:', item, 'column:', column, 'meta:', meta);
         if (!column.key || !meta?.key || !item?.id) {
@@ -60,7 +60,7 @@ const EditableCell: React.FC<EditableCellProps> = ({ item, column }) => {
             actionKey: column.key,
             item: { id: item.id },
             data: { value: currentValue },
-        }); 
+        });
         if (result?.success) {
             setIsEditing(false);
             // Atualiza o estado localmente para evitar recarregar a página
@@ -104,7 +104,7 @@ const EditableCell: React.FC<EditableCellProps> = ({ item, column }) => {
                         </p>
                     </div>
                     <div className="grid gap-2">
-                        <EditRenderer
+                        <TextEditor
                             item={item}
                             column={column}
                             value={currentValue}
@@ -134,4 +134,4 @@ const EditableCell: React.FC<EditableCellProps> = ({ item, column }) => {
     );
 };
 
-export default EditableCell; 
+export default EditableTextRenderer; 

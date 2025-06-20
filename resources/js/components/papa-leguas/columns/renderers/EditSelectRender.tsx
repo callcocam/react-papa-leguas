@@ -6,12 +6,12 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Loader2, X, Check } from 'lucide-react';
-import { TableColumn } from '../types';
 import get from 'lodash/get';
-import { TableContext, TableContextProps } from '../contexts/TableContext';
-import { useActionProcessor } from '../hooks/useActionProcessor';
-import EditRenderer from './edit/EditRenderer';
-import ColumnEditRenderer from './edit/ColumnEditRenderer'; 
+import { TableContext, TableContextProps } from '../../contexts/TableContext';
+import { useActionProcessor } from '../../hooks/useActionProcessor';
+import ColumnEditRenderer from '../edit/ColumnEditRenderer'; 
+import { TableColumn } from '../../types';
+import SelectEditor from '../edit/renderers/SelectEditor'; 
 
 // Helper para extrair o valor de texto para edição
 const getEditableValue = (value: any): string => {
@@ -104,7 +104,7 @@ const EditableCell: React.FC<EditableCellProps> = ({ item, column }) => {
                         </p>
                     </div>
                     <div className="grid gap-2">
-                        <EditRenderer
+                        <SelectEditor
                             item={item}
                             column={column}
                             value={currentValue}

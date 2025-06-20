@@ -3,8 +3,9 @@ import { RendererProps } from '../../types';
 import TextRenderer from './TextRenderer';
 import BadgeRenderer from './BadgeRenderer';
 import EmailRenderer from './EmailRenderer';
-import CompoundRenderer from '../CompoundRenderer';
-import EditableCell from '../EditableCell';
+import CompoundRenderer from '../CompoundRenderer'; 
+import EditSelectRender from './EditSelectRender';
+import EditableTextRenderer from './EditableTextRenderer';
 
 // O tipo 'any' aqui é uma solução pragmática para a dependência circular.
 // O tipo real é React.FC<RendererProps>, mas EditableCell tem um tipo diferente.
@@ -29,6 +30,10 @@ const baseRenderers: { [key: string]: React.FC<any> } = {
     badge: BadgeRenderer,
     badgeRenderer: BadgeRenderer,
     status: BadgeRenderer,
+
+    // Renderers de select
+    'editable-select': EditSelectRender,
+    editableSelect: EditSelectRender,
     
     // Renderers de email
     email: EmailRenderer,
@@ -39,10 +44,9 @@ const baseRenderers: { [key: string]: React.FC<any> } = {
     compoundRenderer: CompoundRenderer,
 
     // Renderer para edição inline
-    'editable-text': EditableCell,
-    editableText: EditableCell,
-    editable: EditableCell,
-
+    'editable-text': EditableTextRenderer,
+    editableText: EditableTextRenderer, 
+    editable: EditableTextRenderer,
     // Renderer padrão
     default: TextRenderer,
     defaultRenderer: TextRenderer,

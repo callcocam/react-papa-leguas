@@ -8,6 +8,8 @@
 
 namespace Callcocam\ReactPapaLeguas\Support\Table\Columns;
 
+use Callcocam\ReactPapaLeguas\Enums\BaseStatus;
+
 class TextColumn extends Column
 {
     protected ?int $limit = null;
@@ -58,34 +60,35 @@ class TextColumn extends Column
      */
     protected function format(mixed $value, $row): mixed
     {
-        // Se o valor já foi processado por um cast e é um array, usar ele
-        if (is_array($value) && isset($value['formatted'])) {
-            // Valor já processado por cast - mesclar com configurações da coluna
-            $baseResult = $value;
-            $text = $baseResult['formatted'] ?? (string) ($baseResult['value'] ?? '');
-        } else {
-            // Valor simples - processar normalmente
-            if (is_null($value) || $value === '') {
-                return [
-                    'value' => null,
-                    'type' => 'text',
-                    'formatted' => $this->placeholder ?? '',
-                    'wrap' => $this->wrap,
-                    'copyable' => $this->copyable,
-                    'placeholder' => $this->placeholder
-                ];
-            }
+        $baseResult = is_array($value) ? $value : ['value' => $value];
+        $textForFormatting = $baseResult['formatted'] ?? ($baseResult['value'] ?? '');
 
-            $text = (string) $value;
-            $baseResult = ['value' => $value];
+        if ($textForFormatting instanceof BaseStatus) {
+            $baseResult['value'] = $textForFormatting->value;
+            $textForFormatting = $textForFormatting->label();
+        } elseif (is_object($textForFormatting) && method_exists($textForFormatting, 'name')) {
+            $textForFormatting = $textForFormatting->value ?? $textForFormatting->name;
+        } elseif (is_array($textForFormatting)) {
+            $textForFormatting = $textForFormatting['label'] ?? $textForFormatting['name'] ?? '';
         }
 
-        // Aplicar limite de caracteres se definido
+        $text = (string) $textForFormatting;
+        
+        if (is_null($value) || $text === '') {
+            return [
+                'value' => null,
+                'type' => 'text',
+                'formatted' => $this->placeholder ?? '',
+                'wrap' => $this->wrap,
+                'copyable' => $this->copyable,
+                'placeholder' => $this->placeholder
+            ];
+        }
+
         if ($this->limit && mb_strlen($text) > $this->limit) {
             $text = mb_substr($text, 0, $this->limit) . $this->limitSuffix;
         }
 
-        // Mesclar resultado base com configurações da coluna
         return array_merge($baseResult, [
             'type' => 'text',
             'formatted' => $text,

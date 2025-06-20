@@ -1,34 +1,43 @@
 import React from 'react';
-import { type TableColumn } from '../../types';
+import { TableColumn, TableRow } from '../../types';
 import { getEditRenderers } from './renderers';
-import { EditorProps } from './renderers/TextEditor';
 
-export interface EditRendererProps extends EditorProps {
+export interface EditRendererProps {
+    item: TableRow;
     column: TableColumn;
+    value: string;
+    onValueChange: (value: string) => void;
 }
 
-export default function EditRenderer({ column, value, onValueChange }: EditRendererProps) {
+const EditRenderer: React.FC<EditRendererProps> = ({ item, column, value, onValueChange }) => {
     // Verificação de segurança
     if (!column || typeof column !== 'object') {
-        console.warn('⚠️ Coluna inválida para edição:', column);
+        console.warn('⚠️ Coluna inválida:', column);
         return null;
     }
 
     const renderers = getEditRenderers();
+    let editorType: string;
 
-    // Usa a propriedade `editor` vinda do backend, com fallback para 'text'
-    const editorType = column.renderAs || 'text';
+    const hasOptions = column.options && Array.isArray(column.options) && column.options.length > 0;
 
-    // typescript-eslint: Element implicitly has an 'any' type
-    // Corrigido: verificamos se a chave existe antes de usá-la.
+    if (hasOptions) {
+        editorType = 'editable-select';
+    } else {
+        editorType = column.renderAs || column.type || 'text-editor';
+    }
+    console.log(editorType);
     const Renderer = Object.prototype.hasOwnProperty.call(renderers, editorType)
         ? renderers[editorType as keyof typeof renderers]
         : renderers.default;
+
 
     if (!Renderer) {
         console.error(`❌ ERRO: Nenhum editor encontrado para o tipo '${editorType}' e nenhum editor padrão definido.`);
         return <div>Editor não encontrado</div>;
     }
 
-    return <Renderer value={value} onValueChange={onValueChange} column={column} />;
-} 
+    return <Renderer value={value} onValueChange={onValueChange} item={item} column={column} />;
+};
+
+export default EditRenderer; 

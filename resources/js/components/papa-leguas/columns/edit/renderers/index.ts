@@ -6,8 +6,8 @@ import SelectEditor from './SelectEditor';
 
 // Mapeamento dos tipos de editor para os componentes React
 const EDIT_RENDERERS: Record<string, React.ComponentType<any>> = {
-    text: TextEditor,
-    select: SelectEditor,
+    'editable-text': TextEditor,
+    'editable-select': SelectEditor,
     // number: NumberEditor,
     // date: DateEditor,
 };

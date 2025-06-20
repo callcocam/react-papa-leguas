@@ -119,49 +119,60 @@ class UserTable extends Table
                 ->sortable()
                 ->copyable()
                 // Cast personalizado para formatação de e-mail
-                ->cast(ClosureCast::make()
-                    ->transform(function ($value, $context) {
-                        if (!$value) return null;
-
-                        $parts = explode('@', $value);
-                        $domain = $parts[1] ?? '';
-
-                        return [
-                            'value' => $value,
-                            'formatted' => $value,
-                            'domain' => $domain,
-                            'username' => $parts[0] ?? '',
-                            'type' => 'email',
-                            'copyable' => true,
-                            'mailto' => "mailto:{$value}",
-                            'is_business' => in_array($domain, ['gmail.com', 'yahoo.com', 'hotmail.com']) ? false : true,
-                        ];
-                    })
-                ),
-
-            BadgeColumn::make('status', 'Status')
-                ->sortable()
-                ->width('120px')
                 ->cast(
-                    StatusCast::make()
-                        ->formatType('badge')
-                        ->variants([
-                            BaseStatus::Active->value => 'default',
-                            BaseStatus::Published->value => 'default',
-                            BaseStatus::Draft->value => 'default',
-                            BaseStatus::Inactive->value => 'destructive',
-                            BaseStatus::Archived->value => 'default',
-                            BaseStatus::Deleted->value => 'destructive',
-                        ])
-                        ->labels([
-                            BaseStatus::Active->value => 'Ativo',
-                            BaseStatus::Published->value => 'Publicado',
-                            BaseStatus::Draft->value => 'Rascunho',
-                            BaseStatus::Inactive->value => 'Inativo',
-                            BaseStatus::Archived->value => 'Arquivado',
-                            BaseStatus::Deleted->value => 'Excluído',
-                        ])
+                    ClosureCast::make()
+                        ->transform(function ($value, $context) {
+                            if (!$value) return null;
+
+                            $parts = explode('@', $value);
+                            $domain = $parts[1] ?? '';
+
+                            return [
+                                'value' => $value,
+                                'formatted' => $value,
+                                'domain' => $domain,
+                                'username' => $parts[0] ?? '',
+                                'type' => 'email',
+                                'copyable' => true,
+                                'mailto' => "mailto:{$value}",
+                                'is_business' => in_array($domain, ['gmail.com', 'yahoo.com', 'hotmail.com']) ? false : true,
+                            ];
+                        })
                 ),
+
+                EditableColumn::make('status', 'Status') 
+                    ->options([
+                        ['value' => 'draft', 'label' => 'Rascunho'],
+                        ['value' => 'published', 'label' => 'Publicado'],
+                        ['value' => 'archived', 'label' => 'Arquivado'],
+                    ])
+                    ->updateUsing(function (User $record, $value) {
+                        $record->update(['status' => $value]);
+                        return true;
+                    }),
+                // BadgeColumn::make('status', 'Status')
+            //     ->sortable()
+            //     ->width('120px')
+            //     ->cast(
+            //         StatusCast::make()
+            //             ->formatType('badge')
+            //             ->variants([
+            //                 BaseStatus::Active->value => 'default',
+            //                 BaseStatus::Published->value => 'default',
+            //                 BaseStatus::Draft->value => 'default',
+            //                 BaseStatus::Inactive->value => 'destructive',
+            //                 BaseStatus::Archived->value => 'default',
+            //                 BaseStatus::Deleted->value => 'destructive',
+            //             ])
+            //             ->labels([
+            //                 BaseStatus::Active->value => 'Ativo',
+            //                 BaseStatus::Published->value => 'Publicado',
+            //                 BaseStatus::Draft->value => 'Rascunho',
+            //                 BaseStatus::Inactive->value => 'Inativo',
+            //                 BaseStatus::Archived->value => 'Arquivado',
+            //                 BaseStatus::Deleted->value => 'Excluído',
+            //             ])
+            //     ),
 
             BooleanColumn::make('email_verified_at', 'E-mail Verificado')
                 ->getValueUsing(function ($row) {

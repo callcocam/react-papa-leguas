@@ -4,19 +4,21 @@ export interface RendererProps {
     column: TableColumn;
 }
 
+export interface TableMeta {
+    key: string;
+    title?: string;
+    description?: string;
+}
+
 export interface TableColumn {
-    name?: string;
-    key?: string;
-    label?: string;
+    key: string | null;
+    label: string;
+    sortable?: boolean;
+    searchable?: boolean;
+    hidden?: boolean;
     type?: string;
     renderAs?: string;
-    width?: string;
-    alignment?: 'left' | 'center' | 'right';
-    sortable?: boolean;
-    hidden?: boolean;
-    rendererOptions?: {
-        [key: string]: any;
-    };
+    options?: { value: string; label: string }[];
 }
 
 export interface TableFilter {
@@ -70,5 +72,33 @@ export interface PapaLeguasTableProps {
         searchable?: boolean;
         sortable?: boolean;
         filterable?: boolean;
+    };
+}
+
+export interface TableRow {
+    [key: string]: any;
+}
+
+export interface TableData {
+    data: TableRow[];
+    links: {
+        first: string;
+        last: string;
+        prev: string | null;
+        next: string | null;
+    };
+    meta: {
+        current_page: number;
+        from: number;
+        last_page: number;
+        links: {
+            url: string | null;
+            label: string;
+            active: boolean;
+        }[];
+        path: string;
+        per_page: number;
+        to: number;
+        total: number;
     };
 }

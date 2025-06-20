@@ -11,18 +11,22 @@ namespace Callcocam\ReactPapaLeguas\Support\Table\Columns;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use \Callcocam\ReactPapaLeguas\Support\Concerns\EvaluatesClosures;
 
 class EditableColumn extends TextColumn
 {
+    use EvaluatesClosures;
+
     protected string $view = 'react-papa-leguas::columns.editable-column';
     protected ?Closure $updateCallback = null;
+    protected array $options = [];
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->type('editable-text'); // Define o tipo da coluna como 'editable'
-        $this->renderAs('editable-text'); // Define o renderAs como 'editable-text'
+        $this->type('editable'); // Define o tipo da coluna como 'editable'
+        $this->renderAs('editable-text'); // Define o renderAs como 'editable-text' por padrão
     }
 
     /**
@@ -31,7 +35,7 @@ class EditableColumn extends TextColumn
      *
      * @param Closure $callback (Model $record, mixed $value): bool
      */
-    public function updateUsing(Closure $callback): static
+    public function updateUsing(?Closure $callback): self
     {
         $this->updateCallback = $callback;
         return $this;
@@ -50,11 +54,11 @@ class EditableColumn extends TextColumn
      */
     public function executeUpdate(Model $record, mixed $value): bool
     {
-        if (!$this->hasUpdateCallback()) {
+        if ($this->getUpdate() === null) {
             return false;
         }
 
-        return (bool) $this->evaluate($this->updateCallback, [
+        return (bool) $this->evaluate($this->getUpdate(), [
             'record' => $record,
             'value' => $value,
         ]);
@@ -74,10 +78,38 @@ class EditableColumn extends TextColumn
     public function toArray(): array
     {
         $data = parent::toArray();
-
-        // Garante que o tipo seja sempre 'editable' no JSON final
         $data['type'] = 'editable';
 
+        $data['update_using'] = $this->getUpdate() !== null;
+
+        if (!empty($this->getOptions())) {
+            $data['options'] = $this->getOptions();
+            // $data['renderAs'] = 'editable-select';
+        }
+
         return $data;
+    }
+
+    public function options(array $options): static
+    {
+        $this->options = $options;
+
+        if (!empty($options)) {
+            $this->renderAs('editable-select');
+        } else {
+            $this->renderAs('editable-text');
+        }
+
+        return $this;
+    }
+
+    public function getOptions(): array
+    {
+        return $this->options;
+    }
+
+    public function getUpdate(): ?Closure
+    {
+        return $this->updateCallback;
     }
 } 
