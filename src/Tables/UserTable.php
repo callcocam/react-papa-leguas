@@ -206,16 +206,12 @@ class UserTable extends Table
                 ),
 
             DateColumn::make('created_at', 'Criado em')
-                ->dateFormat('d/m/Y H:i')
+                ->dateFormat('d/m/Y')
                 ->since()
                 ->sortable()
                 ->width('150px')
-                ->cast(
-                    DateCast::make()
-                        ->format('d/m/Y H:i')
-                        ->timezone('America/Sao_Paulo')
-                        ->showRelative(true, 30)
-                ),
+                ->since()
+               ,
 
             DateColumn::make('updated_at', 'Atualizado em')
                 ->dateFormat('d/m/Y H:i')
@@ -380,7 +376,7 @@ class UserTable extends Table
                 }),
 
             // ✅ AÇÃO DE CALLBACK - Alternar status de verificação de e-mail
-            $this->callbackAction('toggle_verification')
+            $this->callbackAction('email_verified_at')
                 ->labelUsing(function ($item, $context) {
                     if (!$item) return 'Verificação';
                     return $item->email_verified_at
@@ -409,19 +405,23 @@ class UserTable extends Table
 
                     if ($item->email_verified_at) {
                         // Remover verificação
-                        $item->update(['email_verified_at' => null]);
+                        $item->update(['email_verified_at' => null]); 
+                        $item = $item->fresh();
                         return [
                             'success' => true,
                             'message' => 'Verificação de e-mail removida com sucesso!',
-                            'reload' => true
+                            'reload' => false,
+                            'item' => $this->formatRow($item->toArray()),
                         ];
                     } else {
                         // Marcar como verificado
                         $item->update(['email_verified_at' => now()]);
+                        $item = $item->fresh();
                         return [
                             'success' => true,
                             'message' => 'E-mail marcado como verificado!',
-                            'reload' => true
+                            'reload' => false,
+                            'item' => $this->formatRow($item->toArray()),
                         ];
                     }
                 })
@@ -467,7 +467,8 @@ class UserTable extends Table
                         'message' => "Usuário {$item->name} foi " .
                             ($newStatus === 'active' ? 'ativado' : 'desativado') .
                             ' com sucesso!',
-                        'reload' => true
+                        'reload' => false,
+                        'item' => $item->fresh(),
                     ];
                 }),
 

@@ -189,6 +189,7 @@ class RouteAction extends Action
             return $array;
         }
 
+        $array['url'] = $this->getUrl($item, $context);
         $array['route'] = $this->route ?? null;
         $array['parameters'] = $this->getParameters($item, $context);
         $array['open_in_new_tab'] = $this->openInNewTab;

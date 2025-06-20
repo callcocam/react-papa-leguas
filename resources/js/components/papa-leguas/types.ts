@@ -53,6 +53,7 @@ export interface TableAction {
     tooltip?: string;
     confirmMessage?: string;
     renderAs?: string;
+    data?: Record<string, any>;
 }
 
 export interface ActionRendererProps {

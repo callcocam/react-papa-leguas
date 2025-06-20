@@ -35,8 +35,8 @@ const renderers: { [key: string]: React.FC<ActionRendererProps> } = {
     secondary: ButtonActionRenderer,
     
     // Renderers para tipos do backend
-    route: ButtonActionRenderer,
-    url: ButtonActionRenderer,
+    route: LinkActionRenderer,
+    url: LinkActionRenderer,
     
     // Renderer padrão
     default: ButtonActionRenderer,

@@ -45,7 +45,11 @@ class CallbackAction extends Action
     public function execute($item = null, array $context = []): mixed
     {
         if (!$this->callback) {
-            return null;
+            return [
+                'success' => false,
+                'message' => 'Ação não implementada no backend.',
+                'reload' => false,
+            ];
         }
 
         return $this->evaluate($this->callback, [

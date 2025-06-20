@@ -11,7 +11,7 @@ export default function LinkActionRenderer({ action, item, IconComponent }: Acti
     const url = typeof action.url === 'function' ? action.url(item) : action.url || '#';
     
     const className = `inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 hover:underline ${action.className || ''}`;
-
+ 
     return (
         <Link
             href={url}

@@ -1,52 +1,68 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import { type ActionRendererProps } from '../../types';
+import { useActionProcessor } from '../../hooks/useActionProcessor';
+import { TableContext } from '../../contexts/TableContext';
 
 /**
  * Renderizador de Ação Callback
  * Usado para ações customizadas que executam callbacks no backend
  */
 export default function CallbackActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
+    const context = useContext(TableContext);
+    const { processAction, isLoading } = useActionProcessor();
+
     const handleClick = async () => {
         try {
             // Confirmação se necessária
             if (action.confirmMessage) {
-                const confirmed = confirm(action.confirmMessage);
-                if (!confirmed) return;
+                if (!confirm(action.confirmMessage)) {
+                    return;
+                }
             }
 
-            // Executar callback customizado se fornecido
+            // Executar callback customizado do frontend se fornecido
             if (action.onClick) {
                 action.onClick(item);
                 return;
             }
 
-            // Fazer requisição para executar callback no backend
-            const response = await fetch(`/api/actions/${action.key}/execute`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    item_id: item.id,
-                }),
+            // Garantir que temos as informações necessárias
+            if (!context.meta?.key) {
+                console.error("❌ A chave da tabela (meta.key) não foi encontrada no contexto.");
+                alert("Erro de configuração: Chave da tabela ausente.");
+                return;
+            }
+
+            // Usar o hook para processar a ação no backend
+            const result = await processAction({
+                table: context.meta.key,
+                actionKey: action.key,
+                item: item,
+                data: action.data || {},
             });
 
-            const result = await response.json();
-            
-            if (result.success) {
+            if (result && result.success) {
                 // Sucesso - pode mostrar notificação ou recarregar página
-                console.log('✅ Ação executada com sucesso:', result.message);
-                
-                // Recarregar página para refletir mudanças
-                if (result.reload !== false) {
+                console.log('✅ Ação executada com sucesso:', result.message, action.key);
+
+                // Se o backend mandar o item atualizado, atualizamos o estado
+                if (result.item && context.setTableData) {
+                    context.setTableData(prevData =>
+                        prevData.map(row =>
+                            row.id === result.item.id ? result.item : row
+                        )
+                    );
+                }
+                // Se o backend explicitamente pedir reload, fazemos
+                else if (result.reload === true) {
                     window.location.reload();
                 }
             } else {
                 // Erro - mostrar mensagem de erro
-                console.error('❌ Erro na execução da ação:', result.message);
-                alert(result.message || 'Erro ao executar ação');
+                const errorMessage = result?.message || 'Erro ao executar ação';
+                console.error('❌ Erro na execução da ação:', errorMessage);
+                alert(errorMessage);
             }
         } catch (error) {
             console.error('❌ Erro ao executar callback:', error);
@@ -73,7 +89,7 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
             variant={variant}
             size={buttonSize}
             onClick={handleClick}
-            disabled={action.disabled}
+            disabled={action.disabled || isLoading}
             className={action.className}
             title={action.tooltip || action.label}
         >

@@ -17,8 +17,7 @@ export const useActionProcessor = () => {
 
 
     const processAction = async (payload: UseActionProcessorPayload) => {
-        setIsLoading(true);
-        console.log('payload:', payload.table);
+        setIsLoading(true); 
         try {
             const response = await axios.post(
                 `/api/${payload.table}/actions/${payload.actionKey}/execute`,
