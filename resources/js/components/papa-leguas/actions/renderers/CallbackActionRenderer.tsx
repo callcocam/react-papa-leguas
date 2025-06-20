@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Tooltip,
@@ -9,7 +9,9 @@ import {
 import { useConfirmationDialog } from '../../contexts/ConfirmationDialogContext';
 import { type ActionRendererProps } from '../../types';
 import { cn } from '@/lib/utils';
-import { useActionProcessor } from '../ActionRenderer';
+import { useActionProcessor } from '../../hooks/useActionProcessor';
+import { TableContext } from '../../contexts/TableContext';
+import { router } from '@inertiajs/react';
 
 /**
  * Renderiza uma ação que dispara um callback no backend,
@@ -17,7 +19,8 @@ import { useActionProcessor } from '../ActionRenderer';
  */
 export default function CallbackActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
     const { confirm } = useConfirmationDialog();
-    const { executeAction } = useActionProcessor();
+    const { processAction, isLoading } = useActionProcessor();
+    const { meta } = useContext(TableContext);
 
     if (action.hidden) {
         return null;
@@ -33,16 +36,37 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
         className,
     } = action;
 
-    // A função que efetivamente executa a ação no backend
-    const runAction = () => {
-        executeAction(action, item);
+    const runAction = async () => {
+        if (!meta?.key) {
+            console.error("Erro crítico: A chave da tabela (meta.key) não foi encontrada no contexto.");
+            alert("Erro de configuração: Chave da tabela ausente.");
+            return;
+        }
+
+        const result = await processAction({
+            table: meta.key,
+            actionKey: action.key,
+            item: item,
+            data: action.data || {},
+        });
+
+        if (result?.success) {
+            // Se o backend não disser explicitamente para não recarregar
+            if (result.reload !== false) {
+                // Usa o router do Inertia para recarregar apenas os dados, mantendo a posição do scroll
+                router.visit(window.location.href, {
+                    preserveScroll: true,
+                });
+            }
+        } else {
+            alert(result?.message || 'Ocorreu um erro ao processar a ação.');
+        }
     };
 
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
 
         if (confirmation) {
-            // Se a confirmação for necessária, usa o hook do diálogo
             confirm({
                 title: confirmation.title || 'Você tem certeza?',
                 message: confirmation.message,
@@ -52,7 +76,6 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
                 onConfirm: runAction,
             });
         } else {
-            // Caso contrário, executa a ação diretamente
             runAction();
         }
     };
@@ -65,7 +88,7 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
                         variant={variant}
                         size={showLabel ? 'sm' : 'icon'}
                         onClick={handleClick}
-                        disabled={disabled}
+                        disabled={disabled || isLoading}
                         className={cn(
                             showLabel ? 'h-auto text-xs px-2 py-1.5' : 'h-8 w-8',
                             className
