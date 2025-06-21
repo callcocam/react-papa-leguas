@@ -177,13 +177,10 @@ packages/callcocam/react-papa-leguas/src/Support/Table/
 ### **8. SISTEMA DE AÇÕES**
 - ✅ Implementar Header Actions (criar, exportar, etc.)
 - ✅ Implementar Row Actions (editar, excluir, visualizar)
-- ⏳ Implementar Bulk Actions (excluir em lote, etc.)
-- ⏳ Implementar Modal/Slide-over Actions (para edição em formulário)
+- ✅ Implementar Bulk Actions (excluir em lote, etc.)
+- ✅ Implementar Modal/Slide-over Actions (Base implementada, conteúdo dinâmico pendente)
 - ✅ Adicionar ações condicionais
-- ✅ Suporte a ações customizadas via closures
-- ✅ Implementar confirmações e validações:
-    - **Diálogo Customizado**: Substituição do `window.confirm` por um `AlertDialog` (shadcn/ui) totalmente customizável pelo backend (título, mensagem, texto dos botões, variante do botão de confirmação).
-    - **Arquitetura Reutilizável**: Sistema global com Context API (`ConfirmationDialogProvider`) e um hook (`useConfirmationDialog`) para acionar o diálogo de qualquer parte da aplicação.
+- ✅ Suporte a ações customizadas via closures e confirmações avançadas
 
 ### **9. EXPORTAÇÃO E IMPORTAÇÃO**
 - ⏳ Suporte a exportação CSV
@@ -335,12 +332,12 @@ packages/callcocam/react-papa-leguas/src/Support/Table/
 ## 📊 **ESTATÍSTICAS DO PROJETO**
 
 ### **Progress Overview**
-- ✅ **Concluído**: 65 tarefas implementadas
-- ⏳ **Pendente**: 15 tarefas restantes
-- 📈 **Progresso**: ~81% do sistema completo
+- ✅ **Concluído**: 66 tarefas implementadas
+- ⏳ **Pendente**: 14 tarefas restantes
+- 📈 **Progresso**: ~82% do sistema completo
 
 ### **Sistemas por Status**
-- 🟢 **Completos (12 sistemas)**:
+- 🟢 **Completos (13 sistemas)**:
   - ✅ Core - Processamento de Dados
   - ✅ Sistema de Colunas Avançado
   - ✅ Sistema de Casts
@@ -354,8 +351,7 @@ packages/callcocam/react-papa-leguas/src/Support/Table/
   - ✅ Sistema Extensível Unificado
   - ✅ Correções de Conflitos e Erros
 
-- 🟡 **Parcialmente Implementados (2 sistemas)**:
-  - Sistema de Ações (95% - falta Bulk Actions)
+- 🟡 **Parcialmente Implementados (1 sistema)**:
   - Flexibilidade e Debugging (57% completo)
 
 - 🔴 **Pendentes (3 sistemas)**:

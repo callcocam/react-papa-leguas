@@ -315,45 +315,35 @@ trait HasActions
     }
 
     /**
-     * Métodos de conveniência para criar ações
-     */
-    
-    /**
-     * Cria uma ação de rota
+     * Helpers para criar ações
      */
     protected function routeAction(string $key): RouteAction
     {
         return RouteAction::make($key);
     }
 
-    /**
-     * Cria uma ação de URL
-     */
     protected function urlAction(string $key): UrlAction
     {
         return UrlAction::make($key);
     }
 
-    /**
-     * Cria uma ação de callback
-     */
     protected function callbackAction(string $key): CallbackAction
     {
-        return $this->actions[$key] = CallbackAction::make($key);
+        return CallbackAction::make($key);
     }
 
     protected function modalAction(string $key): ModalAction
     {
-        return $this->actions[$key] = ModalAction::make($key);
+        return ModalAction::make($key);
     }
 
     protected function bulkAction(string $key): BulkAction
     {
-        return $this->actions[$key] = BulkAction::make($key);
+        return BulkAction::make($key);
     }
 
     /**
-     * Configurações rápidas para ações comuns
+     * Helpers para ações comuns
      */
     
     /**

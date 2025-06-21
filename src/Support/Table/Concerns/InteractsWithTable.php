@@ -48,14 +48,6 @@ trait InteractsWithTable
                 $this->{$method}();
             }
         }
-
-        // Integração de Colunas Editáveis com Ações
-        if (method_exists($this, 'getEditableColumnActions') && property_exists($this, 'actions')) {
-            $editableActions = $this->getEditableColumnActions();
-            if (!empty($editableActions)) {
-                $this->actions = array_merge($this->actions, $editableActions);
-            }
-        }
     }
 
     /**
@@ -73,6 +65,15 @@ trait InteractsWithTable
     public function toArray(): array
     {
         try {
+            // Garante que todas as ações, incluindo as de colunas editáveis,
+            // sejam carregadas e mescladas antes de qualquer outra coisa.
+            if (method_exists($this, 'loadActions')) {
+                $this->loadActions(); // Carrega ações definidas no método actions()
+            }
+            if (method_exists($this, 'getEditableColumnActions')) {
+                 $this->actions = array_merge($this->actions, $this->getEditableColumnActions());
+            }
+
             // Usar paginação se habilitada
             if ($this->isPaginated()) {
                 $paginatedData = $this->getPaginatedData();
