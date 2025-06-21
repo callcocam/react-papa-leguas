@@ -32,6 +32,8 @@ import {
 import { usePermissions } from '../hooks/usePermissions' 
 import { PermissionLink } from '../components/PermissionLink'
 import { Toaster } from '../components/ui/toaster'
+import { LoadingOverlay } from '../components/ui/loading-overlay'
+import { useGlobalLoading } from '../hooks/use-global-loading'
 import { router } from '@inertiajs/react'
 
 interface AppLayoutProps {
@@ -56,6 +58,7 @@ export default function AppLayout({
   const { props } = usePage()
   const { user, isAuthenticated, hasPermission } = usePermissions()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { isLoading: globalLoading, message: loadingMessage } = useGlobalLoading()
   
   // Itens de navegação com permissões
   const navigationItems = [
@@ -312,6 +315,12 @@ export default function AppLayout({
       
       {/* Toast/Notifications Provider */}
       <Toaster />
+      
+      {/* Loading Overlay Global */}
+      <LoadingOverlay 
+        isVisible={globalLoading} 
+        message={loadingMessage}
+      />
     </div>
   )
 }

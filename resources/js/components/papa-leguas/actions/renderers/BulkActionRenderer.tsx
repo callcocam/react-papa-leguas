@@ -4,7 +4,7 @@ import { type TableAction } from '../../types';
 import { TableContext } from '../../contexts/TableContext';
 import { useConfirmationDialog } from '../../contexts/ConfirmationDialogContext';
 import { useActionProcessor } from '../../hooks/useActionProcessor';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, Loader2 } from 'lucide-react';
 import { Icons } from '../../icons';
 import { router } from '@inertiajs/react';
 
@@ -69,8 +69,12 @@ export default function BulkActionRenderer({ action }: BulkActionRendererProps) 
             disabled={isDisabled}
             title={action.tooltip || action.label}
         >
-            {IconComponent && <IconComponent className="mr-0 h-4 w-4" />}
-            <span>{action.label}</span>
+            {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                IconComponent && <IconComponent className="mr-2 h-4 w-4" />
+            )}
+            <span>{isLoading ? 'Processando...' : action.label}</span>
         </Button>
     );
 } 

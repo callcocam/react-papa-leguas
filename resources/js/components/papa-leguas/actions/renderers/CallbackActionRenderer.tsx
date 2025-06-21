@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import {
     Tooltip,
     TooltipContent,
@@ -95,9 +96,13 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
                             className
                         )}
                     >
-                        {IconComponent && <IconComponent className={cn('h-4 w-4', showLabel && 'mr-2')} />}
-                        {showLabel && <span>{label}</span>}
-                        {!showLabel && <span className="sr-only">{label}</span>}
+                        {isLoading ? (
+                            <Loader2 className={cn('h-4 w-4 animate-spin', showLabel && 'mr-2')} />
+                        ) : (
+                            IconComponent && <IconComponent className={cn('h-4 w-4', showLabel && 'mr-2')} />
+                        )}
+                        {showLabel && <span>{isLoading ? 'Processando...' : label}</span>}
+                        {!showLabel && <span className="sr-only">{isLoading ? 'Processando...' : label}</span>}
                     </Button>
                 </TooltipTrigger>
                 {tooltip && (
