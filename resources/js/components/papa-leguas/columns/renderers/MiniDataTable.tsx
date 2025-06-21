@@ -20,8 +20,8 @@ import {
     ArrowDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ColumnRenderer } from '../ColumnRenderer';
-import { ActionRenderer } from '../../actions/renderers/ActionRenderer';
+import ColumnRenderer from '../ColumnRenderer';
+import ActionRenderer from '../../actions/ActionRenderer';
 
 interface MiniDataTableProps {
     data: any[];
@@ -239,7 +239,6 @@ export default function MiniDataTable({
                                                         key={action.key}
                                                         action={action}
                                                         item={item}
-                                                        size="sm"
                                                     />
                                                 ))}
                                             </div>

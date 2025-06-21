@@ -193,6 +193,33 @@ class NestedTableColumn extends Column
     }
 
     /**
+     * Define o ícone quando expandido
+     */
+    public function expandedIcon(string $icon): static
+    {
+        $this->icons['expanded'] = $icon;
+        return $this;
+    }
+
+    /**
+     * Define o ícone quando recolhido
+     */
+    public function collapsedIcon(string $icon): static
+    {
+        $this->icons['collapsed'] = $icon;
+        return $this;
+    }
+
+    /**
+     * Define o ícone de loading
+     */
+    public function loadingIcon(string $icon): static
+    {
+        $this->icons['loading'] = $icon;
+        return $this;
+    }
+
+    /**
      * Obtém o tipo da coluna
      */
     public function getType(): string

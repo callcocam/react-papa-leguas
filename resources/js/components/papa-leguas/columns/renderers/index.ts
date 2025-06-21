@@ -51,6 +51,7 @@ const baseRenderers: { [key: string]: React.FC<any> } = {
     
     // Renderer para tabelas aninhadas
     'nested-table': NestedTableRenderer,
+    'nested_table': NestedTableRenderer,
     nestedTable: NestedTableRenderer,
     nested: NestedTableRenderer,
     

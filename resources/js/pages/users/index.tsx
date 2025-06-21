@@ -1,22 +1,19 @@
 import React from 'react';
 import { Head, router } from '@inertiajs/react';
-import PapaLeguasTable from '../../components/papa-leguas-table';
+import DataTable from '../../components/papa-leguas/DataTable';
 import { 
     TableColumn, 
-    TableRow, 
     TableFilter, 
-    TableActions, 
-    TablePagination,
     TableAction 
-} from '../../components/papa-leguas-table/types';
+} from '../../components/papa-leguas/types';
 
 interface UsersProps {
     table: {
-        data: TableRow[];
+        data: any[];
         columns: TableColumn[];
         filters?: TableFilter[];
-        actions?: TableActions;
-        pagination?: TablePagination;
+        actions?: any;
+        pagination?: any;
         meta?: {
             title?: string;
             description?: string;
@@ -59,7 +56,7 @@ export default function UsersIndex({ table, error }: UsersProps) {
         });
     };
 
-    const handleActionClick = (action: TableAction, row?: TableRow) => {
+    const handleActionClick = (action: TableAction, row?: any) => {
         console.log('Ação executada:', { action: action.key, row: row?.id });
         
         switch (action.key) {
@@ -100,7 +97,7 @@ export default function UsersIndex({ table, error }: UsersProps) {
         }
     };
 
-    const handleBulkActionClick = (action: any, selectedRows: TableRow[]) => {
+    const handleBulkActionClick = (action: any, selectedRows: any[]) => {
         console.log('Ação em lote executada:', { 
             action: action.key, 
             count: selectedRows.length,
@@ -151,18 +148,12 @@ export default function UsersIndex({ table, error }: UsersProps) {
                 </div>
 
                 {/* Tabela Papa Leguas */}
-                <PapaLeguasTable
+                <DataTable
                     data={table.data}
                     columns={table.columns}
                     filters={table.filters}
                     actions={table.actions}
-                    pagination={table.pagination}
                     error={error}
-                    onFilterChange={handleFilterChange}
-                    onSortChange={handleSortChange}
-                    onPageChange={handlePageChange}
-                    onActionClick={handleActionClick}
-                    onBulkActionClick={handleBulkActionClick}
                 />
             </div>
         </>
