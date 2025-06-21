@@ -11,6 +11,7 @@ use Callcocam\ReactPapaLeguas\Enums\RoleStatus;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 
 class CreateTenantAdminCommand extends Command
@@ -22,10 +23,10 @@ class CreateTenantAdminCommand extends Command
      */
     protected $signature = 'papa-leguas:create-tenant-admin 
                             {--tenant-name=Empresa Exemplo : Nome do tenant}
-                            {--tenant-email=admin@empresa.com : Email do tenant}
-                            {--tenant-domain= : Domínio do tenant (opcional)}
+                            {--tenant-email= : Email do tenant (se não fornecido, será gerado automaticamente)}
+                            {--tenant-domain= : Domínio do tenant (se não fornecido, será gerado automaticamente)}
                             {--admin-name=Administrador : Nome do usuário admin}
-                            {--admin-email=admin@empresa.com : Email do usuário admin}
+                            {--admin-email=admin : Email do usuário admin (se não fornecido, será gerado automaticamente)}
                             {--admin-password=password : Senha do usuário admin}
                             {--tenant-description= : Descrição do tenant (opcional)}';
 
@@ -46,48 +47,37 @@ class CreateTenantAdminCommand extends Command
 
         try {
             $tenantName = $this->option('tenant-name');
-            $tenantEmail = $this->option('tenant-email');
-            $tenantDomain = $this->option('tenant-domain');
+            $tenantEmail = $this->option('tenant-email') ?: $this->generateTenantEmail($tenantName);
+            $tenantDomain = $this->option('tenant-domain') ?: $this->generateTenantDomain();
             $tenantDescription = $this->option('tenant-description');
             
             $adminName = $this->option('admin-name');
             $adminEmail = $this->option('admin-email');
+            $adminEmail = sprintf('%s@%s', $adminEmail, $tenantDomain);
             $adminPassword = $this->option('admin-password');
 
-            // Verificar se o tenant já existe
-            if (Tenant::where('email', $tenantEmail)->exists()) {
-                $this->warn("ℹ️  Tenant com email {$tenantEmail} já existe.");
-                $this->newLine();
-                return Command::SUCCESS;
-            }
-
-            // Verificar se o usuário admin já existe
-            if (User::where('email', $adminEmail)->exists()) {
-                $this->warn("ℹ️  Usuário com email {$adminEmail} já existe.");
-                $this->newLine();
-                return Command::SUCCESS;
-            }
+            $this->info("📧 Email do tenant: {$tenantEmail}");
+            $this->info("🌐 Domínio do tenant: {$tenantDomain}");
+            $this->info("👤 Email do admin: {$adminEmail}");
+            $this->newLine();
 
             // Iniciar transação
             DB::beginTransaction();
 
-            // Criar o tenant
-            $tenant = $this->createTenant($tenantName, $tenantEmail, $tenantDomain, $tenantDescription);
-            $this->info("✅ Tenant '{$tenant->name}' criado com sucesso!");
-
-            // Criar o usuário admin
-            $adminUser = $this->createAdminUser($tenant, $adminName, $adminEmail, $adminPassword);
-            $this->info("✅ Usuário admin '{$adminUser->name}' criado com sucesso!");
-
-            // Criar e associar a role admin
-            $adminRole = $this->createAdminRole($tenant, $adminUser);
-            $this->info("✅ Role admin criada e associada com sucesso!");
+            // Verificar ou criar o tenant
+            $tenant = $this->findOrCreateTenant($tenantName, $tenantEmail, $tenantDomain, $tenantDescription);
+            
+            // Verificar ou criar o usuário admin
+            $adminUser = $this->findOrCreateAdminUser($tenant, $adminName, $adminEmail, $adminPassword);
+            
+            // Verificar ou criar e associar a role admin
+            $adminRole = $this->findOrCreateAdminRole($tenant, $adminUser);
 
             // Confirmar transação
             DB::commit();
 
             $this->newLine();
-            $this->comment('🎉 Tenant e administrador criados com sucesso!');
+            $this->comment('🎉 Processo concluído com sucesso!');
             $this->newLine();
             
             $this->comment('📋 Dados do tenant:');
@@ -133,6 +123,44 @@ class CreateTenantAdminCommand extends Command
             
             return Command::FAILURE;
         }
+    }
+
+    /**
+     * Gerar email do tenant automaticamente baseado no app.url
+     */
+    protected function generateTenantEmail(string $tenantName): string
+    {
+        $domain = $this->extractDomainFromAppUrl();
+        $slug = Str::slug($tenantName);
+        
+        return "{$slug}@{$domain}";
+    }
+
+    /**
+     * Gerar domínio do tenant automaticamente baseado no app.url
+     */
+    protected function generateTenantDomain(): string
+    {
+        return $this->extractDomainFromAppUrl();
+    }
+
+    /**
+     * Extrair domínio do config app.url
+     */
+    protected function extractDomainFromAppUrl(): string
+    {
+        $appUrl = Config::get('app.url');
+        
+        // Remover protocolo (http://, https://)
+        $domain = preg_replace('/^https?:\/\//', '', $appUrl);
+        
+        // Remover porta se existir
+        $domain = preg_replace('/:\d+$/', '', $domain);
+        
+        // Remover path se existir
+        $domain = explode('/', $domain)[0];
+        
+        return $domain;
     }
 
     /**
@@ -186,6 +214,91 @@ class CreateTenantAdminCommand extends Command
 
         // Associar a role ao usuário
         $user->roles()->attach($role->id);
+
+        return $role;
+    }
+
+    /**
+     * Encontrar ou criar o tenant
+     */
+    protected function findOrCreateTenant(string $name, string $email, ?string $domain, ?string $description): Tenant
+    {
+        $existingTenant = Tenant::where('email', $email)->first();
+        
+        if ($existingTenant) {
+            $this->warn("ℹ️  Tenant com email {$email} já existe - reutilizando existente.");
+            return $existingTenant;
+        }
+        
+        $tenant = $this->createTenant($name, $email, $domain, $description);
+        $this->info("✅ Tenant '{$tenant->name}' criado com sucesso!");
+        
+        return $tenant;
+    }
+
+    /**
+     * Encontrar ou criar o usuário administrador
+     */
+    protected function findOrCreateAdminUser(Tenant $tenant, string $name, string $email, string $password): User
+    {
+        $existingUser = User::where('email', $email)->first();
+        
+        if ($existingUser) {
+            $this->warn("ℹ️  Usuário com email {$email} já existe - reutilizando existente.");
+            
+            // Verificar se o usuário pertence ao tenant correto
+            if ($existingUser->tenant_id !== $tenant->id) {
+                $this->comment("🔄 Atualizando tenant_id do usuário existente.");
+                $existingUser->update(['tenant_id' => $tenant->id]);
+            }
+            
+            return $existingUser;
+        }
+        
+        $adminUser = $this->createAdminUser($tenant, $name, $email, $password);
+        $this->info("✅ Usuário admin '{$adminUser->name}' criado com sucesso!");
+        
+        return $adminUser;
+    }
+
+    /**
+     * Encontrar ou criar a role admin para o tenant
+     */
+    protected function findOrCreateAdminRole(Tenant $tenant, User $user): Role
+    {
+        // Verificar se já existe uma role admin para este tenant
+        $existingRole = Role::where('slug', 'admin')
+            ->first();
+        
+        if ($existingRole) {
+            $this->warn("ℹ️  Role admin já existe para este tenant - reutilizando existente.");
+            
+            // Verificar se o usuário já tem esta role associada
+            if (!$user->roles()->where('role_id', $existingRole->id)->exists()) {
+                $user->roles()->attach($existingRole->id);
+                $this->comment("🔗 Role admin associada ao usuário.");
+            } else {
+                $this->comment("ℹ️  Usuário já possui a role admin associada.");
+            }
+            
+            return $existingRole;
+        }
+        
+        // Criar nova role admin
+        $role = Role::create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'name' => 'Administrador',
+            'slug' => 'admin',
+            'description' => 'Administrador do tenant com acesso total',
+            'status' => RoleStatus::Published,
+            'special' => true,
+        ]);
+
+        // Associar a role ao usuário
+        $user->roles()->attach($role->id);
+        
+        $this->info("✅ Role admin criada e associada com sucesso!");
 
         return $role;
     }
