@@ -13,7 +13,8 @@ use Callcocam\ReactPapaLeguas\Commands\MigrateToPapaLeguasStandardsCommand;
 use Callcocam\ReactPapaLeguas\Commands\CheckStandardsCommand;
 use Callcocam\ReactPapaLeguas\Commands\MakeTableCommand;
 use Callcocam\ReactPapaLeguas\Console\Commands\GenerateControllerCommand;
-use Callcocam\ReactPapaLeguas\Commands\CreateLandlordAdminCommand;
+use Callcocam\ReactPapaLeguas\Commands\CreateAdminCommand;
+use Callcocam\ReactPapaLeguas\Commands\CreateTenantAdminCommand;
 use Callcocam\ReactPapaLeguas\Guards\LandlordGuard;
 use Callcocam\ReactPapaLeguas\Http\Middleware\LandlordAuth;
 use Callcocam\ReactPapaLeguas\Http\Middleware\DisableTenantScoping;
@@ -57,7 +58,8 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
             ->hasCommand(MakeStandardModelCommand::class)
             ->hasCommand(MigrateToPapaLeguasStandardsCommand::class)
             ->hasCommand(CheckStandardsCommand::class)
-            ->hasCommand(CreateLandlordAdminCommand::class)
+            ->hasCommand(CreateAdminCommand::class)
+            ->hasCommand(CreateTenantAdminCommand::class)
             ->hasCommand(MakeTableCommand::class)
             ->hasCommand(GenerateControllerCommand::class)
             ->hasInstallCommand(function (InstallCommand $command) {

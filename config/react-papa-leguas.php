@@ -24,7 +24,7 @@ return [
         | The model class that represents a landlord user.
         |
         */
-        'model' => \Callcocam\ReactPapaLeguas\Models\Landlord::class,
+        'model' => \Callcocam\ReactPapaLeguas\Models\Admin::class,
 
         /*
         |--------------------------------------------------------------------------

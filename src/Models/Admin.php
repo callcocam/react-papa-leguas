@@ -7,6 +7,7 @@
 
 namespace Callcocam\ReactPapaLeguas\Models;
 
+use Callcocam\ReactPapaLeguas\Shinobi\Concerns\HasRolesAndPermissions;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +19,7 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Notifications\Notifiable;
 
-class Landlord extends Model implements Authenticatable, AuthorizableContract, CanResetPasswordContract
+class Admin extends Model implements Authenticatable, AuthorizableContract, CanResetPasswordContract
 {
     use HasFactory;
     use AuthenticatableTrait;
@@ -26,6 +27,7 @@ class Landlord extends Model implements Authenticatable, AuthorizableContract, C
     use CanResetPassword;
     use Notifiable;
     use HasUlids;
+    use HasRolesAndPermissions;
 
     /**
      * The table associated with the model.
@@ -137,7 +139,7 @@ class Landlord extends Model implements Authenticatable, AuthorizableContract, C
     }
 
     /**
-     * Check if landlord is active
+     * Check if admin is active
      *
      * @return bool
      */
@@ -147,7 +149,7 @@ class Landlord extends Model implements Authenticatable, AuthorizableContract, C
     }
 
     /**
-     * Scope a query to only include active landlords.
+     * Scope a query to only include active admins.
      */
     public function scopeActive($query)
     {

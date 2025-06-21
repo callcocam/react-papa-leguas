@@ -1,8 +1,8 @@
 <?php
 
 namespace Callcocam\ReactPapaLeguas\Providers;
-
-use Callcocam\ReactPapaLeguas\Models\Landlord;
+ 
+use Callcocam\ReactPapaLeguas\Models\Admin;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Contracts\Hashing\Hasher as HasherContract;
@@ -26,7 +26,7 @@ class LandlordAuthProvider implements UserProvider
     public function __construct(HasherContract $hasher, string $model = null)
     {
         $this->hasher = $hasher;
-        $this->model = $model ?: Landlord::class;
+        $this->model = $model ?: Admin::class;
     }
 
     /**
@@ -111,7 +111,7 @@ class LandlordAuthProvider implements UserProvider
      */
     public function validateCredentials(Authenticatable $user, array $credentials): bool
     {
-        if (! $user instanceof Landlord) {
+        if (! $user instanceof Admin) {
             return false;
         }
 
@@ -142,7 +142,7 @@ class LandlordAuthProvider implements UserProvider
     /**
      * Create a new instance of the model.
      */
-    public function createModel(): Landlord
+    public function createModel(): Admin
     {
         $class = '\\'.ltrim($this->model, '\\');
 

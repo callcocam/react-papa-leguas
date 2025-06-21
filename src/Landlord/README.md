@@ -32,7 +32,7 @@ return [
 ```php
 return [
     'landlord' => [
-        'model' => \Callcocam\ReactPapaLeguas\Models\Landlord::class,
+        'model' => \Callcocam\ReactPapaLeguas\Models\Admin::class,
         'table' => 'admins',
         'routes' => [
             'prefix' => 'landlord',
