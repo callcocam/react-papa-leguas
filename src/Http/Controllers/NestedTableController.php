@@ -27,13 +27,30 @@ class NestedTableController extends Controller
      * Obtém dados de uma sub-tabela específica
      * 
      * @param Request $request
-     * @param string $parentId ID do item pai
-     * @param string $nestedTableClass Classe da sub-tabela
      * @return JsonResponse
      */
-    public function getData(Request $request, string $parentId, string $nestedTableClass): JsonResponse
+    public function getData(Request $request): JsonResponse
     {
         try {
+            // Obter dados do request
+            $nestedTableClass = $request->input('nested_table_class');
+            $parentId = $request->input('parent_id');
+
+            // Validar entrada
+            if (!$nestedTableClass) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Classe da sub-tabela é obrigatória'
+                ], 400);
+            }
+
+            if (!$parentId) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'ID do item pai é obrigatório'
+                ], 400);
+            }
+
             // Validar se a classe existe e é válida
             if (!class_exists($nestedTableClass)) {
                 return response()->json([
@@ -73,8 +90,8 @@ class NestedTableController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Erro ao carregar dados da sub-tabela', [
-                'parent_id' => $parentId,
-                'nested_table_class' => $nestedTableClass,
+                'parent_id' => $request->input('parent_id'),
+                'nested_table_class' => $request->input('nested_table_class'),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

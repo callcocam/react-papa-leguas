@@ -1,163 +1,204 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ChevronRight, ChevronDown, Loader2, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, Loader2, Database } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { type ColumnRendererProps } from '../../types';
-import MiniDataTable from './MiniDataTable';
+import { RendererProps } from '../../types';
 import { useNestedTableData } from '../../hooks/useNestedTableData';
+import MiniDataTable from './MiniDataTable';
 
 /**
- * Renderizador para colunas de tabelas aninhadas/hierárquicas.
+ * Renderizador para colunas de tabelas aninhadas/hierárquicas
+ * 
+ * Este componente permite que uma linha da tabela principal
+ * expanda para mostrar uma sub-tabela configurável com seus próprios
+ * dados, colunas, ações e funcionalidades.
  * 
  * Funcionalidades:
- * - Expandir/recolher sub-tabela
+ * - Expansão/recolhimento suave
  * - Lazy loading de dados
+ * - Cache inteligente
+ * - Estados visuais (loading, error, vazio)
  * - Resumo quando recolhida
- * - Loading states elegantes
- * - Integração com API
+ * - Sub-tabela completa quando expandida
  */
-export default function NestedTableRenderer({ 
-    column, 
-    item, 
-    value 
-}: ColumnRendererProps) {
+export default function NestedTableRenderer({ value, item, column }: RendererProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     
-    // Hook customizado para gerenciar dados da sub-tabela
+    // Configurações da coluna aninhada - acessar diretamente as propriedades
+    const nested_table_class = (column as any).nested_table_class;
+    const relationship = (column as any).relationship;
+    const load_on_expand = (column as any).load_on_expand ?? true;
+    const config = (column as any).nested_config || {};
+    const icons = (column as any).icons || {};
+    
     const {
-        data: nestedData,
+        summary_text,
+        expanded_icon = icons.expanded || 'ChevronDown',
+        collapsed_icon = icons.collapsed || 'ChevronRight',
+        loading_icon = icons.loading || 'Loader2'
+    } = config;
+
+    // Hook para gerenciar dados da sub-tabela
+    const hookParams = {
+        nestedTableClass: nested_table_class,
+        parentId: item?.id,
+        enabled: isExpanded && load_on_expand,
+        loadOnExpand: load_on_expand
+    };
+    
+    const {
+        data,
         loading,
         error,
         pagination,
-        config,
-        columns: nestedColumns,
-        actions: nestedActions,
+        config: tableConfig,
+        columns,
+        actions,
         loadData,
         refetch
-    } = useNestedTableData({
-        parentId: item.id,
-        nestedTableClass: column.nested_table_class,
-        loadOnExpand: column.load_on_expand,
-        enabled: isExpanded || !column.load_on_expand
-    });
-
-    // Toggle expansão/recolhimento
-    const handleToggle = useCallback(async () => {
-        const newExpanded = !isExpanded;
-        setIsExpanded(newExpanded);
-        
-        // Se está expandindo e deve carregar dados
-        if (newExpanded && column.load_on_expand && !nestedData) {
-            await loadData();
+    } = useNestedTableData(hookParams);
+    
+    // Carrega dados quando expandir (se load_on_expand for true)
+    useEffect(() => {
+        if (isExpanded && load_on_expand && nested_table_class && item?.id) {
+            loadData();
         }
-    }, [isExpanded, column.load_on_expand, nestedData, loadData]);
-
-    // Ícones baseados no estado
-    const getIcon = () => {
-        if (loading) {
-            return <Loader2 className="h-4 w-4 animate-spin" />;
-        }
-        
-        if (isExpanded) {
-            return <ChevronDown className="h-4 w-4" />;
-        }
-        
-        return <ChevronRight className="h-4 w-4" />;
+    }, [isExpanded, load_on_expand, nested_table_class, item?.id, loadData]);
+    // Função para alternar expansão
+    const toggleExpanded = () => {
+        setIsExpanded(!isExpanded);
     };
 
-    // Resumo quando recolhida
-    const getSummary = () => {
-        if (column.summary) {
-            return column.summary;
+    // Renderizar resumo quando recolhida
+    const renderSummary = () => {
+        if (summary_text) {
+            return String(summary_text);
         }
-        
-        // Resumo baseado nos dados
-        if (nestedData && Array.isArray(nestedData)) {
-            const count = nestedData.length;
-            return count === 0 ? 'Nenhum item' : `${count} ${count === 1 ? 'item' : 'itens'}`;
+
+        // Resumo padrão baseado no valor ou dados carregados  
+        if (data && Array.isArray(data) && data.length > 0) {
+            const count = data.length;
+            return `${count} ${count === 1 ? 'item' : 'itens'}`;
         }
-        
-        // Resumo baseado no valor da coluna
-        if (value && Array.isArray(value)) {
-            const count = value.length;
-            return count === 0 ? 'Nenhum item' : `${count} ${count === 1 ? 'item' : 'itens'}`;
+
+        if (value !== undefined && value !== null) {
+            if (typeof value === 'number') {
+                return `${value} ${value === 1 ? 'item' : 'itens'}`;
+            }
+            if (typeof value === 'string') {
+                return String(value);
+            }
         }
-        
-        return 'Expandir';
+
+        return 'Ver detalhes';
     };
+
+    // Ícones dinâmicos
+    const IconComponent = isExpanded 
+        ? (expanded_icon === 'ChevronDown' ? ChevronDown : ChevronDown)
+        : (collapsed_icon === 'ChevronRight' ? ChevronRight : ChevronRight);
+    
+    const LoadingIcon = loading_icon === 'Loader2' ? Loader2 : Loader2;
 
     return (
-        <div className="nested-table-container">
+        <div className="relative">
             {/* Botão de expansão/recolhimento */}
             <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleToggle}
+                onClick={toggleExpanded}
+                className="flex items-center gap-2 h-8 px-2 text-sm"
                 disabled={loading}
-                className={cn(
-                    "flex items-center gap-2 h-8 px-2 text-xs",
-                    "hover:bg-accent hover:text-accent-foreground",
-                    "transition-colors duration-200"
-                )}
             >
-                {getIcon()}
-                <Database className="h-3 w-3 opacity-60" />
-                <span className="font-medium">{getSummary()}</span>
+                {loading ? (
+                    <LoadingIcon className="h-4 w-4 animate-spin" />
+                ) : (
+                    <IconComponent className="h-4 w-4" />
+                )}
+                
+                <span className="text-left">
+                    {renderSummary()}
+                </span>
             </Button>
 
-            {/* Conteúdo da sub-tabela (quando expandida) */}
+            {/* Sub-tabela expandida - Posicionada absolutamente para "escapar" da célula */}
             {isExpanded && (
-                <div className={cn(
-                    "nested-table-content mt-3 ml-6",
-                    "border-l-2 border-border/40 pl-4",
-                    "animate-in slide-in-from-top-2 duration-200"
-                )}>
-                    {/* Estado de loading */}
-                    {loading && (
-                        <div className="flex items-center justify-center py-8 text-muted-foreground">
-                            <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                            <span className="text-sm">Carregando dados...</span>
-                        </div>
-                    )}
+                <div className="absolute top-full left-0 right-0 z-50 mt-1">
+                    <div 
+                        className="bg-white border border-slate-300 rounded-lg shadow-lg animate-in slide-in-from-top-2 duration-200"
+                        style={{
+                            minWidth: '800px',
+                            marginLeft: '-200px', // Ajuste para centralizar melhor
+                        }}
+                    >
+                        <div className="p-4">
+                            {loading && (
+                                <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Carregando dados...
+                                </div>
+                            )}
 
-                    {/* Estado de erro */}
-                    {error && (
-                        <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
-                            <div className="flex items-center gap-2 text-destructive text-sm">
-                                <span className="font-medium">Erro ao carregar dados:</span>
-                                <span>{error}</span>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={refetch}
-                                className="mt-2 h-7 text-xs"
-                            >
-                                Tentar novamente
-                            </Button>
-                        </div>
-                    )}
+                            {error && (
+                                <div className="flex flex-col items-center justify-center py-8 text-sm">
+                                    <div className="text-destructive mb-2">
+                                        Erro ao carregar dados
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={refetch}
+                                        className="text-xs"
+                                    >
+                                        Tentar novamente
+                                    </Button>
+                                </div>
+                            )}
 
-                    {/* Sub-tabela com dados */}
-                    {!loading && !error && nestedData && (
-                        <MiniDataTable
-                            data={nestedData}
-                            columns={nestedColumns || []}
-                            actions={nestedActions || []}
-                            pagination={pagination}
-                            config={config}
-                            parentId={item.id}
-                            onRefresh={refetch}
-                        />
-                    )}
+                            {!loading && !error && data && Array.isArray(data) && data.length > 0 && (
+                                <>
+                                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
+                                        <div className="flex items-center gap-2">
+                                            <Database className="h-4 w-4 text-slate-600" />
+                                            <div className="text-sm font-semibold text-slate-700">
+                                                Posts do usuário
+                                            </div>
+                                            <span className="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded-full">
+                                                {data.length} itens
+                                            </span>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={toggleExpanded}
+                                            className="h-6 w-6 p-0 text-slate-400 hover:text-slate-600"
+                                        >
+                                            ✕
+                                        </Button>
+                                    </div>
+                                    
+                                    <MiniDataTable
+                                        data={data}
+                                        columns={columns || []}
+                                        actions={actions || []}
+                                        pagination={pagination}
+                                        config={tableConfig}
+                                        parentId={String(item?.id || '')}
+                                        onRefresh={refetch}
+                                    />
+                                </>
+                            )}
 
-                    {/* Estado vazio */}
-                    {!loading && !error && nestedData && Array.isArray(nestedData) && nestedData.length === 0 && (
-                        <div className="text-center py-6 text-muted-foreground">
-                            <Database className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                            <p className="text-sm">Nenhum item encontrado</p>
+                            {!loading && !error && (!data || data.length === 0) && (
+                                <div className="flex flex-col items-center justify-center py-12 text-sm text-slate-500">
+                                    <Database className="h-12 w-12 mb-3 opacity-40 text-slate-400" />
+                                    <div className="font-medium">Nenhum post encontrado</div>
+                                    <div className="text-xs text-slate-400 mt-1">
+                                        Usuário não possui posts publicados
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
         </div>

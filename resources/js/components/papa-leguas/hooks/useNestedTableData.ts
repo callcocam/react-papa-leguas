@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { router } from '@inertiajs/react';
+import axios from 'axios';
 
+// Configuração global do axios para Laravel
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+axios.defaults.withCredentials = true;
+axios.defaults.withXSRFToken = true; 
 interface UseNestedTableDataProps {
     parentId: string | number;
     nestedTableClass: string;
@@ -55,7 +60,24 @@ export function useNestedTableData({
 
     // Carrega dados da API
     const loadData = useCallback(async (params: any = {}) => {
+        console.log('🔍 useNestedTableData loadData:', {
+            enabled,
+            parentId,
+            nestedTableClass,
+            params,
+            conditions: {
+                enabled: !!enabled,
+                parentId: !!parentId,
+                nestedTableClass: !!nestedTableClass
+            }
+        });
+        
         if (!enabled || !parentId || !nestedTableClass) {
+            console.log('❌ useNestedTableData: Condições não atendidas', {
+                enabled,
+                parentId,
+                nestedTableClass
+            });
             return;
         }
 
@@ -82,26 +104,16 @@ export function useNestedTableData({
         setError(null);
 
         try {
-            const response = await fetch('/api/nested-tables/data', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                body: JSON.stringify({
-                    nested_table_class: nestedTableClass,
-                    parent_id: parentId,
-                    ...params
-                }),
-                signal: abortControllerRef.current.signal
+            const response = await axios.post('/api/nested-tables/data', {
+                nested_table_class: nestedTableClass,
+                parent_id: parentId,
+                ...params
+            }, {
+                signal: abortControllerRef.current.signal,
+                timeout: 10000, // 10 segundos de timeout
             });
 
-            if (!response.ok) {
-                throw new Error(`Erro ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
+            const result = response.data;
 
             if (result.success) {
                 const responseData = {
@@ -125,9 +137,25 @@ export function useNestedTableData({
                 throw new Error(result.message || 'Erro desconhecido');
             }
         } catch (err: any) {
-            if (err.name !== 'AbortError') {
-                console.error('Erro ao carregar dados da sub-tabela:', err);
-                setError(err.message || 'Erro ao carregar dados');
+            if (axios.isCancel(err)) {
+                console.log('Requisição cancelada');
+                return;
+            }
+            
+            console.error('Erro ao carregar dados da sub-tabela:', err);
+            
+            // Tratamento específico para erros do axios
+            if (err.response) {
+                // Servidor respondeu com status de erro
+                const status = err.response.status;
+                const message = err.response.data?.message || `Erro ${status}`;
+                setError(`${message} (${status})`);
+            } else if (err.request) {
+                // Requisição foi feita mas não houve resposta
+                setError('Erro de conexão - servidor não respondeu');
+            } else {
+                // Erro na configuração da requisição
+                setError(err.message || 'Erro ao configurar requisição');
             }
         } finally {
             setLoading(false);

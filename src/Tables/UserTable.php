@@ -57,7 +57,8 @@ class UserTable extends Table
                         'created_at',
                         'updated_at',
                     ])
-                    ->withCount('posts'); // Adiciona contagem de posts para o resumo
+                    ->withCount('posts')
+                    ->with('posts'); // Adiciona contagem de posts para o resumo
             })
             ->searchable()
             ->sortable()
