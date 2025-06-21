@@ -34,7 +34,7 @@ export default function Table({
 }: TableProps) {
 
     const { tableData } = useContext(TableContext) as TableContextProps;
-
+console.log('actions', actions);
     return (
         <Card>
             <CardContent className="p-0">

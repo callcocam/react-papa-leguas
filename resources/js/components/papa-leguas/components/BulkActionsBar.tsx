@@ -17,6 +17,8 @@ export default function BulkActionsBar({ actions }: BulkActionsBarProps) {
         return null;
     }
 
+    console.log('bulk actions', actions);
+
     return (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
             <div className="flex items-center gap-4 p-3 bg-background border rounded-lg shadow-xl animate-in fade-in-0 slide-in-from-bottom-5">

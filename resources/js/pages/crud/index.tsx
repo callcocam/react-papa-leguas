@@ -69,7 +69,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
     // 🔍 DEBUG: Ver dados vindos do backend
     React.useEffect(() => {
         console.log('📊 DEBUG - Dados do Backend:');
-        console.log('table?.actions:', table?.actions);
+        console.log('table?.actions:', table?.actions.bulk);
         console.log('table?.route_execute_action:', table?.route_execute_action);
         console.log('table?.data:', table?.data?.length, 'items');
         console.log('table?.columns:', table?.columns?.length, 'columns');
@@ -78,54 +78,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
     }, [table, config, routes]);
     
     // ✅ USAR AÇÕES DO BACKEND - Sistema de Ações Avançado
-    const actions = React.useMemo(() => {
-        // 🎯 PRIORIDADE 1: Usar ações vindas do backend (UserTable.php)
-        if (table?.actions && Array.isArray(table.actions) && table.actions.length > 0) {
-            console.log('🚀 Usando ações do backend:', table.actions);
-            return table.actions;
-}
-
-        // 🔄 FALLBACK: Criar ações baseadas nas permissões (compatibilidade)
-        console.log('⚠️ Fallback: Criando ações baseadas em config/routes');
-        const actionList = [];
-        
-        if (config?.can_edit && routes?.edit) {
-            actionList.push({
-                key: 'edit',
-                label: 'Editar',
-                type: 'edit' as const,
-                variant: 'outline' as const,
-                url: (item: any) => routes.edit!(item.id),
-                icon: '✏️'
-            });
-        }
-        
-        if (config?.can_delete && routes?.destroy) {
-            actionList.push({
-                key: 'delete',
-                label: 'Excluir',
-                type: 'delete' as const,
-                variant: 'destructive' as const,
-                method: 'delete' as const,
-                url: (item: any) => routes.destroy!(item.id),
-                confirmMessage: `Tem certeza que deseja excluir este ${config.model_name || 'item'}?`,
-                icon: '🗑️'
-            });
-    }
-        
-        // Se tiver muitas ações, usar dropdown
-        if (actionList.length > 2) {
-            return [{
-                key: 'actions-dropdown',
-                label: 'Ações',
-                type: 'dropdown' as const,
-                actions: actionList,
-                icon: '⚙️'
-            }];
-        }
-        
-        return actionList;
-    }, [table?.actions, config, routes]);
+     
 
     return (
         <AppLayout 
@@ -152,7 +105,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
                     data={table?.data || []}
                     columns={table?.columns || []}
                     filters={table?.filters || []}
-                    actions={[]} // ✅ Ações agora vêm dentro de cada item via _actions
+                    actions={table?.actions || []}
                     loading={false}
                     error={error}
                     meta={table?.meta}

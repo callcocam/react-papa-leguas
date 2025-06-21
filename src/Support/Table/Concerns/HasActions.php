@@ -246,7 +246,7 @@ trait HasActions
 
         // getVisibleBulkActions não depende de um item
         foreach ($this->getVisibleBulkActions($mergedContext) as $action) {
-             // O item é nulo aqui, pois a ação em lote não pertence a uma linha
+            // O item é nulo aqui, pois a ação em lote não pertence a uma linha
             $actionArray = $action->toArray(null, $mergedContext);
             if (!empty($actionArray)) {
                 $bulkActions[] = $actionArray;
@@ -315,89 +315,122 @@ trait HasActions
     }
 
     /**
-     * Helpers para criar ações
+     * Métodos auxiliares para criar ações
+     */
+
+    /**
+     * Cria uma ação de rota
      */
     protected function routeAction(string $key): RouteAction
     {
-        return RouteAction::make($key);
+        return new RouteAction($key);
     }
 
+    /**
+     * Cria uma ação de URL
+     */
     protected function urlAction(string $key): UrlAction
     {
-        return UrlAction::make($key);
+        return new UrlAction($key);
     }
 
+    /**
+     * Cria uma ação de callback
+     */
     protected function callbackAction(string $key): CallbackAction
     {
-        return CallbackAction::make($key);
+        return new CallbackAction($key);
     }
 
+    /**
+     * Cria uma ação de modal
+     */
     protected function modalAction(string $key): ModalAction
     {
-        return ModalAction::make($key);
+        return new ModalAction($key);
     }
 
+    /**
+     * Cria uma ação em lote
+     */
     protected function bulkAction(string $key): BulkAction
     {
-        return BulkAction::make($key);
+        return new BulkAction($key);
     }
 
     /**
-     * Helpers para ações comuns
-     */
-    
-    /**
-     * Ação de edição padrão
+     * Ação de Edição Padrão
      */
     protected function editAction(?string $route = null): RouteAction
     {
-        $route = $route ?? $this->getActionRoutePrefix() . '.edit';
-        
-        return $this->routeAction('edit')
-            ->label('Editar')
-            ->route($route)
-            ->edit();
+        $action = $this->routeAction('edit');
+        $action->label('Editar')
+            ->icon('Pencil')
+            ->tooltip('Editar este registro')
+            ->group('group-1');
+
+        if ($route) {
+            $action->route($route);
+        }
+
+        return $action;
     }
 
     /**
-     * Ação de visualização padrão
+     * Ação de Visualização Padrão
      */
     protected function viewAction(?string $route = null): RouteAction
     {
-        $route = $route ?? $this->getActionRoutePrefix() . '.show';
-        
-        return $this->routeAction('view')
-            ->label('Visualizar')
-            ->route($route)
-            ->view();
+        $action = $this->routeAction('view');
+        $action->label('Visualizar')
+            ->icon('Eye')
+            ->tooltip('Visualizar este registro')
+            ->group('group-1');
+
+        if ($route) {
+            $action->route($route);
+        }
+
+        return $action;
     }
 
     /**
-     * Ação de exclusão padrão
+     * Ação de Exclusão Padrão
      */
     protected function deleteAction(?string $route = null): RouteAction
     {
-        $route = $route ?? $this->getActionRoutePrefix() . '.destroy';
-        
-        return $this->routeAction('delete')
-            ->label('Excluir')
-            ->route($route)
-            ->deleteMethod()
-            ->delete();
+        $action = $this->routeAction('delete');
+        $action->label('Excluir')
+            ->icon('Trash2')
+            ->variant('destructive')
+            ->tooltip('Excluir este registro')
+            ->group('group-2')
+            ->requiresConfirmation(
+                'Tem certeza que deseja excluir este registro?',
+                'Confirmar Exclusão'
+            );
+        if ($route) {
+            $action->route($route);
+        }
+
+        return $action;
     }
 
     /**
-     * Ação de duplicação padrão
+     * Ação de Duplicação Padrão
      */
     protected function duplicateAction(?string $route = null): RouteAction
     {
-        $route = $route ?? $this->getActionRoutePrefix() . '.duplicate';
-        
-        return $this->routeAction('duplicate')
-            ->label('Duplicar')
-            ->route($route)
-            ->post()
-            ->duplicate();
+        $action = $this->routeAction('duplicate');
+        $action->label('Duplicar')
+            ->icon('Copy')
+            ->tooltip('Duplicar este registro')
+            ->group('group-2');
+
+        if ($route) {
+            $action->route($route);
+        }
+        return $action;
     }
 
     /**

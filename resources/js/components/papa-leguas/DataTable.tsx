@@ -170,6 +170,21 @@ export default function DataTable({
         value !== null && value !== undefined && value !== ''
     ).length;
 
+    const formattedActions = React.useMemo(() => {
+        const initial: { row: any[]; bulk: any[] } = { row: [], bulk: [] };
+        if (!actions || !Array.isArray(actions)) {
+            return initial;
+        }
+        return actions.reduce((acc, action) => {
+            if (action.type === 'bulk') {
+                acc.bulk.push(action);
+            } else {
+                acc.row.push(action);
+            }
+            return acc;
+        }, initial);
+    }, [actions]);
+
     if (loading) {
         return (
             <Card>
@@ -216,7 +231,7 @@ export default function DataTable({
                         {/* Tabela Principal */}
                         <Table
                             columns={columns}
-                            actions={actions}
+                            actions={formattedActions}
                             loading={loading}
                             pagination={(meta as any)?.pagination}
                             onSort={handleSort}
