@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../../../hooks/use-toast';
 import { type TableAction } from '../types';
 
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';

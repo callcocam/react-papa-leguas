@@ -31,6 +31,7 @@ import {
 } from 'lucide-react'
 import { usePermissions } from '../hooks/usePermissions' 
 import { PermissionLink } from '../components/PermissionLink'
+import { Toaster } from '../components/ui/toaster'
 import { router } from '@inertiajs/react'
 
 interface AppLayoutProps {
@@ -308,6 +309,9 @@ export default function AppLayout({
           </div>
         </main>
       </div>
+      
+      {/* Toast/Notifications Provider */}
+      <Toaster />
     </div>
   )
 }
