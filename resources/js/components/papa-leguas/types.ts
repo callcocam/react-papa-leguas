@@ -17,6 +17,8 @@ export interface TableColumn {
     searchable?: boolean;
     hidden?: boolean;
     type?: string;
+    width?: string;
+    alignment?: 'left' | 'center' | 'right';
     renderAs?: string;
     rendererOptions?: Record<string, any>;
     options?: { value: string; label: string }[];
@@ -41,7 +43,7 @@ export interface FilterRendererProps {
 export interface TableAction {
     key: string;
     label: string;
-    type?: 'edit' | 'delete' | 'view' | 'primary' | 'secondary' | 'custom' | 'link' | 'dropdown' | 'callback' | 'button' | 'route' | 'url';
+    type?: 'edit' | 'delete' | 'view' | 'primary' | 'secondary' | 'custom' | 'link' | 'dropdown' | 'callback' | 'button' | 'route' | 'url' | 'bulk';
     method?: 'get' | 'post' | 'put' | 'delete';
     url?: string | ((item: any) => string);
     onClick?: (item: any) => void;

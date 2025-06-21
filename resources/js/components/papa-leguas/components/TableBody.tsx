@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { TableBody as UITableBody, TableCell, TableRow } from '@/components/ui/table';
 import ActionRenderer from '../actions/ActionRenderer';
 import { type TableColumn, type TableAction } from '../types';
 import ColumnRenderer from '../columns/ColumnRenderer';
 import get from 'lodash/get';
+import { Checkbox } from '@/components/ui/checkbox';
+import { TableContext } from '../contexts/TableContext';
 
 // Utilitário para gerar keys únicos
 const generateUniqueKey = (...parts: (string | number | undefined)[]): string => {
@@ -23,6 +25,8 @@ export default function TableBody({
     actions,
     loading = false,
 }: TableBodyProps) {
+    const { selectedRows, toggleRow } = useContext(TableContext);
+
     if (loading) {
         return (
             <UITableBody>
@@ -59,7 +63,17 @@ export default function TableBody({
     return (
         <UITableBody>
             {data.map((row, rowIndex) => (
-                <TableRow key={generateUniqueKey('row', row.id, rowIndex)}>
+                <TableRow 
+                    key={generateUniqueKey('row', row.id, rowIndex)}
+                    data-state={selectedRows?.has(row.id) ? 'selected' : undefined}
+                >
+                    <TableCell className="w-[40px]">
+                        <Checkbox
+                            checked={selectedRows?.has(row.id)}
+                            onCheckedChange={() => toggleRow && toggleRow(row.id)}
+                            aria-label="Selecionar linha"
+                        />
+                    </TableCell>
                     {columns.map((column, columnIndex) => {
                         const value = column.key ? get(row, column.key, null) : null;
                         

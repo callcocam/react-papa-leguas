@@ -607,6 +607,36 @@ class UserTable extends Table
                     if (!$item) return false;
                     return auth()->user()->can('create', UserModel::class);
                 }),
+
+            // ✅ AÇÃO EM LOTE - Excluir usuários selecionados
+            $this->bulkAction('bulk_delete')
+                ->label('Excluir Selecionados')
+                ->icon('Trash2')
+                ->variant('destructive')
+                ->requiresConfirmation(
+                    'Você tem certeza que deseja excluir os usuários selecionados? Esta ação não pode ser desfeita.',
+                    'Confirmar Exclusão em Lote'
+                )
+                ->callback(function (\Illuminate\Database\Eloquent\Collection $items, array $context) {
+                    // Prevenir que o usuário logado se auto-delete em lote
+                    $itemsToDelete = $items->where('id', '!=', auth()->id());
+                    
+                    $count = $itemsToDelete->count();
+
+                    if($count === 0){
+                        return [
+                            'success' => false,
+                            'message' => 'Nenhum usuário para excluir (o usuário logado não pode ser excluído).',
+                        ];
+                    }
+
+                    $itemsToDelete->each->delete();
+
+                    return [
+                        'success' => true,
+                        'message' => "{$count} usuários foram excluídos com sucesso!",
+                    ];
+                }),
         ];
     }
 

@@ -46,6 +46,7 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
         const result = await processAction({
             table: meta.key,
             actionKey: action.key,
+            actionType: action.type,
             item: item,
             data: action.data || {},
         });

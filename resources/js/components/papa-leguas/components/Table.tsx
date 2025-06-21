@@ -6,10 +6,14 @@ import TableBody from './TableBody';
 import Pagination from './Pagination';
 import { type TableColumn, type TableAction } from '../types';
 import { TableContext, TableContextProps } from '../contexts/TableContext';
+import BulkActionsBar from './BulkActionsBar';
 
 interface TableProps {
     columns: TableColumn[];
-    actions: TableAction[];
+    actions: {
+        row: TableAction[];
+        bulk: TableAction[];
+    };
     loading?: boolean;
     pagination?: any;
     onSort?: (column: string, direction: 'asc' | 'desc') => void;
@@ -34,10 +38,11 @@ export default function Table({
     return (
         <Card>
             <CardContent className="p-0">
+                <BulkActionsBar actions={actions?.bulk || []} />
                 <UITable>
                     <Headers
                         columns={columns}
-                        actions={actions}
+                        actions={actions?.row || []}
                         onSort={onSort}
                         sortColumn={sortColumn}
                         sortDirection={sortDirection}
@@ -45,7 +50,7 @@ export default function Table({
                     <TableBody
                         data={tableData || []}
                         columns={columns}
-                        actions={actions}
+                        actions={actions?.row || []}
                         loading={loading}
                     />
                 </UITable>

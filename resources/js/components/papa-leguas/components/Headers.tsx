@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { type TableColumn, type TableAction } from '../types';
+import { TableContext } from '../contexts/TableContext';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Utilitário para gerar keys únicos
 const generateUniqueKey = (...parts: (string | number | undefined)[]): string => {
@@ -22,6 +24,8 @@ export default function Headers({
     sortColumn,
     sortDirection
 }: HeadersProps) {
+    const { toggleSelectAll, isAllSelected, isSomeSelected } = useContext(TableContext);
+
     const handleSort = (column: TableColumn) => {
         if (!column.sortable || !onSort) return;
         
@@ -32,6 +36,14 @@ export default function Headers({
     return (
         <TableHeader>
             <TableRow>
+                <TableHead className="w-[40px]">
+                    <Checkbox
+                        checked={isAllSelected || isSomeSelected}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Selecionar todos"
+                        data-state={isSomeSelected ? 'indeterminate' : (isAllSelected ? 'checked' : 'unchecked')}
+                    />
+                </TableHead>
                 {columns.map((column, columnIndex) => (
                     <TableHead 
                         key={generateUniqueKey('header', column.key, columnIndex)}

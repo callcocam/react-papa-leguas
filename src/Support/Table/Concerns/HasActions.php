@@ -2,11 +2,13 @@
 
 namespace Callcocam\ReactPapaLeguas\Support\Table\Concerns;
 
+use Illuminate\Database\Eloquent\Collection;
 use Callcocam\ReactPapaLeguas\Support\Table\Actions\Action;
 use Callcocam\ReactPapaLeguas\Support\Table\Actions\RouteAction;
 use Callcocam\ReactPapaLeguas\Support\Table\Actions\UrlAction;
 use Callcocam\ReactPapaLeguas\Support\Table\Actions\CallbackAction;
 use Callcocam\ReactPapaLeguas\Support\Table\Actions\ModalAction;
+use Callcocam\ReactPapaLeguas\Support\Table\Actions\BulkAction;
 
 /**
  * Trait para gerenciar ações de tabela
@@ -190,21 +192,53 @@ trait HasActions
     }
 
     /**
+     * Executa uma ação em lote (para BulkAction)
+     */
+    public function executeBulkAction(string $key, Collection $items, array $context = []): mixed
+    {
+        $action = $this->getAction($key);
+        
+        if (!$action || !$action instanceof BulkAction) {
+            return null;
+        }
+        
+        $mergedContext = array_merge($this->actionContext, $context);
+        
+        // O callback de BulkAction espera uma coleção
+        $callback = $action->getCallback();
+        if (is_callable($callback)) {
+            return call_user_func($callback, $items, $mergedContext);
+        }
+
+        return null;
+    }
+
+    /**
      * Obtém configuração das ações para serialização
      */
     public function getActionsConfig($item = null, array $context = []): array
     {
-        $actions = [];
+        $rowActions = [];
+        $bulkActions = [];
         $mergedContext = array_merge($this->actionContext, $context);
         
+        // Separa as ações por tipo
         foreach ($this->getVisibleActions($item, $mergedContext) as $action) {
             $actionArray = $action->toArray($item, $mergedContext);
             if (!empty($actionArray)) {
-                $actions[] = $actionArray;
+                if ($action instanceof BulkAction) {
+                    // Bulk actions não dependem de um $item específico para serem serializadas
+                    $bulkActions[] = $action->toArray(null, $mergedContext);
+                } else {
+                    $rowActions[] = $actionArray;
+                }
             }
         }
         
-        return $actions;
+        return [
+            'row' => $rowActions,
+            'bulk' => array_values(array_unique($bulkActions, SORT_REGULAR)),
+        ];
     }
 
     /**
@@ -298,6 +332,11 @@ trait HasActions
         return $this->actions[$key] = ModalAction::make($key);
     }
 
+    protected function bulkAction(string $key): BulkAction
+    {
+        return $this->actions[$key] = BulkAction::make($key);
+    }
+
     /**
      * Configurações rápidas para ações comuns
      */
@@ -368,5 +407,31 @@ trait HasActions
         
         // Fallback: usar propriedade routePrefix se existir
         return property_exists($this, 'routePrefix') ? $this->routePrefix : '';
+    }
+
+    /**
+     * Obtém todas as ações em lote.
+     */
+    public function getBulkActions(): array
+    {
+        return array_filter($this->actions, fn (Action $action) => $action instanceof BulkAction);
+    }
+
+    /**
+     * Obtém as ações em lote visíveis.
+     * Ações em lote geralmente não dependem de um item de linha específico.
+     */
+    public function getVisibleBulkActions(array $context = []): array
+    {
+        $visibleActions = [];
+        $mergedContext = array_merge($this->actionContext, $context);
+
+        foreach ($this->getBulkActions() as $action) {
+            if ($action->isVisible(null, $mergedContext)) {
+                $visibleActions[$action->getKey()] = $action;
+            }
+        }
+        
+        return $visibleActions;
     }
 } 
