@@ -9,6 +9,10 @@
 namespace Callcocam\ReactPapaLeguas\Http\Controllers\Admin;
 
 use Callcocam\ReactPapaLeguas\Http\Controllers\Controller;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToModel;
+use Callcocam\ReactPapaLeguas\Support\Concerns\ModelQueries;
+use Callcocam\ReactPapaLeguas\Support\Concerns\ResolvesModel;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 /**
@@ -17,13 +21,30 @@ use Inertia\Inertia;
  */
 class AdminController extends Controller
 {
+    use BelongsToModel, ResolvesModel, ModelQueries;
+
     /**
-     * Display the admin dashboard.
+     * Display the landlord dashboard.
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render($this->getViewIndex(),  $this->getViewData());
+        if ($request->has('debug')) {
+            return Inertia::render('crud/debug', $this->getDataForViewsIndex($request));
+        }
+        return Inertia::render($this->getViewIndex(), $this->getDataForViewsIndex($request));
+    }
+
+    public function test(Request $request)
+    {
+        return Inertia::render('crud/debug', $this->getDataForViews($request));
+    }
+
+    protected function getDataForViewsIndex(Request $request)
+    {
+        $table = $this->getTable();
+        $data = $table->toArray();
+        return array_merge($this->getDataForViews($request), $data);
     }
 }
