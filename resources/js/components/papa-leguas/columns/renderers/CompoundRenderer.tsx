@@ -1,9 +1,8 @@
 import React from 'react';
 import { type RendererProps } from '../../types';
-import { icons } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
-
+import { icons } from 'lucide-react';
 // lucide-react nos fornece um objeto `icons` com todos os ícones, que é seguro para mapear.
 const iconMap: { [key: string]: React.ElementType } = icons;
 

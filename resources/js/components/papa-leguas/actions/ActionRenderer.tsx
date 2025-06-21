@@ -1,99 +1,43 @@
 import React from 'react';
-import { type ActionRendererProps, type TableAction } from '../types';
+import { type ActionRendererProps } from '../types';
 import ButtonActionRenderer from './renderers/ButtonActionRenderer';
-import LinkActionRenderer from './renderers/LinkActionRenderer';
-import DropdownActionRenderer from './renderers/DropdownActionRenderer';
 import CallbackActionRenderer from './renderers/CallbackActionRenderer';
-import ModalActionRenderer from './renderers/ModalActionRenderer';
-import { icons } from 'lucide-react';
+import BulkActionRenderer from './renderers/BulkActionRenderer';
+import { Icons } from '../icons';
+import { type LucideIcon } from 'lucide-react';
 
-const iconMap: { [key: string]: React.ElementType } = icons;
-
-// Mapeamento de tipos de ação para componentes
-const renderers: { [key: string]: React.FC<ActionRendererProps> } = {
-    // Renderers de botão
-    button: ButtonActionRenderer,
-    buttonActionRenderer: ButtonActionRenderer,
-    
-    // Renderers de link
-    link: LinkActionRenderer,
-    linkActionRenderer: LinkActionRenderer,
-    
-    // Renderers de dropdown
-    dropdown: DropdownActionRenderer,
-    dropdownActionRenderer: DropdownActionRenderer,
-    
-    // Renderers de callback
-    callback: CallbackActionRenderer,
-    callbackActionRenderer: CallbackActionRenderer,
-    custom: CallbackActionRenderer,
-    
-    // Renderer de Modal
-    modal: ModalActionRenderer,
-    
-    // Renderers para tipos específicos (compatibilidade)
-    edit: ButtonActionRenderer,
-    delete: ButtonActionRenderer,
-    view: ButtonActionRenderer,
-    primary: ButtonActionRenderer,
-    secondary: ButtonActionRenderer,
-    
-    // Renderers para tipos do backend
-    route: LinkActionRenderer,
-    url: LinkActionRenderer,
-    
-    // Renderer padrão
-    default: ButtonActionRenderer,
-    defaultActionRenderer: ButtonActionRenderer,
+// Mapeamento de tipos de ação para seus componentes de renderização
+const rendererMap = {
+    'button': ButtonActionRenderer,
+    'route': ButtonActionRenderer,
+    'url': ButtonActionRenderer,
+    'edit': ButtonActionRenderer,
+    'delete': ButtonActionRenderer,
+    'view': ButtonActionRenderer,
+    'callback': CallbackActionRenderer,
+    'bulk': BulkActionRenderer,
+    // Adicione outros tipos conforme necessário
 };
 
 /**
- * Adiciona ou substitui um renderer de ação
- * Permite injeção de novos renderers em runtime
+ * ActionRenderer atua como um despachante (dispatcher).
+ * Ele seleciona o componente de renderização correto com base no tipo da ação.
  */
-export function addActionRenderer(type: string, renderer: React.FC<ActionRendererProps>): void {
-    renderers[type] = renderer;
+export default function ActionRenderer(props: ActionRendererProps) {
+    const { action } = props;
+
+    // Determina o tipo de renderização. Usa 'button' como padrão se o tipo não for especificado.
+    const renderType = action.type || 'button';
+
+    // Seleciona o componente de renderização do mapa.
+    // Usa ButtonActionRenderer como fallback se o tipo não for encontrado no mapa.
+    const RendererComponent = rendererMap[renderType as keyof typeof rendererMap] || ButtonActionRenderer;
+    
+    // Resolve o nome do ícone (string) para um componente React
+    const IconComponent = action.icon && typeof action.icon === 'string'
+        ? (Icons[action.icon as keyof typeof Icons] as LucideIcon)
+        : undefined;
+
+    // Renderiza o componente selecionado, passando todas as props, incluindo o IconComponent resolvido.
+    return <RendererComponent {...props} IconComponent={IconComponent} />;
 }
-
-/**
- * Remove um renderer de ação
- */
-export function removeActionRenderer(type: string): void {
-    delete renderers[type];
-}
-
-/**
- * Obtém todos os renderers disponíveis
- */
-export function getActionRenderers(): { [key: string]: React.FC<ActionRendererProps> } {
-    return { ...renderers };
-}
-
-/**
- * Verifica se um renderer existe
- */
-export function hasActionRenderer(type: string): boolean {
-    return type in renderers;
-}
-
-interface ActionRendererComponentProps {
-    action: TableAction;
-    item: any;
-}
-
-export default function ActionRenderer({ action, item }: ActionRendererComponentProps) {
-    // Verificação de segurança
-    if (!action || typeof action !== 'object') {
-        console.warn('⚠️ Ação inválida:', action);
-        return null;
-    }
-
-    // Define o tipo baseado em renderAs, type ou fallback para 'button'
-    const type = (action as any).renderAs || action.type || 'button';
-
-    // Seleciona o renderer apropriado, ou o padrão como fallback
-    const Renderer = renderers[type] || renderers.default;
-    const iconName = action.icon;
-    const IconComponent = iconName ? iconMap[iconName as keyof typeof iconMap] : undefined; 
-    return <Renderer action={action} item={item} IconComponent={IconComponent} />;
-} 

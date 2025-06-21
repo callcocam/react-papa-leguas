@@ -48,7 +48,7 @@ export interface TableAction {
     url?: string | ((item: any) => string);
     onClick?: (item: any) => void;
     variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'default' | 'sm' | 'lg' | 'icon';
     icon?: string | React.ReactNode;
     disabled?: boolean;
     hidden?: boolean;
@@ -79,7 +79,10 @@ export interface PapaLeguasTableProps {
     data?: any[];
     columns?: TableColumn[];
     filters?: TableFilter[];
-    actions?: TableAction[];
+    actions?: {
+        row: TableAction[];
+        bulk: TableAction[];
+    };
     loading?: boolean;
     error?: string;
     meta?: {

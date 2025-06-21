@@ -2,65 +2,62 @@ import React from 'react';
 import { router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { type ActionRendererProps } from '../../types';
+import { useConfirmationDialog } from '../../contexts/ConfirmationDialogContext';
 
 /**
  * Renderizador de Ação Button
- * Usado para ações básicas como Edit, Delete, View
+ * Usado para ações básicas como Edit, Delete, View que utilizam navegação ou router do Inertia.
  */
 export default function ButtonActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
-    const handleClick = () => {
+    const { confirm } = useConfirmationDialog();
+
+    // Função que executa a ação de fato (navegação/requisição)
+    const executeAction = () => {
         if (action.onClick) {
             action.onClick(item);
         } else if (action.url) {
-            // URL pode ser string ou função
             const url = typeof action.url === 'function' ? action.url(item) : action.url;
-            
-            if (action.method === 'delete') {
-                // Confirmação para delete
-                const confirmMessage = action.confirmMessage || 'Tem certeza que deseja excluir este item?';
-                if (confirm(confirmMessage)) {
-                    router.delete(url, {
-                        onSuccess: () => {
-                            console.log('✅ Item excluído com sucesso');
-                        },
-                        onError: (errors) => {
-                            console.error('❌ Erro ao excluir item:', errors);
-                        }
-                    });
+            const method = action.method || 'get';
+
+            router.visit(url, {
+                method: method,
+                onSuccess: () => {
+                    console.log(`✅ Ação '${action.key}' executada com sucesso.`);
+                },
+                onError: (errors) => {
+                    console.error(`❌ Erro ao executar a ação '${action.key}':`, errors);
                 }
-            } else if (action.method === 'post') {
-                router.post(url);
-            } else if (action.method === 'put') {
-                router.put(url);
-            } else {
-                // GET padrão
-                router.visit(url);
-            }
+            });
         }
     };
 
-    // Definir variante baseada no tipo de ação
-    let variant: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" = 'outline';
-    
-    if (action.variant) {
-        variant = action.variant;
-    } else if (action.type === 'delete' || action.method === 'delete') {
-        variant = 'destructive';
-    } else if (action.type === 'primary' || action.type === 'edit') {
-        variant = 'default';
-    }
+    // Handler do clique, que primeiro verifica se precisa de confirmação
+    const handleClick = () => {
+        if (action.confirmation) {
+            confirm({
+                title: action.confirmation.title || 'Confirmar Ação',
+                message: action.confirmation.message,
+                confirmText: action.confirmation.confirm_text || 'Confirmar',
+                cancelText: action.confirmation.cancel_text || 'Cancelar',
+                confirmVariant: action.confirmation.confirm_variant || (action.variant === 'destructive' ? 'destructive' : 'default'),
+                onConfirm: executeAction,
+            });
+        } else {
+            executeAction();
+        }
+    };
 
     return (
         <Button
-            variant={variant}
-            size={action.size as 'default' | 'sm' | 'lg' | 'icon' | 'default'}
+            variant={action.variant || 'outline'}
+            size={action.size || 'sm'}
             onClick={handleClick}
             disabled={action.disabled}
             className={action.className}
             title={action.tooltip || action.label}
         >
-            {IconComponent && <IconComponent className="mr-1" />}
-            <span>{action.label}</span>
+            {IconComponent && <IconComponent className="mr-2 h-4 w-4" />}
+            {action.showLabel !== false && <span>{action.label}</span>}
         </Button>
     );
 } 
