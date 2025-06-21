@@ -33,11 +33,21 @@ class LandlordController extends Controller
      */
     public function index(Request $request)
     {
-        return Inertia::render($this->getViewIndex(), $this->getDataForViews($request));
+        if ($request->has('debug')) {
+            return Inertia::render('crud/debug', $this->getDataForViewsIndex($request));
+        }
+        return Inertia::render($this->getViewIndex(), $this->getDataForViewsIndex($request));
     }
 
     public function test(Request $request)
     {
         return Inertia::render('crud/debug', $this->getDataForViews($request));
+    }
+
+    protected function getDataForViewsIndex(Request $request)
+    {
+        $table = $this->getTable();
+        $data = $table->toArray(); 
+        return array_merge($this->getDataForViews($request), $data);
     }
 }

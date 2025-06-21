@@ -9,7 +9,10 @@
 namespace Callcocam\ReactPapaLeguas\Http\Controllers;
 
 use Callcocam\ReactPapaLeguas\Facades\ReactPapaLeguas;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToRoutes;
+use Callcocam\ReactPapaLeguas\Support\Table\Table;
 use Callcocam\ReactPapaLeguas\Support\Concerns\EvaluatesClosures;
+use Callcocam\ReactPapaLeguas\Support\Concerns\ResolvesModel;
 use Illuminate\Routing\Controller as BaseController;
 
 /**
@@ -27,7 +30,7 @@ class Controller extends BaseController
 {
 
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
-    use EvaluatesClosures;
+    use EvaluatesClosures, BelongsToRoutes, ResolvesModel;
 
 
     /**
@@ -115,5 +118,21 @@ class Controller extends BaseController
         $prefix = $prefix ?? $this->getPrefix();
         $controller = $controller ?? $this->getControllerName();
         return "{$prefix}.{$controller}.{$suffix}";
+    }
+
+    protected function getTableKeyName(): string
+    {
+        $modelClass = $this->resolveModelClass(); 
+        $modelName = class_basename($modelClass);
+        return str($modelName)->append('Table')->toString();
+    }
+
+    protected function getTable(): Table
+    { 
+        $tableClass = ReactPapaLeguas::getTableClass($this->getTableKeyName());
+        if(!$tableClass){
+            throw new \Exception("Table class not found for controller: {$this->getTableKeyName()}");
+        }
+        return new $tableClass();
     }
 }

@@ -52,6 +52,11 @@ trait ResolvesModel
             return $this->resolvedModelClass;
         }
 
+        if(method_exists($this, 'getModelClass')){
+            $this->resolvedModelClass = $this->getModelClass();
+            return $this->resolvedModelClass;
+        }
+
         $cacheKey = $this->getCacheKey();
         
         // Tentar buscar do cache primeiro
