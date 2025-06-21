@@ -52,7 +52,10 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
                 'create_permission_user_table',
                 'create_permission_role_table',
                 'create_admin_role_table',
-                'create_admin_tenant_table'
+                'create_admin_tenant_table',
+                'create_workflows_table',
+                'create_workflowables_table',
+                'create_workflow_templates_table'
             ])
             ->hasCommand(ReactPapaLeguasCommand::class)
             ->hasCommand(MakeStandardModelCommand::class)

@@ -1,0 +1,93 @@
+<?php
+/**
+ * Created by Claudio Campos.
+ * User: callcocam@gmail.com, contato@sigasmart.com.br
+ * https://www.sigasmart.com.br
+ */
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Callcocam\ReactPapaLeguas\Enums\BaseStatus;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('workflow_templates', function (Blueprint $table) {
+            // Primary key - ULID
+            $table->ulid('id')->primary();
+            
+            // Relationship with workflow
+            $table->foreignUlid('workflow_id')->constrained()->cascadeOnDelete()->comment('Workflow proprietário');
+            
+            // Basic fields
+            $table->string('name')->comment('Nome da etapa (ex: Aberto, Em Andamento, Fechado)');
+            $table->string('slug')->comment('Slug da etapa para URLs');
+            $table->text('description')->nullable()->comment('Descrição da etapa');
+            $table->text('instructions')->nullable()->comment('Instruções para esta etapa');
+            
+            // Template configuration
+            $table->string('category')->nullable()->comment('Categoria da etapa (ex: initial, progress, final)');
+            $table->json('tags')->nullable()->comment('Tags para organização');
+            $table->integer('suggested_order')->default(0)->comment('Ordem sugerida na sequência');
+            $table->integer('estimated_duration_days')->nullable()->comment('Duração estimada em dias');
+            
+            // Visual configuration
+            $table->string('color', 7)->default('#6b7280')->comment('Cor da coluna Kanban (hex)');
+            $table->string('icon')->nullable()->comment('Ícone da etapa (Lucide)');
+            
+            // Template settings
+            $table->boolean('is_required_by_default')->default(false)->comment('Etapa obrigatória por padrão');
+            $table->boolean('is_active')->default(true)->comment('Etapa ativa');
+            $table->boolean('is_featured')->default(false)->comment('Etapa em destaque');
+            $table->integer('sort_order')->default(0)->comment('Ordem de exibição no Kanban');
+            
+            // Workflow rules
+            $table->integer('max_items')->nullable()->comment('Limite máximo de itens na coluna');
+            $table->boolean('auto_assign')->default(false)->comment('Atribuição automática');
+            $table->boolean('requires_approval')->default(false)->comment('Requer aprovação');
+            $table->json('transition_rules')->nullable()->comment('Regras de transição');
+            
+            // Advanced configuration
+            $table->json('metadata')->nullable()->comment('Metadados adicionais');
+            $table->json('settings')->nullable()->comment('Configurações específicas da etapa');
+            
+            // Status enum - padrão do sistema
+            $table->enum('status', BaseStatus::values())->default(BaseStatus::Draft->value);
+            
+            // Relationships
+            $table->foreignUlid('user_id')->nullable()->constrained()->nullOnDelete()->comment('Criador da etapa');
+            $table->foreignUlid('tenant_id')->nullable()->constrained()->nullOnDelete()->comment('Tenant proprietário');
+            
+            // Timestamps and soft deletes
+            $table->timestamps();
+            $table->softDeletes();
+            
+            // Indexes for performance
+            $table->index(['workflow_id', 'sort_order']);
+            $table->index(['workflow_id', 'status']);
+            $table->index(['tenant_id', 'status']);
+            $table->index(['slug', 'workflow_id']);
+            $table->index(['user_id', 'tenant_id']);
+            $table->index(['is_active', 'sort_order']);
+            $table->index(['category', 'status']);
+            $table->index('status');
+            
+            // Unique constraint
+            $table->unique(['workflow_id', 'slug'], 'workflow_templates_workflow_slug_unique');
+            $table->unique(['workflow_id', 'sort_order'], 'workflow_templates_workflow_order_unique');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('workflow_templates');
+    }
+}; 

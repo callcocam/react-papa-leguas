@@ -14,6 +14,7 @@ use Callcocam\ReactPapaLeguas\Support\Concerns\ModelQueries;
 use Callcocam\ReactPapaLeguas\Support\Concerns\ResolvesModel;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Class AdminController
@@ -31,6 +32,7 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         if ($request->has('debug')) {
+            Storage::put('debug.json', json_encode($this->getDataForViewsIndex($request)));
             return Inertia::render('crud/debug', $this->getDataForViewsIndex($request));
         }
         return Inertia::render($this->getViewIndex(), $this->getDataForViewsIndex($request));

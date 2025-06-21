@@ -1,0 +1,74 @@
+<?php
+/**
+ * Created by Claudio Campos.
+ * User: callcocam@gmail.com, contato@sigasmart.com.br
+ * https://www.sigasmart.com.br
+ */
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Callcocam\ReactPapaLeguas\Enums\BaseStatus;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('workflows', function (Blueprint $table) {
+            // Primary key - ULID
+            $table->ulid('id')->primary();
+            
+            // Basic fields
+            $table->string('name')->comment('Nome do workflow (ex: Suporte Técnico, Pipeline de Vendas)');
+            $table->string('slug')->unique()->comment('Slug único para URLs');
+            $table->text('description')->nullable()->comment('Descrição detalhada do workflow');
+            
+            // Workflow configuration
+            $table->string('category')->nullable()->comment('Categoria do workflow (ex: support, sales, hr)');
+            $table->json('tags')->nullable()->comment('Tags para organização e busca');
+            $table->string('color', 7)->default('#3b82f6')->comment('Cor primária do workflow (hex)');
+            $table->string('icon')->nullable()->comment('Ícone do workflow (Lucide)');
+            
+            // Workflow settings
+            $table->integer('estimated_duration_days')->nullable()->comment('Duração estimada em dias');
+            $table->boolean('is_required_by_default')->default(false)->comment('Obrigatório por padrão');
+            $table->boolean('is_active')->default(true)->comment('Workflow ativo');
+            $table->boolean('is_featured')->default(false)->comment('Workflow em destaque');
+            $table->integer('sort_order')->default(0)->comment('Ordem de exibição');
+            
+            // Advanced configuration
+            $table->json('metadata')->nullable()->comment('Metadados adicionais');
+            $table->json('settings')->nullable()->comment('Configurações específicas do workflow');
+            
+            // Status enum - padrão do sistema
+            $table->enum('status', BaseStatus::values())->default(BaseStatus::Draft->value);
+            
+            // Relationships
+            $table->foreignUlid('user_id')->nullable()->constrained()->nullOnDelete()->comment('Criador do workflow');
+            $table->foreignUlid('tenant_id')->nullable()->constrained()->nullOnDelete()->comment('Tenant proprietário');
+            
+            // Timestamps and soft deletes
+            $table->timestamps();
+            $table->softDeletes();
+            
+            // Indexes for performance
+            $table->index(['tenant_id', 'status']);
+            $table->index(['slug', 'tenant_id']);
+            $table->index(['user_id', 'tenant_id']);
+            $table->index(['category', 'status']);
+            $table->index(['is_active', 'sort_order']);
+            $table->index('status');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('workflows');
+    }
+}; 

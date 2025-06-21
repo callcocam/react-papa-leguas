@@ -1,0 +1,84 @@
+<?php
+/**
+ * Created by Claudio Campos.
+ * User: callcocam@gmail.com, contato@sigasmart.com.br
+ * https://www.sigasmart.com.br
+ */
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('workflowables', function (Blueprint $table) {
+            // Primary key - ULID
+            $table->ulid('id')->primary();
+            
+            // Polymorphic relationship
+            $table->ulidMorphs('workflowable'); // workflowable_id, workflowable_type
+            
+            // Workflow relationship
+            $table->foreignUlid('workflow_id')->constrained()->cascadeOnDelete()->comment('Workflow aplicado');
+            $table->foreignUlid('current_template_id')->nullable()->constrained('workflow_templates')->nullOnDelete()->comment('Etapa atual');
+            
+            // Workflow state
+            $table->json('workflow_data')->nullable()->comment('Dados específicos do workflow');
+            $table->timestamp('started_at')->nullable()->comment('Quando o workflow foi iniciado');
+            $table->timestamp('completed_at')->nullable()->comment('Quando o workflow foi concluído');
+            $table->string('status')->default('active')->comment('Status do workflow: active, completed, paused, cancelled');
+            
+            // Progress tracking
+            $table->integer('current_step')->default(1)->comment('Etapa atual (número)');
+            $table->integer('total_steps')->nullable()->comment('Total de etapas');
+            $table->decimal('progress_percentage', 5, 2)->default(0)->comment('Percentual de progresso');
+            
+            // Assignment
+            $table->foreignUlid('assigned_to')->nullable()->constrained('users')->nullOnDelete()->comment('Responsável atual');
+            $table->timestamp('assigned_at')->nullable()->comment('Quando foi atribuído');
+            
+            // SLA and timing
+            $table->timestamp('due_at')->nullable()->comment('Prazo para conclusão');
+            $table->timestamp('escalated_at')->nullable()->comment('Quando foi escalado');
+            $table->integer('time_spent_minutes')->default(0)->comment('Tempo gasto em minutos');
+            
+            // Metadata
+            $table->json('metadata')->nullable()->comment('Metadados adicionais');
+            $table->text('notes')->nullable()->comment('Notas do workflow');
+            
+            // Relationships
+            $table->foreignUlid('user_id')->nullable()->constrained()->nullOnDelete()->comment('Usuário que iniciou');
+            $table->foreignUlid('tenant_id')->nullable()->constrained()->nullOnDelete()->comment('Tenant proprietário');
+            
+            // Timestamps and soft deletes
+            $table->timestamps();
+            $table->softDeletes();
+            
+            // Indexes for performance
+            $table->index(['workflowable_type', 'workflowable_id']);
+            $table->index(['workflow_id', 'status']);
+            $table->index(['current_template_id', 'status']);
+            $table->index(['assigned_to', 'status']);
+            $table->index(['tenant_id', 'status']);
+            $table->index(['due_at', 'status']);
+            $table->index(['started_at', 'completed_at']);
+            $table->index('status');
+            
+            // Unique constraint - um workflow por entidade
+            $table->unique(['workflowable_type', 'workflowable_id', 'workflow_id'], 'workflowables_entity_workflow_unique');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('workflowables');
+    }
+}; 

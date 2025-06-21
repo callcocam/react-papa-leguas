@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';   
 import { Card, CardContent } from '@/components/ui/card';
-import Filters from './components/Filters';
-import Table from './components/Table';
-import Resume from './components/Resume';
+import Filters from './table/components/Filters';
+import Table from './table/components/Table';
+import Resume from './table/components/Resume';
 import { type PapaLeguasTableProps } from './types';
-import { TableProvider } from './contexts/TableContext';
-import { ConfirmationDialogProvider } from './contexts/ConfirmationDialogContext';
-import { ModalProvider } from './contexts/ModalContext';
+import { TableProvider } from './table/contexts/TableContext';
+import { ConfirmationDialogProvider } from './table/contexts/ConfirmationDialogContext';
+import { ModalProvider } from './table/contexts/ModalContext';
 
 export default function DataTable({ 
     data = [], 
