@@ -3,6 +3,8 @@ import { router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { type ActionRendererProps } from '../../types';
 import { useConfirmationDialog } from '../../contexts/ConfirmationDialogContext';
+import { useActionProcessor } from '../../hooks/useActionProcessor';
+import { cn } from '@/lib/utils';
 
 /**
  * Renderizador de Ação Button
@@ -47,6 +49,8 @@ export default function ButtonActionRenderer({ action, item, IconComponent }: Ac
         }
     };
 
+    const hasLabel = action.showLabel !== false && action.label;
+
     return (
         <Button
             variant={action.variant || 'outline'}
@@ -56,8 +60,8 @@ export default function ButtonActionRenderer({ action, item, IconComponent }: Ac
             className={action.className}
             title={action.tooltip || action.label}
         >
-            {IconComponent && <IconComponent className="mr-2 h-4 w-4" />}
-            {action.showLabel !== false && <span>{action.label}</span>}
+            {IconComponent && <IconComponent className={cn("h-4 w-4", hasLabel && "mr-2")} />}
+            {hasLabel && <span>{action.label}</span>}
         </Button>
     );
 } 
