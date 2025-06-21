@@ -67,36 +67,7 @@ class Post extends AbstractModel
 ```php
 class PostController extends Controller
 {
-    public function index()
-    {
-        $posts = Post::with(['category', 'user'])
-                    ->published()
-                    ->latest()
-                    ->paginate(12);
-                    
-        return inertia('Blog/Index', compact('posts'));
-    }
-
-    public function show(Post $post) // Route binding por slug
-    {
-        $post->load(['category', 'user', 'tags']);
-        return inertia('Blog/Show', compact('post'));
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|max:255',
-            'content' => 'required',
-            'excerpt' => 'nullable|max:500',
-            'category_id' => 'required|exists:categories,id',
-        ]);
-
-        $post = Post::create($validated);
-        // user_id e tenant_id preenchidos automaticamente
-        
-        return redirect()->route('posts.show', $post);
-    }
+     
 }
 ```
 
