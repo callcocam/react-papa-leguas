@@ -22,12 +22,16 @@ class EditableColumn extends TextColumn
     protected array $options = [];
     protected ?string $fetchUrl = null;
 
-    protected function setUp(): void
+    /**
+     * Construtor que define configurações padrão
+     */
+    public function __construct(string $key, ?string $label = null)
     {
-        parent::setUp();
-
-        $this->type('editable'); // Define o tipo da coluna como 'editable'
-        $this->renderAs('editable-text'); // Define o renderAs como 'editable-text' por padrão
+        parent::__construct($key, $label);
+        
+        // Define o renderAs padrão como 'editable-text'
+        // Será sobrescrito pelo método options() se opções forem definidas
+        $this->renderAs('editable-text');
     }
 
     /**
@@ -70,7 +74,7 @@ class EditableColumn extends TextColumn
      */
     public function getType(): string
     {
-        return 'editable-text'; 
+        return 'editable'; 
     }
 
     /**
@@ -79,8 +83,11 @@ class EditableColumn extends TextColumn
     public function toArray(): array
     {
         $data = parent::toArray();
+        
+        // Manter o tipo como 'editable' para identificação no frontend
         $data['type'] = 'editable';
-
+        
+        // Adicionar propriedades específicas de edição
         $data['update_using'] = $this->getUpdate() !== null;
 
         if (!empty($this->getOptions())) {

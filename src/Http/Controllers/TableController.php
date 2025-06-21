@@ -59,7 +59,7 @@ class TableController extends Controller
                 return response()->json([
                     'success' => false, 
                     'message' => "Ação '{$actionKey}' não encontrada na tabela '{$tableName}'."
-                ], 404);
+                ], 500);
             }
 
             $itemId = $request->input('item_id');
@@ -73,7 +73,7 @@ class TableController extends Controller
                 ], 404);
             }
 
-            $result = $table->executeAction($actionKey, $item, $request->input('data', []));
+            $result = $table->executeAction($actionKey, $item, $request->input());
 
             // Se o resultado for null, significa que a ação não foi executada
             if ($result === null) {

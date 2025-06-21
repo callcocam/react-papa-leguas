@@ -64,18 +64,6 @@ trait InteractsWithTable
     public function toArray(): array
     {
         try {
-            // Garante que todas as ações, incluindo as de colunas editáveis,
-            // sejam carregadas e mescladas antes de qualquer outra coisa.
-            $this->actions = []; // Reset para garantir um estado limpo
-            if (method_exists($this, 'loadActions')) {
-                $this->loadActions(); // Carrega ações definidas no método actions()
-            }
-            if (method_exists($this, 'getEditableColumnActions')) {
-                $editableActions = $this->getEditableColumnActions();
-                if (is_array($editableActions)) {
-                    $this->actions = array_merge($this->actions, $editableActions);
-                }
-            }
  
 
             // Usar paginação se habilitada

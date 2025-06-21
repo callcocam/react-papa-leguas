@@ -376,7 +376,9 @@ trait HasColumns
 
                 $actions[$actionKey] = CallbackAction::make($actionKey)
                     ->type('editable') // Define tipo específico para colunas editáveis
-                    ->hidden() // Ação não precisa ser visível na UI
+                    ->label('Editar ' . $column->getLabel()) // Label descritivo
+                    ->icon('edit') // Ícone padrão para edição
+                    ->variant('ghost') // Variante discreta
                     ->callback(function ($item, $context) use ($column) {
                         $newValue = data_get($context, 'data.value');
                         

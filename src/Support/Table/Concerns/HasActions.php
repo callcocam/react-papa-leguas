@@ -31,6 +31,7 @@ trait HasActions
     protected function bootHasActions(): void
     {
         $this->loadActions();
+        $this->loadEditableColumnActions();
     }
 
     /**
@@ -47,6 +48,19 @@ trait HasActions
                         $this->actions[$action->getKey()] = $action;
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Carrega as ações das colunas editáveis
+     */
+    protected function loadEditableColumnActions(): void
+    {
+        if (method_exists($this, 'getEditableColumnActions')) {
+            $editableActions = $this->getEditableColumnActions();
+            if (is_array($editableActions)) {
+                $this->actions = array_merge($this->actions, $editableActions);
             }
         }
     }
