@@ -6,6 +6,7 @@ import EmailRenderer from './EmailRenderer';
 import CompoundRenderer from './CompoundRenderer'; 
 import EditableSelectRender from './EditableSelectRender'; 
 import EditableTextRenderer from './EditableTextRenderer';
+import NestedTableRenderer from './NestedTableRenderer';
 
 // O tipo 'any' aqui é uma solução pragmática para a dependência circular.
 // O tipo real é React.FC<RendererProps>, mas EditableCell tem um tipo diferente.
@@ -47,6 +48,12 @@ const baseRenderers: { [key: string]: React.FC<any> } = {
     'editable-text': EditableTextRenderer,
     editableText: EditableTextRenderer, 
     editable: EditableTextRenderer,
+    
+    // Renderer para tabelas aninhadas
+    'nested-table': NestedTableRenderer,
+    nestedTable: NestedTableRenderer,
+    nested: NestedTableRenderer,
+    
     // Renderer padrão
     default: TextRenderer,
     defaultRenderer: TextRenderer,

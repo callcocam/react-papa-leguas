@@ -19,6 +19,7 @@ use Callcocam\ReactPapaLeguas\Support\Table\Casts\ClosureCast;
 use App\Models\User as UserModel;
 use Callcocam\ReactPapaLeguas\Support\Table\Columns\CompoundColumn;
 use Callcocam\ReactPapaLeguas\Support\Table\Columns\EditableColumn;
+use Callcocam\ReactPapaLeguas\Support\Table\Columns\NestedTableColumn;
 use Illuminate\Support\Str;
 
 /**
@@ -46,15 +47,17 @@ class UserTable extends Table
         $this->model(User::class)
             ->query(function () {
                 // Garante que todos os campos necessários, incluindo o email, sejam selecionados.
-                return UserModel::query()->select([
-                    'id',
-                    'name',
-                    'email',
-                    'status',
-                    'email_verified_at',
-                    'created_at',
-                    'updated_at',
-                ]);
+                return UserModel::query()
+                    ->select([
+                        'id',
+                        'name',
+                        'email',
+                        'status',
+                        'email_verified_at',
+                        'created_at',
+                        'updated_at',
+                    ])
+                    ->withCount('posts'); // Adiciona contagem de posts para o resumo
             })
             ->searchable()
             ->sortable()
@@ -270,6 +273,25 @@ class UserTable extends Table
                         ];
                     }
                 )),
+
+            // 🚀 COLUNA ANINHADA - Posts do usuário (SISTEMA INOVADOR!)
+            NestedTableColumn::make('posts')
+                ->label('Posts')
+                ->nestedTable(\App\Tables\UserPostsTable::class)
+                ->relationship('posts') // Relacionamento Eloquent
+                ->loadOnExpand(true) // Lazy loading para performance
+                ->summaryUsing(function ($user) {
+                    // Mostra resumo quando recolhida
+                    $count = $user->posts_count ?? 0;
+                    if ($count === 0) {
+                        return 'Nenhum post';
+                    }
+                    return "{$count} " . ($count === 1 ? 'post' : 'posts');
+                })
+                ->expandedIcon('ChevronDown')
+                ->collapsedIcon('ChevronRight') 
+                ->loadingIcon('Loader2')
+                ->width('180px'),
         ];
     }
 
