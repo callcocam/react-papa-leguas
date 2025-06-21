@@ -79,7 +79,7 @@ export default function TableBody({
                         
                         return (
                             <TableCell 
-                                key={generateUniqueKey('cell', row.id, rowIndex, column.key, columnIndex)}
+                                key={generateUniqueKey('cell', row.id, rowIndex, column.key ?? '', columnIndex)}
                                 style={{ textAlign: column.alignment || 'left' }}
                                 className={`${column.hidden ? 'hidden' : ''} p-0`}
                             >

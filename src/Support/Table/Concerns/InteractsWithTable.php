@@ -86,7 +86,10 @@ trait InteractsWithTable
                         'data' => $formattedData,
                         'columns' => $this->getColumnsConfig(),
                         'filters' => $this->getFiltersConfig(),
-                        'actions' => [], // ✅ Ações agora são processadas por item no formatRow()
+                        'actions' => [
+                            'row' => [], // Ações de linha são adicionadas em formatRow
+                            'bulk' => $this->getBulkActionsConfig(),
+                        ],
                         'pagination' => [
                             'current_page' => $paginatedData->currentPage(),
                             'per_page' => $paginatedData->perPage(),
@@ -135,7 +138,10 @@ trait InteractsWithTable
                         'data' => $formattedData,
                         'columns' => $this->getColumnsConfig(),
                         'filters' => $this->getFiltersConfig(),
-                        'actions' => [], // ✅ Ações agora são processadas por item no formatRow()
+                        'actions' => [
+                            'row' => [], // Ações de linha são adicionadas em formatRow
+                            'bulk' => $this->getBulkActionsConfig(),
+                        ],
                         'route_execute_action' => $this->getRouteExecuteAction(),
                         'pagination' => [
                             'current_page' => 1,
@@ -261,13 +267,12 @@ trait InteractsWithTable
      */
     protected function getTableActions(): array
     {
-        // Verificar se o trait HasActions está sendo usado
-        if (method_exists($this, 'getActionsConfig')) {
-            return $this->getActionsConfig();
+        // Este método parece ser um candidato a conter a lógica de `_actions`
+        $row = $this->getCurrentRow();
+        if($row){
+            return $this->getRowActions($row);
         }
-
-        // Fallback: usar método actions() se existir
-        return method_exists($this, 'actions') ? $this->actions() : [];
+        return [];
     }
 
     /**

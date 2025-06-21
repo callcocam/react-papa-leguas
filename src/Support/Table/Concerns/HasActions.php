@@ -214,31 +214,46 @@ trait HasActions
     }
 
     /**
-     * Obtém configuração das ações para serialização
+     * Obtém a configuração das ações de LINHA para um item específico.
      */
-    public function getActionsConfig($item = null, array $context = []): array
+    public function getRowActions(object $item, array $context = []): array
     {
         $rowActions = [];
-        $bulkActions = [];
         $mergedContext = array_merge($this->actionContext, $context);
-        
-        // Separa as ações por tipo
+
         foreach ($this->getVisibleActions($item, $mergedContext) as $action) {
+            // Ignorar explicitamente ações em lote ao obter ações de linha
+            if ($action instanceof BulkAction) {
+                continue;
+            }
+
             $actionArray = $action->toArray($item, $mergedContext);
             if (!empty($actionArray)) {
-                if ($action instanceof BulkAction) {
-                    // Bulk actions não dependem de um $item específico para serem serializadas
-                    $bulkActions[] = $action->toArray(null, $mergedContext);
-                } else {
-                    $rowActions[] = $actionArray;
-                }
+                $rowActions[] = $actionArray;
             }
         }
-        
-        return [
-            'row' => $rowActions,
-            'bulk' => array_values(array_unique($bulkActions, SORT_REGULAR)),
-        ];
+
+        return $rowActions;
+    }
+
+    /**
+     * Obtém a configuração de TODAS as ações em LOTE.
+     */
+    public function getBulkActionsConfig(array $context = []): array
+    {
+        $bulkActions = [];
+        $mergedContext = array_merge($this->actionContext, $context);
+
+        // getVisibleBulkActions não depende de um item
+        foreach ($this->getVisibleBulkActions($mergedContext) as $action) {
+             // O item é nulo aqui, pois a ação em lote não pertence a uma linha
+            $actionArray = $action->toArray(null, $mergedContext);
+            if (!empty($actionArray)) {
+                $bulkActions[] = $actionArray;
+            }
+        }
+
+        return $bulkActions;
     }
 
     /**

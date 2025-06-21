@@ -109,40 +109,12 @@ trait HasColumns
     protected function getActionsForItem($item): array
     {
         // Verificar se o trait HasActions está sendo usado
-        if (!method_exists($this, 'getActions')) {
-            return [];
+        if (method_exists($this, 'getRowActions')) {
+            // Usar o método correto que já filtra e formata apenas as ações de linha.
+            return $this->getRowActions($item);
         }
 
-        try {
-            $actions = [];
-            $context = ['table' => $this];
-
-            foreach ($this->getActions() as $action) {
-                // Definir contexto do item para a ação
-                $action->setContext($context);
-                
-                // Verificar visibilidade com o item específico
-                if ($action->isVisible($item, $context)) {
-                    // ✅ CHAMADA DIRETA: toArray() resolve todas as closures com o contexto
-                    $actionData = $action->toArray($item, $context);
-                    
-                    // Adicionar ID do item para referência no frontend
-                    $actionData['item_id'] = $item->id ?? null;
-                    
-                    $actions[] = $actionData;
-                }
-            }
-
-            return $actions;
-        } catch (\Exception $e) {
-            // Log do erro mas não quebrar a tabela
-            \Illuminate\Support\Facades\Log::warning('Erro ao processar ações para item: ' . $e->getMessage(), [
-                'item_id' => $item->id ?? 'unknown',
-                'exception' => $e
-            ]);
-            
-            return [];
-        }
+        return [];
     }
 
     /**
