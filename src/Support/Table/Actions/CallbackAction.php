@@ -27,6 +27,11 @@ class CallbackAction extends Action
     protected array $data = [];
 
     /**
+     * Tipo da ação (pode ser sobrescrito)
+     */
+    protected string $type = 'callback';
+
+    /**
      * Define o callback da ação
      */
     public function callback(Closure $callback): static
@@ -41,6 +46,15 @@ class CallbackAction extends Action
     public function data(array $data): static
     {
         $this->data = array_merge($this->data, $data);
+        return $this;
+    }
+
+    /**
+     * Define o tipo da ação
+     */
+    public function type(string $type): static
+    {
+        $this->type = $type;
         return $this;
     }
 
@@ -94,7 +108,7 @@ class CallbackAction extends Action
      */
     public function getType(): string
     {
-        return 'callback';
+        return $this->type;
     }
 
     /**

@@ -64,6 +64,7 @@ trait HasActions
      */
     public function getAction(string $key): ?Action
     {
+        
         return $this->actions[$key] ?? null;
     }
 

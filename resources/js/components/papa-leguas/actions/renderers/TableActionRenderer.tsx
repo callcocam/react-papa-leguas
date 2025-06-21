@@ -15,17 +15,14 @@ import { TableContext } from '../../contexts/TableContext';
 import { router } from '@inertiajs/react';
 
 /**
- * Renderiza ações de callback para COLUNAS EDITÁVEIS
- * 
- * IMPORTANTE: Este renderer é específico para EditableColumn.php
- * Para ações normais da tabela, use ActionRenderer.tsx
+ * Renderiza ações de callback normais da tabela (não colunas editáveis)
  * 
  * Este renderer é usado para:
- * - Ações geradas automaticamente por EditableColumn
- * - Atualizações inline de valores de coluna
- * - Callbacks de edição de células
+ * - CallbackActions definidas no método actions() da tabela
+ * - Ações que executam callbacks no backend
+ * - Ações com confirmação opcional
  */
-export default function CallbackActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
+export default function TableActionRenderer({ action, item, IconComponent }: ActionRendererProps) {
     const { confirm } = useConfirmationDialog();
     const { processAction, isLoading } = useActionProcessor();
     const { meta } = useContext(TableContext);
@@ -47,14 +44,18 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
     const runAction = async () => {
         if (!meta?.key) {
             console.error("Erro crítico: A chave da tabela (meta.key) não foi encontrada no contexto.");
-            alert("Erro de configuração: Chave da tabela ausente.");
+            return;
+        }
+
+        if (!item?.id) {
+            console.error("Erro: ID do item não encontrado.", item);
             return;
         }
 
         const result = await processAction({
             table: meta.key,
             actionKey: action.key,
-            actionType: action.type,
+            actionType: action.type || 'callback',
             item: item,
             data: action.data || {},
         });
@@ -67,8 +68,6 @@ export default function CallbackActionRenderer({ action, item, IconComponent }: 
                     preserveScroll: true,
                 });
             }
-        } else {
-            alert(result?.message || 'Ocorreu um erro ao processar a ação.');
         }
     };
 

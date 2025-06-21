@@ -76,6 +76,7 @@ trait InteractsWithTable
                     $this->actions = array_merge($this->actions, $editableActions);
                 }
             }
+ 
 
             // Usar paginação se habilitada
             if ($this->isPaginated()) {
@@ -84,8 +85,7 @@ trait InteractsWithTable
                     // Tratar ações aqui 
                     return $this->formatRow($row);
                 })->values();
- 
-
+  
                 return [
                     'table' => [
                         'data' => $formattedData,

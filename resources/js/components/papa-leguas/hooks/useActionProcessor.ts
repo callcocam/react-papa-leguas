@@ -11,7 +11,7 @@ interface ProcessActionPayload {
     table: string;
     actionKey: string;
     actionType?: TableAction['type'];
-    item: { id?: any; selectedIds?: (string | number)[] };
+    item: any; // Pode ser um objeto completo ou objeto com selectedIds
     data?: Record<string, any>;
 }
 
@@ -29,7 +29,22 @@ export const useActionProcessor = () => {
 
         const body = isBulk
             ? { item_ids: payload.item.selectedIds, data: payload.data }
-            : { item_id: payload.item.id, data: payload.data };
+            : { item_id: payload.item?.id || payload.item, data: payload.data };
+
+        // Debug log para desenvolvimento (pode ser removido em produção)
+        if (process.env.NODE_ENV === 'development') {
+            console.log('🔧 useActionProcessor Debug:', {
+                endpoint,
+                body,
+                payload: {
+                    table: payload.table,
+                    actionKey: payload.actionKey,
+                    actionType: payload.actionType,
+                    itemType: typeof payload.item,
+                    itemId: payload.item?.id,
+                }
+            });
+        }
 
         try {
             const response = await axios.post(endpoint, body, {
@@ -60,9 +75,9 @@ export const useActionProcessor = () => {
             }
             
             return result;
-        } catch (error: any) {
-            console.error('Erro ao processar a ação:', error);
-            const message = error.response?.data?.message || error.message || 'Falha ao processar a ação.';
+        } catch (err: any) {
+            console.error('Erro ao processar a ação:', err);
+            const message = err.response?.data?.message || err.message || 'Falha ao processar a ação.';
             
             // Mostrar toast de erro
             error(

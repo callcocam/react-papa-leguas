@@ -3,6 +3,7 @@ import { type ActionRendererProps } from '../types';
 import ButtonActionRenderer from './renderers/ButtonActionRenderer';
 import CallbackActionRenderer from './renderers/CallbackActionRenderer';
 import BulkActionRenderer from './renderers/BulkActionRenderer';
+import TableActionRenderer from './renderers/TableActionRenderer';
 import { Icons } from '../icons';
 import { type LucideIcon } from 'lucide-react';
 
@@ -14,7 +15,8 @@ const rendererMap = {
     'edit': ButtonActionRenderer,
     'delete': ButtonActionRenderer,
     'view': ButtonActionRenderer,
-    'callback': CallbackActionRenderer,
+    'callback': TableActionRenderer, // Ações normais da tabela
+    'editable': CallbackActionRenderer, // Ações de colunas editáveis
     'bulk': BulkActionRenderer,
     // Adicione outros tipos conforme necessário
 };
@@ -22,6 +24,12 @@ const rendererMap = {
 /**
  * ActionRenderer atua como um despachante (dispatcher).
  * Ele seleciona o componente de renderização correto com base no tipo da ação.
+ * 
+ * TIPOS DE AÇÃO:
+ * - 'callback': Ações normais da tabela (TableActionRenderer)
+ * - 'editable': Ações de colunas editáveis (CallbackActionRenderer)
+ * - 'button', 'route', 'url', 'edit', 'delete', 'view': Ações de botão (ButtonActionRenderer)
+ * - 'bulk': Ações em lote (BulkActionRenderer)
  */
 export default function ActionRenderer(props: ActionRendererProps) {
     const { action } = props;

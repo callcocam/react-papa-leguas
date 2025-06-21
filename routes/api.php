@@ -15,7 +15,7 @@ Route::prefix('api')
     ->middleware(config('react-papa-leguas.api.middleware', ['api'])) // Usar middleware de API padrão
     ->group(function () {
         // Rota para executar ações de callback individuais
-        Route::post('/{table}/actions/{action}/execute', [TableController::class, 'executeAction'])
+        Route::post('/{table}/actions/{actionKey}/execute', [TableController::class, 'executeAction'])
             ->name('api.tables.actions.execute');
 
         // Rota para executar ações em lote (bulk actions)
