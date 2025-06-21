@@ -580,6 +580,10 @@ class UserTable extends Table
                 ->label('Duplicar')
                 ->icon('Copy')
                 ->variant('ghost')
+                ->requiresConfirmation(
+                    'Tem certeza que deseja duplicar este usuário?',
+                    'Confirmar Duplicação'
+                )
                 ->tooltip('Criar novo usuário baseado neste')
                 ->callback(function ($item, $context) {
                     if (!$item) {

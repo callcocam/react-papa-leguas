@@ -4,6 +4,7 @@ import ButtonActionRenderer from './renderers/ButtonActionRenderer';
 import CallbackActionRenderer from './renderers/CallbackActionRenderer';
 import BulkActionRenderer from './renderers/BulkActionRenderer';
 import TableActionRenderer from './renderers/TableActionRenderer';
+import ModalActionRenderer from './renderers/ModalActionRenderer';
 import { Icons } from '../icons';
 import { type LucideIcon } from 'lucide-react';
 
@@ -17,6 +18,7 @@ const rendererMap = {
     'view': ButtonActionRenderer,
     'callback': TableActionRenderer, // Ações normais da tabela
     'editable': CallbackActionRenderer, // Ações de colunas editáveis
+    'modal': ModalActionRenderer, // Ações que abrem modal/slideover
     'bulk': BulkActionRenderer,
     // Adicione outros tipos conforme necessário
 };
@@ -28,6 +30,7 @@ const rendererMap = {
  * TIPOS DE AÇÃO:
  * - 'callback': Ações normais da tabela (TableActionRenderer)
  * - 'editable': Ações de colunas editáveis (CallbackActionRenderer)
+ * - 'modal': Ações que abrem modal/slideover (ModalActionRenderer)
  * - 'button', 'route', 'url', 'edit', 'delete', 'view': Ações de botão (ButtonActionRenderer)
  * - 'bulk': Ações em lote (BulkActionRenderer)
  */
