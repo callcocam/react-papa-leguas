@@ -6,6 +6,7 @@ import { useConfirmationDialog } from '../../contexts/ConfirmationDialogContext'
 import { useActionProcessor } from '../../hooks/useActionProcessor';
 import { LucideIcon } from 'lucide-react';
 import { Icons } from '../../icons';
+import { router } from '@inertiajs/react';
 
 interface BulkActionRendererProps {
     action: TableAction;
@@ -23,18 +24,24 @@ export default function BulkActionRenderer({ action }: BulkActionRendererProps) 
         ? (Icons[action.icon as keyof typeof Icons] as LucideIcon)
         : null;
 
-    const executeAction = () => {
+    const executeAction = async () => {
         if (!meta?.key) {
             console.error("A 'key' da tabela não foi definida nos metadados.");
             return;
         }
         const selectedIds = Array.from(selectedRows ?? []);
-        processAction({
+        const result = await processAction({
             table: meta.key,
             actionKey: action.key,
             actionType: 'bulk',
             item: { selectedIds: selectedIds },
         });
+
+        if (result?.success) {
+            if (result.reload !== false) {
+                router.reload();
+            }
+        }
     };
 
     const handleClick = () => {
