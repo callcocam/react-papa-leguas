@@ -36,7 +36,7 @@ class TableController extends Controller
             return response()->json(['success' => false, 'message' => 'Ação não encontrada.'], 404);
         }
 
-        $modelClass = $table->getModel();
+        $modelClass = $table->getModelClass();
         $item = $modelClass::find($request->input('item_id'));
 
         if (!$item) {
@@ -60,7 +60,7 @@ class TableController extends Controller
             return response()->json(['success' => false, 'message' => 'Ação não encontrada.'], 404);
         }
 
-        $modelClass = $table->getModel();
+        $modelClass = $table->getModelClass();
         $itemIds = $request->input('item_ids', []);
         
         if (empty($itemIds)) {
