@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { useToast } from '@/hooks/use-toast';
 import { type TableAction } from '../types';
 
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
@@ -16,6 +17,7 @@ interface ProcessActionPayload {
 
 export const useActionProcessor = () => {
     const [isLoading, setIsLoading] = useState(false);
+    const { success, error, warning, info } = useToast();
 
     const processAction = async (payload: ProcessActionPayload) => {
         setIsLoading(true);
@@ -36,10 +38,38 @@ export const useActionProcessor = () => {
                     'Accept': 'application/json',
                 },
             });
-            return response.data;
+            
+            const result = response.data;
+            
+            // Mostrar feedback visual baseado na resposta
+            if (result.success) {
+                success(
+                    result.message || 'Ação executada com sucesso!',
+                    result.description
+                );
+            } else if (result.warning) {
+                warning(
+                    result.message || 'Atenção!',
+                    result.description
+                );
+            } else if (result.info) {
+                info(
+                    result.message || 'Informação',
+                    result.description
+                );
+            }
+            
+            return result;
         } catch (error: any) {
             console.error('Erro ao processar a ação:', error);
             const message = error.response?.data?.message || error.message || 'Falha ao processar a ação.';
+            
+            // Mostrar toast de erro
+            error(
+                'Erro ao processar ação',
+                message
+            );
+            
             return { success: false, message };
         } finally {
             setIsLoading(false);
