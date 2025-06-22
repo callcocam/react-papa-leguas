@@ -78,8 +78,7 @@ class AdminController extends Controller
      * Show the form for editing the specified resource.
      */
     public function edit(Request $request, string $id)
-    {
-        dd($this->getDataForViewsEdit($request, $id));
+    { 
         return Inertia::render($this->getViewEdit(), $this->getDataForViewsEdit($request, $id));
     }
 

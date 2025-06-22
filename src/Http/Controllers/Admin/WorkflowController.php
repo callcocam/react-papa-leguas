@@ -49,4 +49,40 @@ class WorkflowController extends AdminController
     {
         return 'crud/workflows/show';
     }
+
+    /**
+     * Configura relacionamentos específicos do WorkflowController com eager loading contextual
+     * 
+     * Relacionamentos do modelo Workflow:
+     * - BelongsTo: user (criador), tenant (proprietário)
+     * - HasMany: templates (etapas), activeTemplates, workflowables (entidades usando o workflow)
+     * 
+     * @return void
+     */
+    protected function configureControllerSpecificRelations(): void
+    {
+        // INDEX: Relacionamentos básicos para listagem
+        // Carrega apenas user e tenant para mostrar informações essenciais na tabela
+        $this->addEagerLoadToContext('index', 'user:id,name,email');   // Criador do workflow
+        $this->addEagerLoadToContext('index', 'tenant:id,name');       // Tenant proprietário
+
+        // SHOW: Visualização completa com todos os relacionamentos necessários
+        // Inclui todos os templates e workflowables para análise completa
+        $this->addEagerLoadToContext('show', 'user:id,name,email');    // Criador completo
+        $this->addEagerLoadToContext('show', 'tenant:id,name');        // Tenant proprietário
+        $this->addEagerLoadToContext('show', 'templates:id,workflow_id,name,slug,description,color,icon,sort_order,is_active'); // Templates/etapas
+        $this->addEagerLoadToContext('show', 'activeTemplates:id,workflow_id,name,slug,description,color,icon,sort_order'); // Templates ativas
+        $this->addEagerLoadToContext('show', 'workflowables:id,workflow_id,workflowable_type,workflowable_id,current_template_id,status,started_at,completed_at'); // Entidades
+
+        // EDIT: Relacionamentos necessários para formulários de edição
+        // Inclui user e tenant para contexto, templates para configuração
+        $this->addEagerLoadToContext('edit', 'user:id,name,email');    // Criador
+        $this->addEagerLoadToContext('edit', 'tenant:id,name');        // Tenant proprietário  
+        $this->addEagerLoadToContext('edit', 'templates:id,workflow_id,name,slug,sort_order,is_active'); // Templates para configuração
+
+        // CREATE: Relacionamentos para formulários de criação
+        // Apenas relacionamentos básicos necessários para o formulário
+        $this->addEagerLoadToContext('create', 'user:id,name,email');  // Para contexto do usuário
+        $this->addEagerLoadToContext('create', 'tenant:id,name');      // Para contexto do tenant
+    }
 } 

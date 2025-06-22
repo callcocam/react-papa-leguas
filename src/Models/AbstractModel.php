@@ -55,6 +55,11 @@ abstract class AbstractModel extends Model
         });
     }
 
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
     /**
      * Get the user that owns this model.
      */
