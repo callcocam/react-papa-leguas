@@ -9,8 +9,8 @@
 namespace Callcocam\ReactPapaLeguas\Support\Table\Concerns;
 
 use Illuminate\Support\Facades\Log;
-use Callcocam\ReactPapaLeguas\Models\Workflow;
-use Callcocam\ReactPapaLeguas\Models\WorkflowTemplate;
+use Callcocam\ReactPapaLeguas\Models\Workflow; 
+use Callcocam\ReactPapaLeguas\Support\Table\Views\KanbanView;
 
 /**
  * Trait para adicionar suporte a views condicionais baseadas em workflows
@@ -57,7 +57,7 @@ trait HasWorkflow
                 ->with('activeTemplates')
                 ->first();
 
-            if ($workflow && $workflow->activeTemplates->count() > 0) {
+            if ($workflow && $workflow->activeTemplates->count() > 0) { 
                 return [
                     'slug' => $workflow->slug,
                     'name' => $workflow->name,
@@ -82,8 +82,7 @@ trait HasWorkflow
      */
     protected function getKanbanColumnsFromWorkflow(): array
     {
-        $workflow = $this->getWorkflowForCurrentTable();
-
+        $workflow = $this->getWorkflowForCurrentTable(); 
         if (!$workflow) {
             Log::info('Sem workflow configurado - colunas Kanban não geradas');
             return [];
@@ -126,51 +125,20 @@ trait HasWorkflow
      * Retorna views com suporte condicional a workflow
      * Kanban só aparece se houver workflow configurado no banco
      */
-    protected function getViewsWithWorkflowSupport(): array
-    {
-        // Views básicas sempre disponíveis
-        $views = [
-            [
-                'id' => 'list',
-                'label' => 'Lista',
-                'icon' => 'list',
-                'description' => 'Visualização em lista tradicional'
-            ],
-            [
-                'id' => 'cards',
-                'label' => 'Cards',
-                'icon' => 'grid',
-                'description' => 'Visualização em cards'
-            ]
-        ];
-
+    protected function getViewsWithWorkflowSupport(array $views): array
+    { 
         // Verificar se há workflow configurado
         $workflow = $this->getWorkflowForCurrentTable();
 
         if ($workflow) {
             // Adicionar view Kanban apenas se workflow existe
-            $views[] = [
-                'id' => 'kanban',
-                'label' => 'Kanban',
-                'icon' => 'kanban',
-                'description' => "Quadro Kanban - {$workflow['name']}",
-                'config' => [
-                    'workflow_slug' => $workflow['slug'],
-                    'workflow_name' => $workflow['name'],
-                    'columns' => $this->getKanbanColumnsFromWorkflow()
-                ]
-            ];
-
-            Log::info('View Kanban disponibilizada via trait', [
-                'table_class' => static::class,
-                'workflow' => $workflow['slug'],
-                'workflow_name' => $workflow['name']
-            ]);
-        } else {
-            Log::info('View Kanban não disponibilizada - sem workflow configurado', [
-                'table_class' => static::class
-            ]);
-        }
+            $views[] = KanbanView::make('kanban', 'Kanban')
+                ->icon('kanban')
+                ->description("Quadro Kanban - {$workflow['name']}")
+                ->workflow_slug($workflow['slug'])
+                ->workflow_name($workflow['name'])
+                ->columns($this->getKanbanColumnsFromWorkflow())->toArray(); 
+        } 
 
         return $views;
     }

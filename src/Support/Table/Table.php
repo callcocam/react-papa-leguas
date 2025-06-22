@@ -52,4 +52,22 @@ abstract class Table
     {
         return [];
     }
+
+    /**
+     * Define os filtros da tabela
+     * Pode ser sobrescrito pelas classes filhas
+     */
+    protected function views(): array
+    {
+        return [];
+    }
+
+    /**
+     * Define os tabs da tabela
+     * Pode ser sobrescrito pelas classes filhas
+     */
+    protected function tabs(): array
+    {
+        return [];
+    }
 } 

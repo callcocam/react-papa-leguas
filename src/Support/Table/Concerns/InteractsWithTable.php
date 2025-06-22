@@ -218,11 +218,8 @@ trait InteractsWithTable
      */
     protected function getTabsConfiguration(): array
     {
-        if (!method_exists($this, 'tabs')) {
-            return [];
-        }
-
-        $tabs = $this->tabs();
+        
+        $tabs = array_map(fn($tab) => $tab->toArray(), $this->tabs());
         if (empty($tabs)) {
             return [];
         }
@@ -244,11 +241,12 @@ trait InteractsWithTable
      */
     protected function getViewsConfiguration(): array
     {
-        if (!method_exists($this, 'views')) {
-            return [];
-        }
+        $views = array_map(fn($view) => $view->toArray(), $this->views());
 
-        $views = $this->views();
+        if(method_exists($this, 'getViewsWithWorkflowSupport')){
+            $views = $this->getViewsWithWorkflowSupport($views);
+        }
+ 
         if (empty($views)) {
             return [];
         }
