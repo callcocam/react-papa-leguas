@@ -34,4 +34,19 @@ class WorkflowController extends AdminController
     {
         return WorkflowTable::class;
     }
+
+    public function getViewCreate(): string
+    {
+        return 'crud/workflows/create';
+    }
+
+    public function getViewEdit(): string
+    {
+        return 'crud/workflows/edit';
+    }
+
+    public function getViewShow(): string
+    {
+        return 'crud/workflows/show';
+    }
 } 

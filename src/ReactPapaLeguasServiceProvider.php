@@ -39,7 +39,7 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasConfigFile('shinobi')
             ->hasConfigFile('tenant')
-            ->hasRoutes('web', 'api')
+            ->hasRoutes('web', 'api', 'admin')
             ->hasViews()
             ->hasMigrations([
                 'create_users_table',
@@ -54,8 +54,8 @@ class ReactPapaLeguasServiceProvider extends PackageServiceProvider
                 'create_admin_role_table',
                 'create_admin_tenant_table',
                 'create_workflows_table',
-                'create_workflowables_table',
-                'create_workflow_templates_table'
+                'create_workflow_templates_table',
+                'create_workflowables_table'
             ])
             ->hasCommand(ReactPapaLeguasCommand::class)
             ->hasCommand(MakeStandardModelCommand::class)

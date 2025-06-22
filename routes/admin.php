@@ -7,6 +7,8 @@
  */
 
 use Callcocam\ReactPapaLeguas\Facades\ReactPapaLeguas;
+use Callcocam\ReactPapaLeguas\Http\Controllers\Admin\WorkflowController;
+use Callcocam\ReactPapaLeguas\Http\Controllers\Admin\WorkflowTemplateController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -21,14 +23,17 @@ use Inertia\Inertia;
 |
 */
 
-Route::prefix(ReactPapaLeguas::getPrefix())
-    ->name(ReactPapaLeguas::getId())
+Route::prefix('admin')
+    ->name(ReactPapaLeguas::getId().'.')
     ->middleware(ReactPapaLeguas::getMiddlewares())
     ->group(function () {
 
         Route::middleware(['auth', 'verified'])->group(function () {
-            Route::get('/', function () { 
+            Route::get('/', function () {
                 return Inertia::render('app');
             })->name('dashboard');
+
+            Route::resource('workflows', WorkflowController::class);
+            Route::resource('templates', WorkflowTemplateController::class);
         });
     });

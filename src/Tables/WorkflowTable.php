@@ -81,26 +81,33 @@ class WorkflowTable extends Table
     {
         return [
             // Nome com ícone e cor
-            CompoundColumn::make('name', 'Workflow')
-                ->icon('icon')
-                ->title('name')
-                ->subtitle('description')
-                ->searchable()
-                ->sortable()
-                ->limit(40)
-                ->formatUsing(function ($value, $record) {
-                    return [
-                        'icon' => $record->icon ?: 'Workflow',
-                        'icon_color' => $record->color ?: '#6b7280',
-                        'title' => $record->name,
-                        'subtitle' => $record->description ? 
-                            Str::limit($record->description, 60) : 
-                            'Sem descrição',
-                    ];
-                }),
+            // CompoundColumn::make('name', 'Workflow')
+            //     ->icon('icon')
+            //     ->title('name') 
+            //     ->searchable()
+            //     ->sortable()
+            //     ->limit(40)
+            //     ->formatUsing(function (Workflow $record, $value) {
+            //         return [
+            //             'icon' => $record->icon ?: 'Workflow',
+            //             'icon_color' => $record->color ?: '#6b7280',
+            //             'title' => $record->name,
+            //             'subtitle' => $record->description ? 
+            //                 Str::limit($record->description, 60) : 
+            //                 'Sem descrição',
+            //         ];
+            //     }),
 
             // Slug para URLs
-            TextColumn::make('slug', 'Slug')
+            TextColumn::make('name', 'Nome')
+                ->searchable()
+                ->sortable()
+                ->copyable()
+                ->width('120px')
+                ->placeholder('Não definido'),
+
+            // Slug para URLs
+            TextColumn::make('slug', 'Identificador')
                 ->searchable()
                 ->sortable()
                 ->copyable()
@@ -111,7 +118,7 @@ class WorkflowTable extends Table
             BadgeColumn::make('category', 'Categoria')
                 ->sortable()
                 ->width('120px')
-                ->formatUsing(function ($value, $record) {
+                ->formatUsing(function (Workflow $record, $value) {
                     $categories = [
                         'support' => ['label' => 'Suporte', 'color' => 'blue'],
                         'sales' => ['label' => 'Vendas', 'color' => 'green'],
@@ -128,15 +135,14 @@ class WorkflowTable extends Table
                         'label' => $category['label'],
                         'color' => $category['color'],
                     ];
-                })
-                ->placeholder('Geral'),
+                }) ,
 
             // Templates count com link para gestão
             TextColumn::make('templates_count', 'Etapas')
                 ->sortable()
                 ->width('80px')
                 ->alignment('center')
-                ->formatUsing(function ($value, $record) {
+                ->formatUsing(function (Workflow $record, $value) {
                     return [
                         'type' => 'badge',
                         'label' => $value . ' etapa' . ($value != 1 ? 's' : ''),
@@ -150,7 +156,7 @@ class WorkflowTable extends Table
                 ->sortable()
                 ->width('80px')
                 ->alignment('center')
-                ->formatUsing(function ($value, $record) {
+                ->formatUsing(function (Workflow $record, $value) {
                     return [
                         'type' => 'badge',
                         'label' => $value . ' item' . ($value != 1 ? 's' : ''),
@@ -164,56 +170,48 @@ class WorkflowTable extends Table
                 ->sortable()
                 ->width('100px')
                 ->alignment('center')
-                ->formatUsing(function ($value, $record) {
-                    if (!$value) return ['formatted' => 'Não definida', 'color' => 'secondary'];
-                    
-                    return [
-                        'formatted' => $value . ' dia' . ($value != 1 ? 's' : ''),
-                        'color' => $value <= 7 ? 'success' : ($value <= 30 ? 'warning' : 'destructive'),
-                        'subtitle' => $value <= 7 ? 'Rápido' : ($value <= 30 ? 'Médio' : 'Longo'),
-                    ];
-                })
+                // ->formatUsing(function (Workflow $record, $value) {
+                //     if (!$value) return ['formatted' => 'Não definida', 'color' => 'secondary'];
+                //     dd($value);
+                //     return [
+                //         'formatted' => $value . ' dia' . ($value != 1 ? 's' : ''),
+                //         'color' => $value <= 7 ? 'success' : ($value <= 30 ? 'warning' : 'destructive'),
+                //         'subtitle' => $value <= 7 ? 'Rápido' : ($value <= 30 ? 'Médio' : 'Longo'),
+                //     ];
+                // })
                 ->placeholder('Não definida'),
 
             // Flags importantes
             BooleanColumn::make('is_required_by_default', 'Obrigatório')
-                ->trueLabel('Sim')
-                ->falseLabel('Não')
-                ->trueIcon('Lock')
-                ->falseIcon('Unlock')
-                ->trueColor('warning')
-                ->falseColor('secondary')
-                ->displayAs('badge')
-                ->width('100px'),
+                // ->trueLabel('Sim')
+                // ->falseLabel('Não')
+                ->yesNo()
+                // ->trueIcon('Lock')
+                // ->falseIcon('Unlock')
+                // ->trueColor('warning')
+                // ->falseColor('secondary')
+                // ->displayAs('badge')
+                ->width('100px')
+                ->alignment('center'),
 
             BooleanColumn::make('is_active', 'Ativo')
-                ->trueLabel('Ativo')
-                ->falseLabel('Inativo')
-                ->trueIcon('CheckCircle')
-                ->falseIcon('XCircle')
-                ->trueColor('success')
-                ->falseColor('destructive')
-                ->displayAs('badge')
-                ->width('80px'),
+                ->yesNo()
+                ->width('80px')
+                ->alignment('center'),
 
             BooleanColumn::make('is_featured', 'Destaque')
-                ->trueLabel('Sim')
-                ->falseLabel('Não')
-                ->trueIcon('Star')
-                ->falseIcon('StarOff')
-                ->trueColor('warning')
-                ->falseColor('secondary')
-                ->displayAs('badge')
-                ->width('90px'),
+                ->yesNo()
+                ->width('90px')
+                ->alignment('center'),
 
             // Sort order
             TextColumn::make('sort_order', 'Ordem')
                 ->sortable()
                 ->width('70px')
                 ->alignment('center')
-                ->formatUsing(function ($value, $record) {
+                ->formatUsing(function (Workflow $record, $value) {
                     return [
-                        'formatted' => '#' . $value,
+                        'formatted' => '#' . data_get($record, 'value'),
                         'color' => 'secondary',
                     ];
                 }),
@@ -313,6 +311,16 @@ class WorkflowTable extends Table
                 ->label('Data de Criação')
                 ->brazilian()
                 ->dateOnly(),
+        ];
+    }
+
+    protected function actions(): array
+    {
+        return [
+            $this->editAction('admin.workflows.edit')
+                ->label('Editar')
+                ->icon('Pencil')
+                ->tooltip('Editar workflow')
         ];
     }
 } 

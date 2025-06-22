@@ -94,6 +94,20 @@ class Controller extends BaseController
         ];
     }
 
+    protected function getDataForViewsCreate(Request $request)
+    {
+        return $this->getDataForViews($request);
+    }
+
+    protected function getDataForViewsEdit(Request $request, string $id)
+    {
+        return $this->getDataForViews($request);
+    }
+
+    protected function getDataForViewsShow(Request $request, string $id)
+    {
+        return $this->getDataForViews($request);
+    }
 
     /**
      * Get route name for current controller
