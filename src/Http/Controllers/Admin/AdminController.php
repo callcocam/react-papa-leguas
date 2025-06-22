@@ -118,8 +118,7 @@ class AdminController extends Controller
         
         // Processar dados da tabela com eager loading contextual
         $table = $this->getTable();
-        $tableData = $table->toArray();
-        
+        $tableData = $table->toArray(); 
         // Processar requisição com contexto 'index'
         $customRelations = $this->getCustomRelationsForContext('index');
         $tableData['data'] = $this->processRequest($request, $customRelations, 'index');

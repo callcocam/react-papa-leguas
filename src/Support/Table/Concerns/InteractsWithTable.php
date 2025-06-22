@@ -74,7 +74,7 @@ trait InteractsWithTable
                     return $this->formatRow($row);
                 })->values();
   
-                return [
+                $result = [
                     'table' => [
                         'data' => $formattedData,
                         'columns' => $this->getColumnsConfig(),
@@ -121,12 +121,36 @@ trait InteractsWithTable
                     ],
                     'data_source' => $this->getDataSourceInfo(),
                 ];
+
+                // 🎯 Sistema de Tabs Configuráveis - Carregamento Automático
+                if (method_exists($this, 'tabs')) {
+                    $tabs = $this->tabs();
+                    if (!empty($tabs)) {
+                        $result['tabs'] = $tabs;
+                        
+                        // Configuração padrão das tabs se não especificada
+                        if (method_exists($this, 'tabsConfig')) {
+                            $result['tabsConfig'] = $this->tabsConfig();
+                        } else {
+                            $result['tabsConfig'] = [
+                                'defaultTab' => $tabs[0]['id'] ?? 'lista',
+                                'variant' => 'default',
+                                'size' => 'md',
+                                'showBadges' => true,
+                                'showIcons' => true,
+                                'scrollable' => true,
+                            ];
+                        }
+                    }
+                }
+
+                return $result;
             } else {
                 // Modo sem paginação
                 $data = $this->getData();
                 $formattedData = $data->map(fn($row) => $this->formatRow($row))->values();
 
-                return [
+                $result = [
                     'table' => [
                         'data' => $formattedData,
                         'columns' => $this->getColumnsConfig(),
@@ -174,6 +198,30 @@ trait InteractsWithTable
                     ],
                     'data_source' => $this->getDataSourceInfo(),
                 ];
+
+                // 🎯 Sistema de Tabs Configuráveis - Carregamento Automático
+                if (method_exists($this, 'tabs')) {
+                    $tabs = $this->tabs();
+                    if (!empty($tabs)) {
+                        $result['tabs'] = $tabs;
+                        
+                        // Configuração padrão das tabs se não especificada
+                        if (method_exists($this, 'tabsConfig')) {
+                            $result['tabsConfig'] = $this->tabsConfig();
+                        } else {
+                            $result['tabsConfig'] = [
+                                'defaultTab' => $tabs[0]['id'] ?? 'lista',
+                                'variant' => 'default',
+                                'size' => 'md',
+                                'showBadges' => true,
+                                'showIcons' => true,
+                                'scrollable' => true,
+                            ];
+                        }
+                    }
+                }
+
+                return $result;
             }
         } catch (\Exception $e) {
             Log::error('Erro no método toArray da Table: ' . $e->getMessage(), [

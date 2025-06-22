@@ -3,6 +3,8 @@ import { Head } from '@inertiajs/react';
 import AppLayout from '../../layouts/react-app-layout';
 import { type BreadcrumbItem } from '../../types';
 import { DataTable } from '../../components/papa-leguas';
+import TabbedInterface from '@/components/ui/tabbed-interface';
+import { TabConfig, TabsConfig, TabbedTableData } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -18,7 +20,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     }
 ];
 
-interface CrudIndexProps {
+interface CrudIndexProps extends TabbedTableData {
     table?: {
         data?: any[];
         columns?: any[];
@@ -64,7 +66,7 @@ interface CrudIndexProps {
     error?: string;
 }
 
-export default function CrudIndex({ table, routes, config, capabilities, error }: CrudIndexProps) {
+export default function CrudIndex({ table, routes, config, capabilities, error, tabs, tabsConfig }: CrudIndexProps) {
     
     // 🔍 DEBUG: Ver dados vindos do backend
     React.useEffect(() => {
@@ -75,10 +77,24 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
         console.log('table?.columns:', table?.columns?.length, 'columns');
         console.log('config:', config);
         console.log('routes:', routes);
-    }, [table, config, routes]);
+        console.log('🔗 tabs:', tabs?.length, 'tabs configuradas');
+        console.log('⚙️ tabsConfig:', tabsConfig);
+    }, [table, config, routes, tabs, tabsConfig]);
     
     // ✅ USAR AÇÕES DO BACKEND - Sistema de Ações Avançado
-     
+    
+    // 🎨 Renderizar DataTable (usado tanto nas tabs quanto no fallback)
+    const renderDataTable = (tabData?: any) => (
+        <DataTable
+            data={tabData?.data || table?.data || []}
+            columns={tabData?.columns || table?.columns || []}
+            filters={tabData?.filters || table?.filters || []}
+            actions={tabData?.actions || table?.actions || []}
+            loading={false}
+            error={error}
+            meta={tabData?.meta || table?.meta}
+        />
+    );
 
     return (
         <AppLayout 
@@ -100,16 +116,25 @@ export default function CrudIndex({ table, routes, config, capabilities, error }
                     </div>
                 </div>
 
-                {/* DataTable Modular Papa Leguas */}
-                <DataTable
-                    data={table?.data || []}
-                    columns={table?.columns || []}
-                    filters={table?.filters || []}
-                    actions={table?.actions || []}
-                    loading={false}
-                    error={error}
-                    meta={table?.meta}
-                />
+                {/* Sistema de Tabs ou DataTable Direta */}
+                <TabbedInterface
+                    tabs={tabs || []}
+                    config={tabsConfig}
+                    defaultContent={renderDataTable()}
+                >
+                    {(activeTab, tabContent) => {
+                        console.log('🎯 DEBUG - Tab Ativa:', activeTab.id, activeTab.label);
+                        console.log('📋 DEBUG - Conteúdo da Tab:', tabContent);
+                        
+                        // Se a tab tem conteúdo próprio, renderizar ele
+                        if (tabContent) {
+                            return renderDataTable(tabContent);
+                        }
+                        
+                        // Se a tab não tem conteúdo, renderizar DataTable padrão
+                        return renderDataTable();
+                    }}
+                </TabbedInterface>
             </div>
         </AppLayout>
     );
