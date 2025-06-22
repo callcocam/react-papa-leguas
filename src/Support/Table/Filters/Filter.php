@@ -9,6 +9,10 @@
 namespace Callcocam\ReactPapaLeguas\Support\Table\Filters;
 
 use Callcocam\ReactPapaLeguas\Support\Concerns\EvaluatesClosures;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToLabel;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToHidden;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToAttributes;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToPlaceholder;
 use Closure;
 
 /**
@@ -16,19 +20,19 @@ use Closure;
  */
 abstract class Filter
 {
-    use EvaluatesClosures;
+    use EvaluatesClosures,
+        BelongsToLabel,
+        BelongsToHidden,
+        BelongsToAttributes,
+        BelongsToPlaceholder;
 
     protected string $key;
-    protected string $label;
     protected mixed $value = null;
     protected mixed $defaultValue = null;
     protected array $config = [];
     protected bool $multiple = false;
-    protected ?string $placeholder = null;
     protected ?Closure $queryCallback = null;
     protected ?Closure $valueCallback = null;
-    protected bool $hidden = false;
-    protected array $attributes = [];
 
     /**
      * Constructor
@@ -48,15 +52,6 @@ abstract class Filter
     }
 
     /**
-     * Definir label do filtro
-     */
-    public function label(string $label): static
-    {
-        $this->label = $label;
-        return $this;
-    }
-
-    /**
      * Definir valor padrão
      */
     public function default(mixed $value): static
@@ -66,38 +61,11 @@ abstract class Filter
     }
 
     /**
-     * Definir placeholder
-     */
-    public function placeholder(string $placeholder): static
-    {
-        $this->placeholder = $placeholder;
-        return $this;
-    }
-
-    /**
      * Permitir múltiplos valores
      */
     public function multiple(bool $multiple = true): static
     {
         $this->multiple = $multiple;
-        return $this;
-    }
-
-    /**
-     * Ocultar filtro
-     */
-    public function hidden(bool $hidden = true): static
-    {
-        $this->hidden = $hidden;
-        return $this;
-    }
-
-    /**
-     * Definir atributos HTML personalizados
-     */
-    public function attributes(array $attributes): static
-    {
-        $this->attributes = array_merge($this->attributes, $attributes);
         return $this;
     }
 
@@ -227,14 +195,14 @@ abstract class Filter
     {
         return [
             'key' => $this->key,
-            'label' => $this->label,
+            'label' => $this->getLabel() ?? $this->generateLabel($this->key),
             'type' => $this->getType(),
             'value' => $this->getValue(),
             'default_value' => $this->defaultValue,
             'multiple' => $this->multiple,
-            'placeholder' => $this->placeholder,
-            'hidden' => $this->hidden,
-            'attributes' => $this->attributes,
+            'placeholder' => $this->getPlaceholder(),
+            'hidden' => $this->isHidden(),
+            'attributes' => $this->getAttributes(),
             'config' => $this->config,
         ];
     }
@@ -255,28 +223,22 @@ abstract class Filter
         return $this->key;
     }
 
-    public function getLabel(): string
+    /**
+     * Obtém o label do filtro (usa trait BelongsToLabel com fallback)
+     */
+    public function getLabel(): ?string
     {
-        return $this->label;
+        // Usa trait se label está definido, senão gera label automático
+        if ($this->label !== null) {
+            $result = $this->evaluate($this->label, $this->context ?? []);
+            return is_string($result) ? $result : $this->generateLabel($this->key);
+        }
+        
+        return $this->generateLabel($this->key);
     }
 
     public function isMultiple(): bool
     {
         return $this->multiple;
-    }
-
-    public function isHidden(): bool
-    {
-        return $this->hidden;
-    }
-
-    public function getPlaceholder(): ?string
-    {
-        return $this->placeholder;
-    }
-
-    public function getAttributes(): array
-    {
-        return $this->attributes;
     }
 } 

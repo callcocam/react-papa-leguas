@@ -8,6 +8,16 @@ namespace Callcocam\ReactPapaLeguas\Support\Table\Actions;
 
 use Callcocam\ReactPapaLeguas\Support\Concerns\EvaluatesClosures;
 use Callcocam\ReactPapaLeguas\Support\Concerns\FactoryPattern;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToLabel;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToIcon;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToVariant;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToSize;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToHidden;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToDisabled;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToOrder;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToGroup;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToTooltip;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToAttributes;
 use Closure;
 
 /**
@@ -18,7 +28,18 @@ use Closure;
  */
 abstract class Action
 {
-    use EvaluatesClosures, FactoryPattern;
+    use EvaluatesClosures, 
+        FactoryPattern,
+        BelongsToLabel,
+        BelongsToIcon,
+        BelongsToVariant,
+        BelongsToSize,
+        BelongsToHidden,
+        BelongsToDisabled,
+        BelongsToOrder,
+        BelongsToGroup,
+        BelongsToTooltip,
+        BelongsToAttributes;
 
     /**
      * Identificador único da ação
@@ -26,54 +47,9 @@ abstract class Action
     protected string $key;
 
     /**
-     * Label exibido para a ação
-     */
-    protected string $label;
-
-    /**
-     * Ícone da ação (opcional)
-     */
-    protected ?string $icon = null;
-
-    /**
-     * Cor/variante da ação
-     */
-    protected string $variant = 'default';
-
-    /**
-     * Tamanho da ação
-     */
-    protected string $size = 'sm';
-
-    /**
-     * Se a ação está oculta
-     */
-    protected bool $hidden = false;
-
-    /**
-     * Se a ação está desabilitada
-     */
-    protected bool $disabled = false;
-
-    /**
      * Posição da ação (start, end)
      */
     protected string $position = 'end';
-
-    /**
-     * Grupo da ação (para organização)
-     */
-    protected ?string $group = null;
-
-    /**
-     * Ordem de exibição
-     */
-    protected int $order = 0;
-
-    /**
-     * Tooltip da ação
-     */
-    protected ?string $tooltip = null;
 
     /**
      * Se o label deve ser exibido junto com o ícone.
@@ -107,39 +83,9 @@ abstract class Action
     protected ?string $confirmationConfirmVariant = null;
 
     /**
-     * Closure para determinar visibilidade
-     */
-    protected ?Closure $visibleUsing = null;
-
-    /**
-     * Closure para determinar se está habilitada
-     */
-    protected ?Closure $enabledUsing = null;
-
-    /**
-     * Closure para customizar label
-     */
-    protected ?Closure $labelUsing = null;
-
-    /**
-     * Closure para customizar ícone
-     */
-    protected ?Closure $iconUsing = null;
-
-    /**
-     * Closure para customizar variante
-     */
-    protected ?Closure $variantUsing = null;
-
-    /**
      * Closure para customizar URL
      */
     protected ?Closure $urlUsing = null;
-
-    /**
-     * Atributos HTML personalizados
-     */
-    protected array $attributes = [];
 
     /**
      * Contexto da ação (tabela, etc.)
@@ -153,6 +99,24 @@ abstract class Action
     {
         $this->key = $key;
         $this->label = ucfirst(str_replace(['_', '-'], ' ', $key));
+        $this->variant = 'default';
+        $this->size = 'sm';
+    }
+
+    /**
+     * Compatibilidade: Alias para visibleUsing (usa trait BelongsToHidden)
+     */
+    public function visible(Closure $callback): static
+    {
+        return $this->visibleUsing($callback);
+    }
+
+    /**
+     * Compatibilidade: Alias para enabledUsing (usa trait BelongsToDisabled)
+     */
+    public function enabled(Closure $callback): static
+    {
+        return $this->enabledUsing($callback);
     }
 
     /**
@@ -219,24 +183,6 @@ abstract class Action
     }
 
     /**
-     * Define o grupo da ação
-     */
-    public function group(string $group): static
-    {
-        $this->group = $group;
-        return $this;
-    }
-
-    /**
-     * Define a ordem de exibição
-     */
-    public function order(int $order): static
-    {
-        $this->order = $order;
-        return $this;
-    }
-
-    /**
      * Define o tooltip da ação
      */
     public function tooltip(string $tooltip): static
@@ -273,51 +219,6 @@ abstract class Action
     }
 
     /**
-     * Define closure para visibilidade
-     */
-    public function visible(Closure $callback): static
-    {
-        $this->visibleUsing = $callback;
-        return $this;
-    }
-
-    /**
-     * Define closure para habilitação
-     */
-    public function enabled(Closure $callback): static
-    {
-        $this->enabledUsing = $callback;
-        return $this;
-    }
-
-    /**
-     * Define closure para label dinâmico
-     */
-    public function labelUsing(Closure $callback): static
-    {
-        $this->labelUsing = $callback;
-        return $this;
-    }
-
-    /**
-     * Define closure para ícone dinâmico
-     */
-    public function iconUsing(Closure $callback): static
-    {
-        $this->iconUsing = $callback;
-        return $this;
-    }
-
-    /**
-     * Define closure para variante dinâmica
-     */
-    public function variantUsing(Closure $callback): static
-    {
-        $this->variantUsing = $callback;
-        return $this;
-    }
-
-    /**
      * Define closure para URL dinâmica
      */
     public function urlUsing(Closure $callback): static
@@ -341,15 +242,6 @@ abstract class Action
     public function getContext(): array
     {
         return $this->context;
-    }
-
-    /**
-     * Define atributos HTML personalizados
-     */
-    public function attributes(array $attributes): static
-    {
-        $this->attributes = array_merge($this->attributes, $attributes);
-        return $this;
     }
 
     /**
@@ -385,93 +277,99 @@ abstract class Action
     }
 
     /**
-     * Verifica se a ação está visível para um item
+     * Verifica se a ação está visível para um item (sobrescreve trait BelongsToHidden)
      */
     public function isVisible($item = null, array $context = []): bool
     {
-        if ($this->hidden) {
+        // Usa a lógica do trait primeiro
+        if ($this->isHidden()) {
             return false;
-        }
-
-        if ($this->visibleUsing) {
-            $result = $this->evaluate($this->visibleUsing, [
-                'item' => $item,
-                'context' => $context,
-                'action' => $this,
-            ]);
-            return (bool) $result;
         }
 
         return true;
     }
 
     /**
-     * Verifica se a ação está habilitada para um item
+     * Verifica se a ação está habilitada para um item (sobrescreve trait BelongsToDisabled)
      */
     public function isEnabled($item = null, array $context = []): bool
     {
-        if ($this->disabled) {
+        // Usa a lógica do trait primeiro
+        if ($this->isDisabled()) {
             return false;
-        }
-
-        if ($this->enabledUsing) {
-            $result = $this->evaluate($this->enabledUsing, [
-                'item' => $item,
-                'context' => $context,
-                'action' => $this,
-            ]);
-            return (bool) $result;
         }
 
         return true;
     }
 
     /**
-     * Obtém o label da ação para um item
+     * Obtém o label da ação para um item (usa trait BelongsToLabel com contexto)
      */
     public function getLabel($item = null, array $context = []): string
     {
-        if ($this->labelUsing) {
-            return $this->evaluate($this->labelUsing, [
-                'item' => $item,
-                'context' => $context,
-                'action' => $this,
-            ]) ?? $this->label;
-        }
+        // Seta contexto temporário para callbacks
+        $originalContext = $this->context;
+        $this->context = array_merge($this->context, [
+            'item' => $item,
+            'context' => $context,
+            'action' => $this,
+        ]);
 
-        return $this->label;
+        // Usa método do trait BelongsToLabel
+        $result = $this->label !== null 
+            ? $this->evaluate($this->label, $this->context) 
+            : ucfirst(str_replace(['_', '-'], ' ', $this->key));
+
+        // Restaura contexto
+        $this->context = $originalContext;
+        
+        return $result ?? '';
     }
 
     /**
-     * Obtém o ícone da ação para um item
+     * Obtém o ícone da ação para um item (usa trait BelongsToIcon com contexto)
      */
     public function getIcon($item = null, array $context = []): ?string
     {
-        if ($this->iconUsing) {
-            return $this->evaluate($this->iconUsing, [
-                'item' => $item,
-                'context' => $context,
-                'action' => $this,
-            ]) ?? $this->icon;
-        }
+        // Seta contexto temporário para callbacks
+        $originalContext = $this->context;
+        $this->context = array_merge($this->context, [
+            'item' => $item,
+            'context' => $context,
+            'action' => $this,
+        ]);
 
-        return $this->icon;
+        // Usa método do trait BelongsToIcon
+        $result = $this->icon !== null 
+            ? $this->evaluate($this->icon, $this->context) 
+            : null;
+
+        // Restaura contexto
+        $this->context = $originalContext;
+        
+        return $result;
     }
 
     /**
-     * Obtém a variante da ação para um item
+     * Obtém a variante da ação para um item (usa trait BelongsToVariant com contexto)
      */
     public function getVariant($item = null, array $context = []): string
     {
-        if ($this->variantUsing) {
-            return $this->evaluate($this->variantUsing, [
-                'item' => $item,
-                'context' => $context,
-                'action' => $this,
-            ]) ?? $this->variant;
-        }
+        // Seta contexto temporário para callbacks
+        $originalContext = $this->context;
+        $this->context = array_merge($this->context, [
+            'item' => $item,
+            'context' => $context,
+            'action' => $this,
+        ]);
 
-        return $this->variant;
+        // Usa método do trait BelongsToVariant
+        $result = $this->evaluate($this->variant, $this->context);
+
+        // Restaura contexto
+        $this->context = $originalContext;
+        
+        return $result ?? 'default';
     }
 
     /**
@@ -499,20 +397,20 @@ abstract class Action
         }
 
         $array = [
-            'key' => $this->getKey(),
+            'key' => $this->key,
             'item_id' => $item->id ?? null,
             'type' => $this->getType(),
             'label' => $this->getLabel($item, $context),
             'icon' => $this->getIcon($item, $context),
             'variant' => $this->getVariant($item, $context),
-            'size' => $this->size,
+            'size' => $this->getSize(),
             'position' => $this->getPosition(),
             'group' => $this->getGroup(),
             'order' => $this->getOrder(),
-            'tooltip' => $this->tooltip,
+            'tooltip' => $this->getTooltip(),
             'showLabel' => $this->showLabel,
             'enabled' => $this->isEnabled($item, $context),
-            'attributes' => $this->attributes,
+            'attributes' => $this->getAttributes(),
             'confirmation' => null,
         ];
 
@@ -530,23 +428,8 @@ abstract class Action
     }
 
     /**
-     * Getters para propriedades
+     * Getter para posição (específico da Action)
      */
-    public function getKey(): string
-    {
-        return $this->key;
-    }
-
-    public function getOrder(): int
-    {
-        return $this->order;
-    }
-
-    public function getGroup(): ?string
-    {
-        return $this->group;
-    }
-
     public function getPosition(): string
     {
         return $this->position;

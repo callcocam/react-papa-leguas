@@ -10,23 +10,27 @@ namespace Callcocam\ReactPapaLeguas\Support\Table\Columns;
 
 use Callcocam\ReactPapaLeguas\Support\Concerns\EvaluatesClosures;
 use Callcocam\ReactPapaLeguas\Support\Concerns\FactoryPattern;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToLabel;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToHidden;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToAttributes;
 use Callcocam\ReactPapaLeguas\Support\Table\Casts\Contracts\CastInterface;
 use Closure;
 
 abstract class Column
 {
-    use EvaluatesClosures, FactoryPattern;
+    use EvaluatesClosures, 
+        FactoryPattern,
+        BelongsToLabel,
+        BelongsToHidden,
+        BelongsToAttributes;
 
     protected string $key;
-    protected string $label;
     protected bool $sortable = true;
     protected bool $searchable = true;
-    protected bool $hidden = false;
     protected ?string $width = null;
     protected ?string $alignment = null;
     protected ?Closure $formatCallback = null;
     protected ?Closure $valueCallback = null;
-    protected array $attributes = [];
     
     /**
      * Casts específicos da coluna
@@ -39,15 +43,6 @@ abstract class Column
         $this->key = $key;
         $this->label = $label ?? $this->generateLabel($key);
         $this->evaluationIdentifier = 'column';
-    }
-
-    /**
-     * Definir label da coluna
-     */
-    public function label(string $label): static
-    {
-        $this->label = $label;
-        return $this;
     }
 
     /**
@@ -65,15 +60,6 @@ abstract class Column
     public function searchable(bool $searchable = true): static
     {
         $this->searchable = $searchable;
-        return $this;
-    }
-
-    /**
-     * Definir se a coluna está oculta
-     */
-    public function hidden(bool $hidden = true): static
-    {
-        $this->hidden = $hidden;
         return $this;
     }
 
@@ -110,15 +96,6 @@ abstract class Column
     public function getValueUsing(Closure $callback): static
     {
         $this->valueCallback = $callback;
-        return $this;
-    }
-
-    /**
-     * Adicionar atributos personalizados
-     */
-    public function attributes(array $attributes): static
-    {
-        $this->attributes = array_merge($this->attributes, $attributes);
         return $this;
     }
 
@@ -222,18 +199,20 @@ abstract class Column
      */
     public function toArray(): array
     {
+        $attributes = $this->getAttributes();
+        
         return [
             'key' => $this->key,
-            'label' => $this->label,
+            'label' => $this->getLabel() ?? $this->generateLabel($this->key),
             'type' => $this->getType(),
-            'renderAs' => $this->attributes['renderAs'] ?? null,
-            'rendererOptions' => $this->attributes['rendererOptions'] ?? [],
+            'renderAs' => $attributes['renderAs'] ?? null,
+            'rendererOptions' => $attributes['rendererOptions'] ?? [],
             'sortable' => $this->sortable,
             'searchable' => $this->searchable,
-            'hidden' => $this->hidden,
+            'hidden' => $this->isHidden(),
             'width' => $this->width,
             'alignment' => $this->alignment,
-            'attributes' => $this->attributes,
+            'attributes' => $attributes,
             'casts_count' => count($this->casts),
             'auto_casts_disabled' => $this->disableAutoCasts,
         ];
@@ -255,9 +234,17 @@ abstract class Column
         return $this->key;
     }
 
+    /**
+     * Obtém o label da coluna (usa trait BelongsToLabel com fallback)
+     */
     public function getLabel(): string
     {
-        return $this->label;
+        // Usa trait se label está definido, senão gera label automático
+        if ($this->label !== null) {
+            return $this->evaluate($this->label, $this->context ?? []);
+        }
+        
+        return $this->generateLabel($this->key);
     }
 
     /**
@@ -280,11 +267,6 @@ abstract class Column
         return $this->searchable;
     }
 
-    public function isHidden(): bool
-    {
-        return $this->hidden;
-    }
-
     public function getWidth(): ?string
     {
         return $this->width;
@@ -293,11 +275,6 @@ abstract class Column
     public function getAlignment(): ?string
     {
         return $this->alignment;
-    }
-
-    public function getAttributes(): array
-    {
-        return $this->attributes;
     }
 
     /**
