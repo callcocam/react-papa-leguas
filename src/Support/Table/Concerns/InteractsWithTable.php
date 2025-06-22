@@ -126,6 +126,12 @@ trait InteractsWithTable
                 if (method_exists($this, 'tabs')) {
                     $tabs = $this->tabs();
                     if (!empty($tabs)) {
+                        // 🎨 Marcar tab ativa baseada no parâmetro da URL
+                        $activeTabId = request()->get('tab', $tabs[0]['id'] ?? 'todos');
+                        foreach ($tabs as &$tab) {
+                            $tab['active'] = ($tab['id'] === $activeTabId);
+                        }
+                        
                         $result['tabs'] = $tabs;
                         
                         // Configuração padrão das tabs se não especificada
@@ -133,7 +139,7 @@ trait InteractsWithTable
                             $result['tabsConfig'] = $this->tabsConfig();
                         } else {
                             $result['tabsConfig'] = [
-                                'defaultTab' => $tabs[0]['id'] ?? 'lista',
+                                'defaultTab' => $activeTabId,
                                 'variant' => 'default',
                                 'size' => 'md',
                                 'showBadges' => true,

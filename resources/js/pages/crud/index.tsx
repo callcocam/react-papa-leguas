@@ -3,8 +3,8 @@ import { Head } from '@inertiajs/react';
 import AppLayout from '../../layouts/react-app-layout';
 import { type BreadcrumbItem } from '../../types';
 import { DataTable } from '../../components/papa-leguas';
-import TabbedInterface from '@/components/ui/tabbed-interface';
-import { TabConfig, TabsConfig, TabbedTableData } from '@/types';
+import TabbedInterface from '../../components/ui/tabbed-interface';
+import { TabConfig, TabsConfig, TabbedTableData } from '../../types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

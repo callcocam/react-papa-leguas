@@ -166,6 +166,9 @@ trait HasDataSource
                 throw new \RuntimeException('Nenhuma fonte de dados configurada');
             }
 
+            // 🎯 FILTROS POR TAB - Aplicar filtros baseados na tab ativa
+            $this->applyTabFiltersToDataSource();
+
             // Configurar busca se habilitada
             if ($this->isSearchable && !empty($this->searchableColumns)) {
                 $search = request('search', '');
@@ -213,6 +216,9 @@ trait HasDataSource
             }
 
             $perPage = $perPage ?? $this->perPage;
+
+            // 🎯 FILTROS POR TAB - Aplicar filtros baseados na tab ativa
+            $this->applyTabFiltersToDataSource();
 
             // Aplicar mesmas configurações do getData()
             if ($this->isSearchable && !empty($this->searchableColumns)) {
@@ -400,5 +406,50 @@ trait HasDataSource
     public function getFilterableColumns(): array
     {
         return $this->filterableColumns;
+    }
+
+    /**
+     * 🎯 SISTEMA DE FILTROS POR TAB
+     * Detecta parâmetro 'tab' na URL e aplica filtros configurados automaticamente
+     */
+    protected function applyTabFiltersToDataSource(): void
+    {
+        // Verificar se há parâmetro 'tab' na request
+        $activeTab = request('tab');
+        if (!$activeTab) {
+            return; // Sem tab ativa, não aplicar filtros
+        }
+
+        // Verificar se a classe tem método applyTabFilters
+        if (!method_exists($this, 'applyTabFilters')) {
+            return; // Método não implementado, ignorar
+        }
+
+        // Verificar se a fonte de dados é ModelSource (suporta query customizada)
+        if (!($this->dataSource instanceof \Callcocam\ReactPapaLeguas\Support\Table\DataSources\ModelSource)) {
+            return; // Só funciona com ModelSource por enquanto
+        }
+
+        try {
+            // Obter query atual da fonte de dados
+            $query = $this->dataSource->getBuilder();
+            
+            // Aplicar filtros da tab usando o método da classe
+            $this->applyTabFilters($query, $activeTab);
+            
+            // Log para debug
+            Log::info("Filtros de tab aplicados", [
+                'tab' => $activeTab,
+                'table_class' => get_class($this),
+                'model' => $this->getModelClass()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::warning("Erro ao aplicar filtros de tab", [
+                'tab' => $activeTab,
+                'table_class' => get_class($this),
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 } 
