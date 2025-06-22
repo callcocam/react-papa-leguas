@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Claudio Campos.
  * User: callcocam@gmail.com, contato@sigasmart.com.br
@@ -199,7 +200,7 @@ class WorkflowTemplate extends AbstractModel
         }
 
         $allowedTemplateIds = $this->transition_rules['allowed_next'] ?? [];
-        
+
         if (empty($allowedTemplateIds)) {
             return [];
         }
@@ -218,7 +219,7 @@ class WorkflowTemplate extends AbstractModel
     public function canTransitionTo(WorkflowTemplate $target): bool
     {
         $nextTemplates = $this->getNextTemplates();
-        
+
         return collect($nextTemplates)->contains('id', $target->id);
     }
 
@@ -227,23 +228,20 @@ class WorkflowTemplate extends AbstractModel
      */
     public function getKanbanColumnConfig(): array
     {
+
         return [
             'id' => $this->slug,
             'title' => $this->name,
-            'color' => $this->color,
-            'icon' => $this->icon,
-            'key' => 'current_template_id',
-            'maxItems' => $this->max_items,
-            'sortable' => true,
-            'filter' => function ($item) {
-                return $item->current_template_id === $this->id;
-            },
-            'config' => [
-                'template_id' => $this->id,
-                'auto_assign' => $this->auto_assign,
-                'requires_approval' => $this->requires_approval,
-                'transition_rules' => $this->transition_rules,
-            ]
+            'status' => $this->slug,
+            'color' => $this->color ?? '#6B7280',
+            'icon' => $this->icon ?? 'circle',
+            'limit' => $this->max_items,
+            'order' => $this->sort_order ?? 0,
+            'description' => $this->description,
+            'template_id' => $this->id,
+            'auto_assign' => $this->auto_assign ?? false,
+            'requires_approval' => $this->requires_approval ?? false,
+            'estimated_duration_days' => $this->estimated_duration_days,
         ];
     }
 
@@ -253,7 +251,7 @@ class WorkflowTemplate extends AbstractModel
     public function getStats(): array
     {
         $workflowables = $this->workflowables();
-        
+
         return [
             'current_count' => $workflowables->count(),
             'max_items' => $this->max_items,
@@ -272,7 +270,7 @@ class WorkflowTemplate extends AbstractModel
         if (!$this->hasMaxItems()) {
             return null;
         }
-        
+
         return round(($this->getCurrentCount() / $this->max_items) * 100, 1);
     }
 
@@ -300,7 +298,7 @@ class WorkflowTemplate extends AbstractModel
     protected static function boot()
     {
         parent::boot();
-        
+
         // Definir sort_order automaticamente
         static::creating(function (WorkflowTemplate $template) {
             if (is_null($template->sort_order)) {
@@ -324,14 +322,15 @@ class WorkflowTemplate extends AbstractModel
     {
         $baseSlug = Str::slug($this->name);
         $counter = 1;
-        
+
         while (static::where('workflow_id', $this->workflow_id)
             ->where('slug', $baseSlug)
-            ->exists()) {
+            ->exists()
+        ) {
             $baseSlug = Str::slug($this->name) . '-' . $counter;
             $counter++;
         }
-        
+
         return $baseSlug;
     }
 
@@ -342,4 +341,4 @@ class WorkflowTemplate extends AbstractModel
     {
         return $this->name;
     }
-} 
+}
