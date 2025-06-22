@@ -35,7 +35,7 @@ import {
     AlertTriangle
 } from 'lucide-react';
 
-// Cores disponíveis para workflows e templates
+// Cores disponíveis para templates
 const WORKFLOW_COLORS = [
     { value: '#3b82f6', label: 'Azul', class: 'bg-blue-500' },
     { value: '#ef4444', label: 'Vermelho', class: 'bg-red-500' },
@@ -48,7 +48,7 @@ const WORKFLOW_COLORS = [
     { value: '#6b7280', label: 'Cinza', class: 'bg-gray-500' },
 ];
 
-// Ícones disponíveis (Lucide)
+// Ícones disponíveis (Lucide) para templates
 const AVAILABLE_ICONS = [
     'AlertCircle', 'CheckCircle', 'XCircle', 'Clock', 'Play', 'Pause', 'Stop',
     'ArrowRight', 'ArrowDown', 'ArrowUp', 'Settings', 'Cog', 'Zap', 'Star',
@@ -62,20 +62,6 @@ const AVAILABLE_ICONS = [
     'Search', 'Filter', 'Sort', 'Grid', 'List', 'BarChart', 'PieChart', 'TrendingUp',
     'Calendar', 'Timer', 'Stopwatch', 'MapPin', 'Map', 'Navigation',
     'Compass', 'Globe', 'Sun', 'Moon', 'CloudRain', 'Snowflake', 'Thermometer'
-];
-
-// Categorias de workflow
-const WORKFLOW_CATEGORIES = [
-    { value: 'support', label: 'Suporte' },
-    { value: 'development', label: 'Desenvolvimento' },
-    { value: 'enhancement', label: 'Melhorias' },
-    { value: 'sales', label: 'Vendas' },
-    { value: 'marketing', label: 'Marketing' },
-    { value: 'hr', label: 'Recursos Humanos' },
-    { value: 'finance', label: 'Financeiro' },
-    { value: 'operations', label: 'Operações' },
-    { value: 'quality', label: 'Qualidade' },
-    { value: 'other', label: 'Outros' }
 ];
 
 // Status base (enum)
@@ -110,15 +96,6 @@ interface WorkflowFormData {
     name: string;
     slug: string;
     description: string;
-    category: string;
-    tags: string[];
-    color: string;
-    icon: string;
-    estimated_duration_days: number;
-    is_required_by_default: boolean;
-    is_active: boolean;
-    is_featured: boolean;
-    sort_order: number;
     status: string;
     templates: WorkflowTemplate[];
     [key: string]: any;
@@ -140,15 +117,6 @@ const defaultFormData: WorkflowFormData = {
     name: '',
     slug: '',
     description: '',
-    category: 'support',
-    tags: [],
-    color: '#3b82f6',
-    icon: 'Settings',
-    estimated_duration_days: 3,
-    is_required_by_default: false,
-    is_active: true,
-    is_featured: false,
-    sort_order: 1,
     status: 'published',
     templates: []
 };
@@ -201,12 +169,12 @@ export default function WorkflowForm({
     // Adicionar nova template
     const addTemplate = () => {
         const newTemplate: WorkflowTemplate = {
-            id: `temp_${Date.now()}`,
+            id: Date.now().toString(),
             name: '',
             slug: '',
             description: '',
             instructions: '',
-            category: 'processo',
+            category: 'inicial',
             tags: [],
             color: '#3b82f6',
             icon: 'Circle',
@@ -220,10 +188,7 @@ export default function WorkflowForm({
                 auto_transition_after_hours: null
             }
         };
-
-        updateFormData({
-            templates: [...formData.templates, newTemplate]
-        });
+        updateFormData({ templates: [...formData.templates, newTemplate] });
     };
 
     // Remover template
@@ -236,10 +201,8 @@ export default function WorkflowForm({
     // Atualizar template
     const updateTemplate = (templateId: string, updates: Partial<WorkflowTemplate>) => {
         updateFormData({
-            templates: formData.templates.map(template => 
-                template.id === templateId 
-                    ? { ...template, ...updates, slug: updates.name ? generateSlug(updates.name) : template.slug }
-                    : template
+            templates: formData.templates.map(t => 
+                t.id === templateId ? { ...t, ...updates } : t
             )
         });
     };
@@ -251,12 +214,11 @@ export default function WorkflowForm({
         newTemplates.splice(toIndex, 0, removed);
         
         // Atualizar sort_order
-        const reorderedTemplates = newTemplates.map((template, index) => ({
-            ...template,
-            sort_order: index + 1
-        }));
-
-        updateFormData({ templates: reorderedTemplates });
+        newTemplates.forEach((template, index) => {
+            template.sort_order = index + 1;
+        });
+        
+        updateFormData({ templates: newTemplates });
     };
 
     // Submeter formulário
@@ -265,30 +227,30 @@ export default function WorkflowForm({
         onSubmit(formData);
     };
 
-    // Componente para seleção de cor
+    // Componente para seleção de cores (para templates)
     const ColorPicker = ({ value, onChange, className = '' }: { value: string; onChange: (color: string) => void; className?: string }) => (
         <div className={`flex flex-wrap gap-2 ${className}`}>
             {WORKFLOW_COLORS.map(color => (
                 <button
                     key={color.value}
                     type="button"
-                    onClick={() => onChange(color.value)}
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${
-                        value === color.value ? 'border-gray-400 scale-110' : 'border-gray-200'
+                    className={`w-8 h-8 rounded-full border-2 ${
+                        value === color.value ? 'border-gray-800 dark:border-gray-200' : 'border-gray-300'
                     } ${color.class}`}
+                    onClick={() => onChange(color.value)}
                     title={color.label}
                 />
             ))}
         </div>
     );
 
-    // Componente para seleção de ícone
+    // Componente para seleção de ícones (para templates)
     const IconPicker = ({ value, onChange }: { value: string; onChange: (icon: string) => void }) => (
         <Select value={value} onValueChange={onChange}>
             <SelectTrigger>
-                <SelectValue placeholder="Selecionar ícone" />
+                <SelectValue />
             </SelectTrigger>
-            <SelectContent className="max-h-48">
+            <SelectContent>
                 {AVAILABLE_ICONS.map(icon => (
                     <SelectItem key={icon} value={icon}>
                         {icon}
@@ -308,7 +270,7 @@ export default function WorkflowForm({
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400 mt-2">
                         {mode === 'create' 
-                            ? 'Configure um novo workflow com suas etapas (templates)'
+                            ? 'Configure um novo workflow simplificado com suas etapas (templates)'
                             : 'Modifique as configurações e etapas do workflow'
                         }
                     </p>
@@ -386,13 +348,13 @@ export default function WorkflowForm({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Tab: Configurações do Workflow */}
+                {/* Tab: Configurações do Workflow - Simplificado */}
                 {currentTab === 'workflow' && (
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Settings className="w-5 h-5" />
-                                Informações Básicas
+                                Informações Básicas - Sistema Simplificado
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -444,115 +406,32 @@ export default function WorkflowForm({
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {/* Categoria */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="category">Categoria</Label>
-                                    <Select value={formData.category} onValueChange={(value) => updateFormData({ category: value })}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {WORKFLOW_CATEGORIES.map(cat => (
-                                                <SelectItem key={cat.value} value={cat.value}>
-                                                    {cat.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {/* Status */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="status">Status</Label>
-                                    <Select value={formData.status} onValueChange={(value) => updateFormData({ status: value })}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {BASE_STATUS.map(status => (
-                                                <SelectItem key={status.value} value={status.value}>
-                                                    {status.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {/* Duração Estimada */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="estimated_duration_days">Duração (dias)</Label>
-                                    <Input
-                                        id="estimated_duration_days"
-                                        type="number"
-                                        min="1"
-                                        value={formData.estimated_duration_days}
-                                        onChange={(e) => updateFormData({ estimated_duration_days: parseInt(e.target.value) || 1 })}
-                                    />
-                                </div>
+                            {/* Status */}
+                            <div className="space-y-2">
+                                <Label htmlFor="status">Status</Label>
+                                <Select value={formData.status} onValueChange={(value) => updateFormData({ status: value })}>
+                                    <SelectTrigger className="w-full md:w-1/3">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {BASE_STATUS.map(status => (
+                                            <SelectItem key={status.value} value={status.value}>
+                                                {status.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
-                            {/* Aparência */}
-                            <Separator />
-                            <div>
-                                <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
-                                    <Palette className="w-5 h-5" />
-                                    Aparência
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Cor */}
-                                    <div className="space-y-2">
-                                        <Label>Cor Principal</Label>
-                                        <ColorPicker
-                                            value={formData.color}
-                                            onChange={(color) => updateFormData({ color })}
-                                        />
-                                    </div>
-
-                                    {/* Ícone */}
-                                    <div className="space-y-2">
-                                        <Label>Ícone</Label>
-                                        <IconPicker
-                                            value={formData.icon}
-                                            onChange={(icon) => updateFormData({ icon })}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Configurações */}
-                            <Separator />
-                            <div>
-                                <h3 className="text-lg font-medium mb-4">Configurações</h3>
-                                <div className="space-y-4">
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id="is_active"
-                                            checked={formData.is_active}
-                                            onCheckedChange={(checked) => updateFormData({ is_active: !!checked })}
-                                        />
-                                        <Label htmlFor="is_active">Workflow ativo</Label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id="is_featured"
-                                            checked={formData.is_featured}
-                                            onCheckedChange={(checked) => updateFormData({ is_featured: !!checked })}
-                                        />
-                                        <Label htmlFor="is_featured">Destacar workflow</Label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id="is_required_by_default"
-                                            checked={formData.is_required_by_default}
-                                            onCheckedChange={(checked) => updateFormData({ is_required_by_default: !!checked })}
-                                        />
-                                        <Label htmlFor="is_required_by_default">Obrigatório por padrão</Label>
-                                    </div>
-                                </div>
-                            </div>
+                            {/* Nota sobre simplificação */}
+                            <Alert>
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertDescription>
+                                    <strong>Sistema Simplificado:</strong> Configurações visuais (cores, ícones, categorias) 
+                                    agora estão nas templates individuais. Isso permite maior flexibilidade e customização 
+                                    por etapa do workflow.
+                                </AlertDescription>
+                            </Alert>
                         </CardContent>
                     </Card>
                 )}
@@ -565,7 +444,7 @@ export default function WorkflowForm({
                             <div>
                                 <h2 className="text-xl font-semibold">Templates (Etapas do Workflow)</h2>
                                 <p className="text-gray-600 dark:text-gray-400">
-                                    Defina as etapas que compõem este workflow. Arraste para reordenar.
+                                    Defina as etapas que compõem este workflow. Configurações visuais estão aqui.
                                 </p>
                             </div>
                             <Button onClick={addTemplate} type="button">
@@ -748,4 +627,4 @@ export default function WorkflowForm({
 
 // Exportar tipos e constantes para uso nos arquivos que importam
 export type { WorkflowFormData, WorkflowTemplate };
-export { WORKFLOW_COLORS, AVAILABLE_ICONS, WORKFLOW_CATEGORIES, BASE_STATUS }; 
+export { WORKFLOW_COLORS, AVAILABLE_ICONS, BASE_STATUS }; 
