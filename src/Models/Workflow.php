@@ -7,8 +7,7 @@
 
 namespace Callcocam\ReactPapaLeguas\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\HasMany; 
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -21,17 +20,6 @@ use Illuminate\Database\Eloquent\Builder;
  * @property string $name
  * @property string $slug
  * @property string|null $description
- * @property string|null $category
- * @property array|null $tags
- * @property string $color
- * @property string|null $icon
- * @property int|null $estimated_duration_days
- * @property bool $is_required_by_default
- * @property bool $is_active
- * @property bool $is_featured
- * @property int $sort_order
- * @property array|null $metadata
- * @property array|null $settings
  * @property \Callcocam\ReactPapaLeguas\Enums\BaseStatus $status
  * @property string|null $user_id
  * @property string|null $tenant_id
@@ -48,17 +36,6 @@ class Workflow extends AbstractModel
         'name',
         'slug',
         'description',
-        'category',
-        'tags',
-        'color',
-        'icon',
-        'estimated_duration_days',
-        'is_required_by_default',
-        'is_active',
-        'is_featured',
-        'sort_order',
-        'metadata',
-        'settings',
         'status',
         'user_id',
         'tenant_id',
@@ -68,14 +45,8 @@ class Workflow extends AbstractModel
      * The attributes that should be cast.
      */
     protected $casts = [
-        'tags' => 'array',
-        'metadata' => 'array',
-        'settings' => 'array',
-        'is_required_by_default' => 'boolean',
-        'is_active' => 'boolean',
-        'is_featured' => 'boolean',
-        'sort_order' => 'integer',
-        'estimated_duration_days' => 'integer',
+        // Removidos casts dos campos eliminados
+        // Mantém apenas os casts herdados do AbstractModel
     ];
 
     /**
@@ -91,7 +62,7 @@ class Workflow extends AbstractModel
      */
     public function activeTemplates(): HasMany
     {
-        return $this->templates()->where('is_active', true);
+        return $this->templates()->published(); // Usa o scope published do BaseStatus
     }
 
     /**
@@ -103,35 +74,19 @@ class Workflow extends AbstractModel
     }
 
     /**
-     * Scope para workflows ativos.
+     * Scope para workflows ativos (Published).
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->published(); // Usa scope published do BaseStatus
     }
 
     /**
-     * Scope para workflows em destaque.
-     */
-    public function scopeFeatured(Builder $query): Builder
-    {
-        return $query->where('is_featured', true);
-    }
-
-    /**
-     * Scope por categoria.
-     */
-    public function scopeByCategory(Builder $query, string $category): Builder
-    {
-        return $query->where('category', $category);
-    }
-
-    /**
-     * Scope ordenado por sort_order.
+     * Scope ordenado por nome.
      */
     public function scopeOrdered(Builder $query): Builder
     {
-        return $query->orderBy('sort_order')->orderBy('name');
+        return $query->orderBy('name');
     }
 
     /**
@@ -139,15 +94,7 @@ class Workflow extends AbstractModel
      */
     public function isActive(): bool
     {
-        return $this->is_active && $this->isPublished();
-    }
-
-    /**
-     * Verificar se o workflow está em destaque.
-     */
-    public function isFeatured(): bool
-    {
-        return $this->is_featured;
+        return $this->isPublished();
     }
 
     /**
@@ -250,19 +197,8 @@ class Workflow extends AbstractModel
     protected static function boot()
     {
         parent::boot();
-
-        // Definir sort_order automaticamente
-        static::creating(function (Workflow $workflow) {
-            if (is_null($workflow->sort_order)) {
-                $workflow->sort_order = static::max('sort_order') + 1;
-            }
-        });
-
-        // Prevenir deleção se houver workflowables
-        static::deleting(function (Workflow $workflow) {
-            if (!$workflow->canBeDeleted()) {
-                throw new \Exception('Não é possível deletar workflow com itens associados.');
-            }
-        });
+        
+        // Remove auto-slug se não tiver campo slug na migration
+        // O AbstractModel já cuida do slug automaticamente
     }
 } 

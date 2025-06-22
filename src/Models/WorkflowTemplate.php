@@ -26,13 +26,10 @@ use Illuminate\Support\Str;
  * @property string|null $instructions
  * @property string|null $category
  * @property array|null $tags
- * @property int $suggested_order
  * @property int|null $estimated_duration_days
  * @property string $color
  * @property string|null $icon
  * @property bool $is_required_by_default
- * @property bool $is_active
- * @property bool $is_featured
  * @property int $sort_order
  * @property int|null $max_items
  * @property bool $auto_assign
@@ -60,13 +57,10 @@ class WorkflowTemplate extends AbstractModel
         'instructions',
         'category',
         'tags',
-        'suggested_order',
         'estimated_duration_days',
         'color',
         'icon',
         'is_required_by_default',
-        'is_active',
-        'is_featured',
         'sort_order',
         'max_items',
         'auto_assign',
@@ -88,11 +82,8 @@ class WorkflowTemplate extends AbstractModel
         'metadata' => 'array',
         'settings' => 'array',
         'is_required_by_default' => 'boolean',
-        'is_active' => 'boolean',
-        'is_featured' => 'boolean',
         'auto_assign' => 'boolean',
         'requires_approval' => 'boolean',
-        'suggested_order' => 'integer',
         'estimated_duration_days' => 'integer',
         'sort_order' => 'integer',
         'max_items' => 'integer',
@@ -115,11 +106,11 @@ class WorkflowTemplate extends AbstractModel
     }
 
     /**
-     * Scope para templates ativos.
+     * Scope para templates ativos (Published).
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->published(); // Usa scope published do BaseStatus
     }
 
     /**
@@ -151,7 +142,7 @@ class WorkflowTemplate extends AbstractModel
      */
     public function isActive(): bool
     {
-        return $this->is_active && $this->isPublished();
+        return $this->isPublished();
     }
 
     /**
@@ -252,8 +243,6 @@ class WorkflowTemplate extends AbstractModel
                 'auto_assign' => $this->auto_assign,
                 'requires_approval' => $this->requires_approval,
                 'transition_rules' => $this->transition_rules,
-                'estimated_duration_days' => $this->estimated_duration_days,
-                'instructions' => $this->instructions,
             ]
         ];
     }
@@ -268,6 +257,7 @@ class WorkflowTemplate extends AbstractModel
         return [
             'current_count' => $workflowables->count(),
             'max_items' => $this->max_items,
+            'usage_percentage' => $this->getUsagePercentage(),
             'is_at_limit' => $this->isAtLimit(),
             'average_time_in_stage' => $this->getAverageTimeInStage(),
             'completion_rate' => $this->getCompletionRate(),
@@ -275,21 +265,33 @@ class WorkflowTemplate extends AbstractModel
     }
 
     /**
-     * Obter tempo médio nesta etapa em horas.
+     * Obter percentual de uso baseado no limite.
      */
-    public function getAverageTimeInStage(): ?float
+    public function getUsagePercentage(): ?float
     {
-        // TODO: Implementar quando houver histórico de transições
-        return null;
+        if (!$this->hasMaxItems()) {
+            return null;
+        }
+        
+        return round(($this->getCurrentCount() / $this->max_items) * 100, 1);
     }
 
     /**
-     * Obter taxa de conclusão desta etapa.
+     * Obter tempo médio que itens ficam nesta etapa.
+     */
+    public function getAverageTimeInStage(): ?float
+    {
+        // Implementação para calcular tempo médio na etapa
+        return null; // Por enquanto
+    }
+
+    /**
+     * Obter taxa de conclusão da etapa.
      */
     public function getCompletionRate(): float
     {
-        // TODO: Implementar baseado no histórico
-        return 0.0;
+        // Implementação para calcular taxa de conclusão
+        return 0.0; // Por enquanto
     }
 
     /**
@@ -298,43 +300,46 @@ class WorkflowTemplate extends AbstractModel
     protected static function boot()
     {
         parent::boot();
-
-        // Definir sort_order automaticamente dentro do workflow
+        
+        // Definir sort_order automaticamente
         static::creating(function (WorkflowTemplate $template) {
             if (is_null($template->sort_order)) {
-                $maxOrder = static::where('workflow_id', $template->workflow_id)
-                    ->max('sort_order');
+                $maxOrder = static::where('workflow_id', $template->workflow_id)->max('sort_order');
                 $template->sort_order = ($maxOrder ?? 0) + 1;
             }
         });
 
-        // Gerar slug baseado no workflow
+        // Auto-gerar slug único no workflow
         static::creating(function (WorkflowTemplate $template) {
             if (empty($template->slug)) {
-                $baseSlug = Str::slug($template->name);
-                $workflow = Workflow::find($template->workflow_id);
-                
-                // Verificar unicidade dentro do workflow
-                $counter = 1;
-                $slug = $baseSlug;
-                
-                while (static::where('workflow_id', $template->workflow_id)
-                    ->where('slug', $slug)
-                    ->exists()) {
-                    $slug = $baseSlug . '-' . $counter;
-                    $counter++;
-                }
-                
-                $template->slug = $slug;
+                $template->slug = $template->generateUniqueSlug();
             }
         });
     }
 
     /**
-     * Get the source field for slug generation.
+     * Gerar slug único dentro do workflow.
+     */
+    protected function generateUniqueSlug(): string
+    {
+        $baseSlug = Str::slug($this->name);
+        $counter = 1;
+        
+        while (static::where('workflow_id', $this->workflow_id)
+            ->where('slug', $baseSlug)
+            ->exists()) {
+            $baseSlug = Str::slug($this->name) . '-' . $counter;
+            $counter++;
+        }
+        
+        return $baseSlug;
+    }
+
+    /**
+     * Obter fonte para geração do slug.
      */
     protected function getSlugSource(): string
     {
-        return 'name';
+        return $this->name;
     }
 } 
