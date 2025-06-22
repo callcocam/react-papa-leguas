@@ -64,207 +64,24 @@ trait InteractsWithTable
     public function toArray(): array
     {
         try {
- 
+            // Obter dados formatados (com ou sem paginação)
+            $dataResult = $this->getFormattedDataResult();
+            
+            // Montar resultado base
+            $result = [
+                'table' => $dataResult['table'],
+                'config' => $this->getTableConfig(),
+                'routes' => $this->getRouteNames(),
+                'capabilities' => $this->getTableCapabilities(),
+                'data_source' => $this->getDataSourceInfo(),
+            ];
 
-            // Usar paginação se habilitada
-            if ($this->isPaginated()) {
-                $paginatedData = $this->getPaginatedData();
-                $formattedData = $paginatedData->getCollection()->map(function ($row) {
-                    // Tratar ações aqui 
-                    return $this->formatRow($row);
-                })->values();
-  
-                $result = [
-                    'table' => [
-                        'data' => $formattedData,
-                        'columns' => $this->getColumnsConfig(),
-                        'filters' => $this->getFiltersConfig(),
-                        'actions' => [
-                            'row' => [], // Ações de linha são adicionadas em formatRow
-                            'bulk' => $this->getBulkActionsConfig(),
-                        ],
-                        'pagination' => [
-                            'current_page' => $paginatedData->currentPage(),
-                            'per_page' => $paginatedData->perPage(),
-                            'total' => $paginatedData->total(),
-                            'last_page' => $paginatedData->lastPage(),
-                            'from' => $paginatedData->firstItem(),
-                            'to' => $paginatedData->lastItem(),
-                        ],
-                        'meta' => [
-                            'key' => $this->getKey(),
-                            'title' => $this->getTitle(),
-                            'description' => $this->getDescription(),
-                            'searchable' => $this->isSearchable(),
-                            'sortable' => $this->isSortable(),
-                            'filterable' => $this->isFilterable(),
-                            'paginated' => $this->isPaginated(),
-                            'selectable' => $this->isSelectable(),
-                        ]
-                    ],
-                    'config' => [
-                        'model_name' => $this->getModelClass() ? class_basename($this->getModelClass()) : 'Unknown',
-                        'page_title' => $this->getTitle(),
-                        'page_description' => $this->getDescription(),
-                        'route_prefix' => $this->getRoutePrefix(),
-                        'can_create' => true,
-                        'can_edit' => true,
-                        'can_delete' => true,
-                        'can_export' => true,
-                        'can_bulk_delete' => true,
-                    ],
-                    'routes' => $this->getRouteNames(),
-                    'capabilities' => [
-                        'searchable_columns' => $this->getSearchableColumnKeys(),
-                        'sortable_columns' => $this->getSortableColumnKeys(),
-                        'filterable_columns' => $this->getFilterableColumns(),
-                    ],
-                    'data_source' => $this->getDataSourceInfo(),
-                ];
+            // Adicionar sistemas configuráveis
+            $result = array_merge($result, $this->getTabsConfiguration());
+            $result = array_merge($result, $this->getViewsConfiguration());
 
-                // 🎯 Sistema de Tabs Configuráveis - Carregamento Automático
-                if (method_exists($this, 'tabs')) {
-                    $tabs = $this->tabs();
-                    if (!empty($tabs)) {
-                        // 🎨 Marcar tab ativa baseada no parâmetro da URL
-                        $activeTabId = request()->get('tab', $tabs[0]['id'] ?? 'todos');
-                        foreach ($tabs as &$tab) {
-                            $tab['active'] = ($tab['id'] === $activeTabId);
-                        }
-                        
-                        $result['tabs'] = $tabs;
-                        
-                        // Configuração padrão das tabs se não especificada
-                        if (method_exists($this, 'tabsConfig')) {
-                            $result['tabsConfig'] = $this->tabsConfig();
-                        } else {
-                            $result['tabsConfig'] = [
-                                'defaultTab' => $activeTabId,
-                                'variant' => 'default',
-                                'size' => 'md',
-                                'showBadges' => true,
-                                'showIcons' => true,
-                                'scrollable' => true,
-                            ];
-                        }
-                    }
-                }
-
-                // 🎨 Sistema de Views Configuráveis (Lista, Card, Kanban)
-                if (method_exists($this, 'views')) {
-                    $views = $this->views();
-                    if (!empty($views)) {
-                        // 🎯 Detectar view ativa baseada no parâmetro da URL
-                        $activeViewId = request()->get('view', $views[0]['id'] ?? 'list');
-                        
-                        // Verificar se a view solicitada existe
-                        $validView = collect($views)->firstWhere('id', $activeViewId);
-                        if (!$validView) {
-                            $activeViewId = $views[0]['id'] ?? 'list';
-                        }
-                        
-                        // Marcar view ativa
-                        foreach ($views as &$view) {
-                            $view['active'] = ($view['id'] === $activeViewId);
-                        }
-                        
-                        $result['views'] = $views;
-                        $result['activeView'] = $activeViewId;
-                        
-                        // Configuração padrão das views se não especificada
-                        if (method_exists($this, 'viewsConfig')) {
-                            $result['viewsConfig'] = $this->viewsConfig();
-                        } else {
-                            $result['viewsConfig'] = [
-                                'defaultView' => $activeViewId,
-                                'showViewSelector' => true,
-                                'position' => 'top-right', // top-left, top-right, bottom-left, bottom-right
-                                'variant' => 'buttons', // buttons, dropdown, tabs
-                                'size' => 'sm',
-                            ];
-                        }
-                    }
-                }
-
-                return $result;
-            } else {
-                // Modo sem paginação
-                $data = $this->getData();
-                $formattedData = $data->map(fn($row) => $this->formatRow($row))->values();
-
-                $result = [
-                    'table' => [
-                        'data' => $formattedData,
-                        'columns' => $this->getColumnsConfig(),
-                        'filters' => $this->getFiltersConfig(),
-                        'actions' => [
-                            'row' => [], // Ações de linha são adicionadas em formatRow
-                            'bulk' => $this->getBulkActionsConfig(),
-                        ],
-                        'route_execute_action' => $this->getRouteExecuteAction(),
-                        'pagination' => [
-                            'current_page' => 1,
-                            'per_page' => $this->getPerPage(),
-                            'total' => $data->count(),
-                            'last_page' => 1,
-                            'from' => 1,
-                            'to' => $data->count(),
-                        ],
-                        'meta' => [
-                            'key' => $this->getKey(),
-                            'title' => $this->getTitle(),
-                            'description' => $this->getDescription(),
-                            'searchable' => $this->isSearchable(),
-                            'sortable' => $this->isSortable(),
-                            'filterable' => $this->isFilterable(),
-                            'paginated' => $this->isPaginated(),
-                            'selectable' => $this->isSelectable(),
-                        ]
-                    ],
-                    'config' => [
-                        'model_name' => $this->getModelClass() ? class_basename($this->getModelClass()) : 'Unknown',
-                        'page_title' => $this->getTitle(),
-                        'page_description' => $this->getDescription(),
-                        'route_prefix' => $this->getRoutePrefix(),
-                        'can_create' => true,
-                        'can_edit' => true,
-                        'can_delete' => true,
-                        'can_export' => true,
-                        'can_bulk_delete' => true,
-                    ],
-                    'routes' => $this->getRouteNames(),
-                    'capabilities' => [
-                        'searchable_columns' => $this->getSearchableColumnKeys(),
-                        'sortable_columns' => $this->getSortableColumnKeys(),
-                        'filterable_columns' => $this->getFilterableColumns(),
-                    ],
-                    'data_source' => $this->getDataSourceInfo(),
-                ];
-
-                // 🎯 Sistema de Tabs Configuráveis - Carregamento Automático
-                if (method_exists($this, 'tabs')) {
-                    $tabs = $this->tabs();
-                    if (!empty($tabs)) {
-                        $result['tabs'] = $tabs;
-                        
-                        // Configuração padrão das tabs se não especificada
-                        if (method_exists($this, 'tabsConfig')) {
-                            $result['tabsConfig'] = $this->tabsConfig();
-                        } else {
-                            $result['tabsConfig'] = [
-                                'defaultTab' => $tabs[0]['id'] ?? 'lista',
-                                'variant' => 'default',
-                                'size' => 'md',
-                                'showBadges' => true,
-                                'showIcons' => true,
-                                'scrollable' => true,
-                            ];
-                        }
-                    }
-                }
-
-                return $result;
-            }
+            return $result;
+            
         } catch (\Exception $e) {
             Log::error('Erro no método toArray da Table: ' . $e->getMessage(), [
                 'data_source_type' => $this->getDataSource()?->getType() ?? 'undefined',
@@ -272,8 +89,226 @@ trait InteractsWithTable
                 'exception' => $e
             ]);
 
-            throw $e; // Re-throw para que o controller possa capturar
+            throw $e;
         }
+    }
+
+    /**
+     * Obter dados formatados com ou sem paginação
+     */
+    protected function getFormattedDataResult(): array
+    {
+        if ($this->isPaginated()) {
+            return $this->getPaginatedDataResult();
+        } else {
+            return $this->getNonPaginatedDataResult();
+        }
+    }
+
+    /**
+     * Obter dados paginados formatados
+     */
+    protected function getPaginatedDataResult(): array
+    {
+        $paginatedData = $this->getPaginatedData();
+        $formattedData = $paginatedData->getCollection()->map(fn($row) => $this->formatRow($row))->values();
+
+        return [
+            'table' => [
+                'data' => $formattedData,
+                'columns' => $this->getColumnsConfig(),
+                'filters' => $this->getFiltersConfig(),
+                'actions' => [
+                    'row' => [],
+                    'bulk' => $this->getBulkActionsConfig(),
+                ],
+                'pagination' => [
+                    'current_page' => $paginatedData->currentPage(),
+                    'per_page' => $paginatedData->perPage(),
+                    'total' => $paginatedData->total(),
+                    'last_page' => $paginatedData->lastPage(),
+                    'from' => $paginatedData->firstItem(),
+                    'to' => $paginatedData->lastItem(),
+                ],
+                'meta' => $this->getTableMeta(),
+            ]
+        ];
+    }
+
+    /**
+     * Obter dados não paginados formatados
+     */
+    protected function getNonPaginatedDataResult(): array
+    {
+        $data = $this->getData();
+        $formattedData = $data->map(fn($row) => $this->formatRow($row))->values();
+
+        return [
+            'table' => [
+                'data' => $formattedData,
+                'columns' => $this->getColumnsConfig(),
+                'filters' => $this->getFiltersConfig(),
+                'actions' => [
+                    'row' => [],
+                    'bulk' => $this->getBulkActionsConfig(),
+                ],
+                'route_execute_action' => $this->getRouteExecuteAction(),
+                'pagination' => [
+                    'current_page' => 1,
+                    'per_page' => $this->getPerPage(),
+                    'total' => $data->count(),
+                    'last_page' => 1,
+                    'from' => 1,
+                    'to' => $data->count(),
+                ],
+                'meta' => $this->getTableMeta(),
+            ]
+        ];
+    }
+
+    /**
+     * Obter configurações da tabela
+     */
+    protected function getTableConfig(): array
+    {
+        return [
+            'model_name' => $this->getModelClass() ? class_basename($this->getModelClass()) : 'Unknown',
+            'page_title' => $this->getTitle(),
+            'page_description' => $this->getDescription(),
+            'route_prefix' => $this->getRoutePrefix(),
+            'can_create' => true,
+            'can_edit' => true,
+            'can_delete' => true,
+            'can_export' => true,
+            'can_bulk_delete' => true,
+        ];
+    }
+
+    /**
+     * Obter capacidades da tabela
+     */
+    protected function getTableCapabilities(): array
+    {
+        return [
+            'searchable_columns' => $this->getSearchableColumnKeys(),
+            'sortable_columns' => $this->getSortableColumnKeys(),
+            'filterable_columns' => $this->getFilterableColumns(),
+        ];
+    }
+
+    /**
+     * Obter metadados da tabela
+     */
+    protected function getTableMeta(): array
+    {
+        return [
+            'key' => $this->getKey(),
+            'title' => $this->getTitle(),
+            'description' => $this->getDescription(),
+            'searchable' => $this->isSearchable(),
+            'sortable' => $this->isSortable(),
+            'filterable' => $this->isFilterable(),
+            'paginated' => $this->isPaginated(),
+            'selectable' => $this->isSelectable(),
+        ];
+    }
+
+    /**
+     * Obter configuração do sistema de tabs
+     */
+    protected function getTabsConfiguration(): array
+    {
+        if (!method_exists($this, 'tabs')) {
+            return [];
+        }
+
+        $tabs = $this->tabs();
+        if (empty($tabs)) {
+            return [];
+        }
+
+        // Marcar tab ativa baseada no parâmetro da URL
+        $activeTabId = request()->get('tab', $tabs[0]['id'] ?? 'todos');
+        foreach ($tabs as &$tab) {
+            $tab['active'] = ($tab['id'] === $activeTabId);
+        }
+
+        return [
+            'tabs' => $tabs,
+            'tabsConfig' => $this->getTabsConfig($activeTabId),
+        ];
+    }
+
+    /**
+     * Obter configuração do sistema de views
+     */
+    protected function getViewsConfiguration(): array
+    {
+        if (!method_exists($this, 'views')) {
+            return [];
+        }
+
+        $views = $this->views();
+        if (empty($views)) {
+            return [];
+        }
+
+        // Detectar view ativa baseada no parâmetro da URL
+        $activeViewId = request()->get('view', $views[0]['id'] ?? 'list');
+        
+        // Verificar se a view solicitada existe
+        $validView = collect($views)->firstWhere('id', $activeViewId);
+        if (!$validView) {
+            $activeViewId = $views[0]['id'] ?? 'list';
+        }
+
+        // Marcar view ativa
+        foreach ($views as &$view) {
+            $view['active'] = ($view['id'] === $activeViewId);
+        }
+
+        return [
+            'views' => $views,
+            'activeView' => $activeViewId,
+            'viewsConfig' => $this->getViewsConfig($activeViewId),
+        ];
+    }
+
+    /**
+     * Obter configuração das tabs (com fallback padrão)
+     */
+    protected function getTabsConfig(string $activeTabId): array
+    {
+        if (method_exists($this, 'tabsConfig')) {
+            return $this->tabsConfig();
+        }
+
+        return [
+            'defaultTab' => $activeTabId,
+            'variant' => 'default',
+            'size' => 'md',
+            'showBadges' => true,
+            'showIcons' => true,
+            'scrollable' => true,
+        ];
+    }
+
+    /**
+     * Obter configuração das views (com fallback padrão)
+     */
+    protected function getViewsConfig(string $activeViewId): array
+    {
+        if (method_exists($this, 'viewsConfig')) {
+            return $this->viewsConfig();
+        }
+
+        return [
+            'defaultView' => $activeViewId,
+            'showViewSelector' => true,
+            'position' => 'top-right',
+            'variant' => 'buttons',
+            'size' => 'sm',
+        ];
     }
 
     /**
