@@ -10,29 +10,45 @@ namespace Callcocam\ReactPapaLeguas\Support\Concerns;
 
 use Closure;
 
-trait BelongsToIcon{
+trait BelongsToIcon
+{
+    protected Closure|string|null $icon = null;
 
-    protected Closure|string $icon;
-
+    /**
+     * Define o ícone
+     */
     public function icon(Closure|string $icon): self
     {
         $this->icon = $icon;
         return $this;
     }
 
+    /**
+     * Define o ícone usando callback
+     */
     public function iconUsing(Closure $callback): self
     {
         $this->icon = $callback;
         return $this;
     }
 
-    public function getIcon(): Closure|string
+    /**
+     * Obtém o ícone avaliado
+     */
+    public function getIcon(): ?string
     {
-        return $this->evaluate($this->icon);
+        if ($this->icon === null) {
+            return null;
+        }
+
+        return $this->evaluate($this->icon, $this->context ?? []);
     }
 
+    /**
+     * Verifica se tem ícone definido
+     */
     public function hasIcon(): bool
     {
         return $this->icon !== null;
     }
-}
+} 
