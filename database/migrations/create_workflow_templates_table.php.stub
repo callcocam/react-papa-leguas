@@ -33,7 +33,6 @@ return new class extends Migration
             // Template configuration
             $table->string('category')->nullable()->comment('Categoria da etapa (ex: initial, progress, final)');
             $table->json('tags')->nullable()->comment('Tags para organização');
-            $table->integer('suggested_order')->default(0)->comment('Ordem sugerida na sequência');
             $table->integer('estimated_duration_days')->nullable()->comment('Duração estimada em dias');
             
             // Visual configuration
@@ -42,8 +41,6 @@ return new class extends Migration
             
             // Template settings
             $table->boolean('is_required_by_default')->default(false)->comment('Etapa obrigatória por padrão');
-            $table->boolean('is_active')->default(true)->comment('Etapa ativa');
-            $table->boolean('is_featured')->default(false)->comment('Etapa em destaque');
             $table->integer('sort_order')->default(0)->comment('Ordem de exibição no Kanban');
             
             // Workflow rules
@@ -56,7 +53,7 @@ return new class extends Migration
             $table->json('metadata')->nullable()->comment('Metadados adicionais');
             $table->json('settings')->nullable()->comment('Configurações específicas da etapa');
             
-            // Status enum - padrão do sistema
+            // Status control (Draft = inativo, Published = ativo, Archived = inativo)
             $table->enum('status', BaseStatus::values())->default(BaseStatus::Draft->value);
             
             // Relationships
@@ -73,7 +70,6 @@ return new class extends Migration
             $table->index(['tenant_id', 'status']);
             $table->index(['slug', 'workflow_id']);
             $table->index(['user_id', 'tenant_id']);
-            $table->index(['is_active', 'sort_order']);
             $table->index(['category', 'status']);
             $table->index('status');
             
