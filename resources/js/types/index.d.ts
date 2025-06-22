@@ -63,4 +63,62 @@ export interface TabsConfig {
 export interface TabbedTableData {
     tabs?: TabConfig[];
     tabsConfig?: TabsConfig;
+    views?: ViewConfig[];
+    viewsConfig?: ViewsConfig;
+    activeView?: string;
+}
+
+// ===== TIPOS PARA SISTEMA DE VIEWS =====
+
+export interface ViewConfig {
+    id: string;
+    label: string;
+    icon?: string;
+    description?: string;
+    component: 'DataTable' | 'CardView' | 'KanbanView' | string;
+    default?: boolean;
+    active?: boolean;
+    config?: {
+        // Configurações para DataTable
+        searchable?: boolean;
+        sortable?: boolean;
+        filterable?: boolean;
+        paginated?: boolean;
+        selectable?: boolean;
+        density?: 'compact' | 'normal' | 'comfortable';
+        
+        // Configurações para CardView
+        columns?: number;
+        responsive?: boolean;
+        showImage?: boolean;
+        showBadges?: boolean;
+        showActions?: boolean;
+        cardSize?: 'small' | 'medium' | 'large';
+        spacing?: 'tight' | 'normal' | 'loose';
+        
+        // Configurações para KanbanView
+        groupBy?: string;
+        columns?: KanbanColumn[];
+        allowDragDrop?: boolean;
+        showCardCount?: boolean;
+        cardSize?: 'compact' | 'normal' | 'detailed';
+    };
+}
+
+export interface KanbanColumn {
+    id: string;
+    title: string;
+    color?: string;
+    icon?: string;
+    limit?: number | null;
+}
+
+export interface ViewsConfig {
+    defaultView?: string;
+    showViewSelector?: boolean;
+    position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    variant?: 'buttons' | 'dropdown' | 'tabs';
+    size?: 'sm' | 'md' | 'lg';
+    showLabels?: boolean;
+    showIcons?: boolean;
 }

@@ -150,6 +150,42 @@ trait InteractsWithTable
                     }
                 }
 
+                // 🎨 Sistema de Views Configuráveis (Lista, Card, Kanban)
+                if (method_exists($this, 'views')) {
+                    $views = $this->views();
+                    if (!empty($views)) {
+                        // 🎯 Detectar view ativa baseada no parâmetro da URL
+                        $activeViewId = request()->get('view', $views[0]['id'] ?? 'list');
+                        
+                        // Verificar se a view solicitada existe
+                        $validView = collect($views)->firstWhere('id', $activeViewId);
+                        if (!$validView) {
+                            $activeViewId = $views[0]['id'] ?? 'list';
+                        }
+                        
+                        // Marcar view ativa
+                        foreach ($views as &$view) {
+                            $view['active'] = ($view['id'] === $activeViewId);
+                        }
+                        
+                        $result['views'] = $views;
+                        $result['activeView'] = $activeViewId;
+                        
+                        // Configuração padrão das views se não especificada
+                        if (method_exists($this, 'viewsConfig')) {
+                            $result['viewsConfig'] = $this->viewsConfig();
+                        } else {
+                            $result['viewsConfig'] = [
+                                'defaultView' => $activeViewId,
+                                'showViewSelector' => true,
+                                'position' => 'top-right', // top-left, top-right, bottom-left, bottom-right
+                                'variant' => 'buttons', // buttons, dropdown, tabs
+                                'size' => 'sm',
+                            ];
+                        }
+                    }
+                }
+
                 return $result;
             } else {
                 // Modo sem paginação
