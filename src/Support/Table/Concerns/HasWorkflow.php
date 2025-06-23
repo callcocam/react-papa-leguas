@@ -142,4 +142,9 @@ trait HasWorkflow
 
         return $views;
     }
+
+    protected function getColumnsWithWorkflowSupport(array $columns): array
+    {
+        return $columns;
+    }
 }

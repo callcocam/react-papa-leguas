@@ -53,6 +53,7 @@ trait HasColumns
      */
     protected function formatRow($row): array
     {
+         
         // 1. Get all required fields to build the base payload.
         $requiredFields = $this->getAllRequiredFields();
         $formatted = [];
@@ -76,10 +77,15 @@ trait HasColumns
             $formatted[$key] = $column->formatValue($row, $castedValue);
         }
 
-        // 3. Process actions for the item.
+        // 3. Process columns with workflow support
+        if(method_exists($this, 'getColumnsWithWorkflowSupport')){
+            $formatted = array_merge($formatted, $this->getColumnsWithWorkflowSupport($row));
+        }
+
+        // 4. Process actions for the item.
         $formatted['_actions'] = $this->getActionsForItem($row);
 
-        // 4. Return the complete data packet for the frontend.
+        // 5. Return the complete data packet for the frontend.
         return $formatted;
     }
 
