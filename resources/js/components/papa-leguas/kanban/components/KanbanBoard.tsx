@@ -23,13 +23,14 @@ import { useDragDrop } from '../hooks/useDragDrop';
 import type { KanbanBoardProps, DragDropConfig } from '../types';
 
 /**
- * Componente Kanban Board com Drag & Drop implementado.
+ * Componente Kanban Board genérico com Drag & Drop implementado.
  * 
  * Funcionalidades:
  * - Dados via eager loading (não API)
  * - Columns, actions e filters do backend
  * - Drag & Drop entre colunas com @dnd-kit
  * - Validação de transições
+ * - Suporte a qualquer tipo de CRUD (tickets, sales, orders, pipeline, etc.)
  * - Integração com sistema existente
  */
 export default function KanbanBoard({
@@ -58,19 +59,99 @@ export default function KanbanBoard({
         height = '700px', 
         dragAndDrop = true, // Ativado por padrão agora
         validateTransition,
-        onMoveCard
+        onMoveCard,
+        crudType = 'generic', // Tipo do CRUD (tickets, sales, orders, pipeline, etc.)
+        apiEndpoint = '/admin/kanban/move-card' // Endpoint genérico
     } = config;
 
-    // 🎯 Função para mapear coluna ID para current_step
+    // 🎯 Função para mapear coluna ID para current_step (genérica)
     const getStepFromColumnId = (columnId: string): number => {
-        const stepMap: Record<string, number> = {
-            'aberto': 1,
-            'em-andamento': 2,
-            'aguardando-cliente': 3,
-            'resolvido': 4,
-            'fechado': 5
+        // Mapeamentos por tipo de CRUD
+        const mappings: Record<string, Record<string, number>> = {
+            tickets: {
+                'aberto': 1,
+                'em-andamento': 2,
+                'aguardando-cliente': 3,
+                'resolvido': 4,
+                'fechado': 5
+            },
+            sales: {
+                'lead': 1,
+                'contato': 2,
+                'proposta': 3,
+                'negociacao': 4,
+                'fechado': 5
+            },
+            orders: {
+                'pedido': 1,
+                'producao': 2,
+                'qualidade': 3,
+                'entrega': 4,
+                'finalizado': 5
+            },
+            pipeline: {
+                'inicio': 1,
+                'desenvolvimento': 2,
+                'teste': 3,
+                'homologacao': 4,
+                'producao': 5
+            },
+            generic: {
+                'inicio': 1,
+                'andamento': 2,
+                'revisao': 3,
+                'aprovado': 4,
+                'finalizado': 5
+            }
         };
-        return stepMap[columnId] || 1;
+
+        const mapping = mappings[crudType] || mappings.generic;
+        return mapping[columnId] || 1;
+    };
+
+    // 🎯 Função para mapear current_step para coluna ID (genérica)
+    const getColumnIdFromStep = (step: number): string => {
+        // Mapeamentos inversos por tipo de CRUD
+        const mappings: Record<string, Record<number, string>> = {
+            tickets: {
+                1: 'aberto',
+                2: 'em-andamento',
+                3: 'aguardando-cliente',
+                4: 'resolvido',
+                5: 'fechado'
+            },
+            sales: {
+                1: 'lead',
+                2: 'contato',
+                3: 'proposta',
+                4: 'negociacao',
+                5: 'fechado'
+            },
+            orders: {
+                1: 'pedido',
+                2: 'producao',
+                3: 'qualidade',
+                4: 'entrega',
+                5: 'finalizado'
+            },
+            pipeline: {
+                1: 'inicio',
+                2: 'desenvolvimento',
+                3: 'teste',
+                4: 'homologacao',
+                5: 'producao'
+            },
+            generic: {
+                1: 'inicio',
+                2: 'andamento',
+                3: 'revisao',
+                4: 'aprovado',
+                5: 'finalizado'
+            }
+        };
+
+        const mapping = mappings[crudType] || mappings.generic;
+        return mapping[step] || 'inicio';
     };
 
     // 🎯 Configuração do Drag & Drop
@@ -78,11 +159,11 @@ export default function KanbanBoard({
         enabled: dragAndDrop,
         validateTransition: validateTransition || ((from, to, item) => {
             // Validação padrão: permitir qualquer transição
-            console.log('🔍 Validating transition:', from, '→', to, 'for item:', item?.id);
+            console.log('🔍 Validating transition:', from, '→', to, 'for item:', item?.id, 'crud_type:', crudType);
             return true;
         }),
         onMoveCard: onMoveCard || (async (cardId, fromColumnId, toColumnId, item) => {
-            console.log('🎯 Moving card:', { cardId, fromColumnId, toColumnId, item });
+            console.log('🎯 Moving card:', { cardId, fromColumnId, toColumnId, item, crudType });
             
             // Atualizar dados localmente IMEDIATAMENTE para UX fluida
             const newStep = getStepFromColumnId(toColumnId);
@@ -103,9 +184,9 @@ export default function KanbanBoard({
                 });
             });
             
-            // Chamar API real do backend
+            // Chamar API genérica do backend
             try {
-                const response = await fetch('/admin/tickets/kanban/move-card', {
+                const response = await fetch(apiEndpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -116,7 +197,13 @@ export default function KanbanBoard({
                         card_id: cardId,
                         from_column_id: fromColumnId,
                         to_column_id: toColumnId,
-                        item: item
+                        item: item,
+                        crud_type: crudType,
+                        workflow_data: {
+                            // Dados adicionais do workflow se necessário
+                            previous_step: getStepFromColumnId(fromColumnId),
+                            new_step: newStep,
+                        }
                     })
                 });
 
@@ -172,28 +259,28 @@ export default function KanbanBoard({
         })
     };
 
-    // 🎯 Filtrar dados por coluna com base no workflow
+    // 🎯 Filtrar dados por coluna com base no workflow (genérico)
     const filteredDataByColumn = useMemo(() => {
         return columns.reduce((acc, column) => {
             const filtered = localData.filter(item => {
-                // Se tem workflow, filtrar por current_step
-                if (item.currentWorkflow) {
-                    const step = item.currentWorkflow.current_step;
-                    
-                    // Mapear steps para IDs de coluna
-                    const stepToColumnMap: Record<number, string> = {
-                        1: 'aberto',
-                        2: 'em-andamento', 
-                        3: 'aguardando-cliente',
-                        4: 'resolvido',
-                        5: 'fechado'
-                    };
-                    
-                    const expectedColumnId = stepToColumnMap[step];
-                    return expectedColumnId === column.id;
+                // Se tem workflow, usar filtro específico da coluna
+                if (item.currentWorkflow && column.filter) {
+                    return column.filter(item);
                 }
                 
-                // Fallback: filtrar por status se não tem workflow
+                // Se tem workflow mas não tem filtro específico, filtrar por template
+                if (item.currentWorkflow) {
+                    // Verificar se o template atual corresponde ao ID da coluna
+                    const currentTemplate = item.currentWorkflow.currentTemplate;
+                    if (currentTemplate) {
+                        return currentTemplate.slug === column.id;
+                    }
+                    
+                    // Fallback: verificar por current_template_id
+                    return item.currentWorkflow.current_template_id === column.id;
+                }
+                
+                // Fallback: filtrar por status tradicional se não tem workflow
                 return item.status === column.id;
             });
             

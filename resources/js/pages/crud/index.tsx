@@ -78,16 +78,53 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
         // Verificar se os dados têm currentWorkflow (sistema de tickets/workflows)
         const hasWorkflow = table?.data?.some(item => item.currentWorkflow);
         
-        if (hasWorkflow) {
-            // Colunas específicas para workflow
+        if (hasWorkflow && table?.data) {
+            // Buscar templates do primeiro item com workflow para determinar as colunas
+            const firstWorkflowItem = table.data.find(item => item.currentWorkflow);
+            const workflowId = firstWorkflowItem?.currentWorkflow?.workflow_id;
+            
+            if (workflowId) {
+                // TODO: Fazer chamada para buscar colunas reais do workflow
+                // Por enquanto, usar estrutura baseada nos templates existentes
+                const uniqueTemplates = new Map();
+                
+                table.data.forEach(item => {
+                    if (item.currentWorkflow?.currentTemplate) {
+                        const template = item.currentWorkflow.currentTemplate;
+                        uniqueTemplates.set(template.slug, {
+                            id: template.slug,
+                            title: template.name,
+                            key: 'current_template_id',
+                            color: template.color || '#6b7280',
+                            icon: template.icon || 'circle',
+                            maxItems: template.max_items,
+                            sortable: true,
+                            order: template.sort_order || 0,
+                            filter: (item: any) => {
+                                return item.currentWorkflow?.current_template_id === template.id;
+                            }
+                        });
+                    }
+                });
+                
+                // Converter Map para array e ordenar
+                const columns = Array.from(uniqueTemplates.values())
+                    .sort((a, b) => a.order - b.order);
+                
+                if (columns.length > 0) {
+                    return columns;
+                }
+            }
+            
+            // Fallback: colunas baseadas nos dados de workflow existentes
             return [
                 {
                     id: 'aberto',
                     title: 'Aberto',
-                    key: 'status',
+                    key: 'current_template_id',
                     color: '#ef4444',
                     icon: 'AlertCircle',
-                    filter: (item) => {
+                    filter: (item: any) => {
                         return item.currentWorkflow?.status === 'active' && 
                                (item.currentWorkflow?.current_step === 1 || 
                                 item.currentWorkflow?.current_template_id?.includes('aberto'));
@@ -96,10 +133,10 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                 {
                     id: 'em-andamento',
                     title: 'Em Andamento',
-                    key: 'status',
+                    key: 'current_template_id',
                     color: '#f59e0b',
                     icon: 'Clock',
-                    filter: (item) => {
+                    filter: (item: any) => {
                         return item.currentWorkflow?.status === 'active' && 
                                (item.currentWorkflow?.current_step === 2 || 
                                 item.currentWorkflow?.current_template_id?.includes('em-andamento'));
@@ -108,10 +145,10 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                 {
                     id: 'aguardando-cliente',
                     title: 'Aguardando Cliente',
-                    key: 'status',
+                    key: 'current_template_id',
                     color: '#8b5cf6',
                     icon: 'User',
-                    filter: (item) => {
+                    filter: (item: any) => {
                         return item.currentWorkflow?.status === 'active' && 
                                (item.currentWorkflow?.current_step === 3 || 
                                 item.currentWorkflow?.current_template_id?.includes('aguardando'));
@@ -120,10 +157,10 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                 {
                     id: 'resolvido',
                     title: 'Resolvido',
-                    key: 'status',
+                    key: 'current_template_id',
                     color: '#10b981',
                     icon: 'CheckCircle',
-                    filter: (item) => {
+                    filter: (item: any) => {
                         return item.currentWorkflow?.status === 'active' && 
                                (item.currentWorkflow?.current_step === 4 || 
                                 item.currentWorkflow?.current_template_id?.includes('resolvido'));
@@ -132,10 +169,10 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                 {
                     id: 'fechado',
                     title: 'Fechado',
-                    key: 'status',
+                    key: 'current_template_id',
                     color: '#6b7280',
                     icon: 'Archive',
-                    filter: (item) => {
+                    filter: (item: any) => {
                         return item.currentWorkflow?.status === 'completed' || 
                                item.currentWorkflow?.current_step === 5 ||
                                item.currentWorkflow?.current_template_id?.includes('fechado');
@@ -152,7 +189,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                 key: 'status',
                 color: '#10b981',
                 icon: 'CheckCircle',
-                filter: (item) => item.status === 'active' || item.status?.value === 'active'
+                filter: (item: any) => item.status === 'active' || item.status?.value === 'active'
             },
             {
                 id: 'inativo',
@@ -160,7 +197,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                 key: 'status',
                 color: '#6b7280',
                 icon: 'XCircle',
-                filter: (item) => item.status === 'inactive' || item.status?.value === 'inactive'
+                filter: (item: any) => item.status === 'inactive' || item.status?.value === 'inactive'
             },
             {
                 id: 'pendente',
@@ -168,7 +205,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                 key: 'status',
                 color: '#f59e0b',
                 icon: 'Clock',
-                filter: (item) => item.status === 'pending' || item.status?.value === 'pending'
+                filter: (item: any) => item.status === 'pending' || item.status?.value === 'pending'
             }
         ];
     };
@@ -183,6 +220,54 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
         // Encontrar configuração da view ativa
         const viewConfig = views?.find(v => v.id === currentView); 
         
+        // 🎯 Detectar tipo de CRUD baseado nos dados e configuração
+        const detectCrudType = (): string => {
+            // Verificar se há configuração explícita
+            if (viewConfig?.config?.crudType) {
+                return viewConfig.config.crudType;
+            }
+            
+            // Detectar baseado na URL atual
+            const currentPath = window.location.pathname;
+            if (currentPath.includes('/tickets')) return 'tickets';
+            if (currentPath.includes('/sales')) return 'sales';
+            if (currentPath.includes('/orders')) return 'orders';
+            if (currentPath.includes('/pipeline')) return 'pipeline';
+            
+            // Detectar baseado nos dados (se tem currentWorkflow)
+            const hasWorkflow = data.some(item => item.currentWorkflow);
+            if (hasWorkflow) {
+                // Verificar se é tickets baseado nos campos
+                if (data.some(item => item.priority_id || item.category_id)) {
+                    return 'tickets';
+                }
+            }
+            
+            return 'generic';
+        };
+        
+        // 🎯 Definir endpoint da API baseado no tipo de CRUD
+        const getApiEndpoint = (crudType: string): string => {
+            const pathSegments = window.location.pathname.split('/').filter(Boolean);
+            const adminIndex = pathSegments.indexOf('admin');
+            
+            if (adminIndex !== -1 && pathSegments[adminIndex + 1]) {
+                const resource = pathSegments[adminIndex + 1];
+                return `/admin/${resource}/kanban/move-card`;
+            }
+            
+            // Fallback baseado no tipo
+            const endpoints: Record<string, string> = {
+                tickets: '/admin/tickets/kanban/move-card',
+                sales: '/admin/sales/kanban/move-card',
+                orders: '/admin/orders/kanban/move-card',
+                pipeline: '/admin/pipeline/kanban/move-card',
+                generic: '/admin/kanban/move-card'
+            };
+            
+            return endpoints[crudType] || endpoints.generic;
+        };
+        
         switch (currentView) {
             case 'cards':
                 return (
@@ -195,22 +280,37 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                 );
                 
             case 'kanban':
+                const crudType = detectCrudType();
+                const apiEndpoint = getApiEndpoint(crudType);
+                
                 // Usar KanbanBoard avançado com filtros inteligentes
                 return (
                     <KanbanBoard
                         data={data}
                         columns={getKanbanColumns()}
+                        tableColumns={columns}
                         actions={actions}
                         config={{
                             title: table?.meta?.title || config?.page_title || 'Kanban',
                             description: table?.meta?.description || config?.page_description || 'Visualização em quadro',
                             searchable: true,
                             refreshable: true,
+                            dragAndDrop: true,
+                            crudType: crudType,
+                            apiEndpoint: apiEndpoint,
+                            height: '700px',
+                            ...viewConfig?.config
+                        }}
+                        meta={{
+                            ...table?.meta,
+                            crudType: crudType
                         }}
                         onAction={(actionId, item, extra) => {
+                            console.log('🎯 Kanban Action:', { actionId, item, extra, crudType });
                             // TODO: Implementar ações do Kanban
                         }}
                         onRefresh={() => {
+                            console.log('🔄 Refreshing Kanban for:', crudType);
                             window.location.reload();
                         }}
                     />

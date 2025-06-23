@@ -79,6 +79,10 @@ export interface KanbanConfig {
     columnsPerRow?: number;
     /** Permite drag and drop */
     dragAndDrop?: boolean;
+    /** Tipo de CRUD (tickets, sales, orders, pipeline, generic, etc.) */
+    crudType?: string;
+    /** Endpoint da API para mover cards */
+    apiEndpoint?: string;
     /** Configurações de paginação */
     pagination?: {
         enabled: boolean;
@@ -90,6 +94,10 @@ export interface KanbanConfig {
         columnSpacing?: string;
         headerHeight?: string;
     };
+    /** Validação de transições personalizada */
+    validateTransition?: (fromColumnId: string, toColumnId: string, item: any) => boolean;
+    /** Callback personalizado para mover cards */
+    onMoveCard?: (cardId: string, fromColumnId: string, toColumnId: string, item: any) => Promise<boolean>;
     /** Configurações específicas */
     [key: string]: any;
 }
@@ -108,6 +116,8 @@ export interface KanbanMeta {
     title?: string;
     /** Descrição do board */
     description?: string;
+    /** Tipo de CRUD para contexto */
+    crudType?: string;
     /** Configurações adicionais */
     [key: string]: any;
 }
@@ -263,6 +273,10 @@ export interface DragDropConfig {
     onDragEnd?: (event: DragEndEvent) => void;
     onDragOver?: (event: DragOverEvent) => void;
     onMoveCard?: (cardId: string, fromColumnId: string, toColumnId: string, item: any) => Promise<boolean>;
+    /** Tipo de CRUD para contexto */
+    crudType?: string;
+    /** Endpoint da API */
+    apiEndpoint?: string;
 }
 
 /**
@@ -275,6 +289,10 @@ export interface CardMoveData {
     fromIndex: number;
     toIndex: number;
     item: any;
+    /** Tipo de CRUD */
+    crudType?: string;
+    /** Dados adicionais do workflow */
+    workflowData?: Record<string, any>;
 }
 
 /**
@@ -283,6 +301,43 @@ export interface CardMoveData {
 export interface MoveCardResponse {
     success: boolean;
     message?: string;
-    data?: any;
+    data?: {
+        card_id: string;
+        new_step: number;
+        from_column: string;
+        to_column: string;
+        crud_type: string;
+        updated_at: string;
+    };
     errors?: Record<string, string[]>;
+}
+
+// ========================================
+// 🎯 TIPOS PARA CRUD GENÉRICO
+// ========================================
+
+/** Tipos de CRUD suportados */
+export type CrudType = 'tickets' | 'sales' | 'orders' | 'pipeline' | 'generic';
+
+/** Mapeamento de colunas por tipo de CRUD */
+export interface CrudColumnMapping {
+    [crudType: string]: {
+        [columnId: string]: number;
+    };
+}
+
+/** Mapeamento de steps por tipo de CRUD */
+export interface CrudStepMapping {
+    [crudType: string]: {
+        [step: number]: string;
+    };
+}
+
+/** Configuração genérica de workflow */
+export interface WorkflowConfig {
+    crudType: CrudType;
+    columnMapping: Record<string, number>;
+    stepMapping: Record<number, string>;
+    apiEndpoint: string;
+    validTransitions?: Record<string, string[]>;
 } 

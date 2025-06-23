@@ -1,4 +1,3 @@
- 
 export interface Auth {
     user: User;
 }
@@ -102,6 +101,16 @@ export interface ViewConfig {
         allowDragDrop?: boolean;
         showCardCount?: boolean;
         cardSize?: 'compact' | 'normal' | 'detailed';
+        
+        // Configurações genéricas para Kanban
+        crudType?: string;
+        apiEndpoint?: string;
+        dragAndDrop?: boolean;
+        height?: string;
+        refreshable?: boolean;
+        
+        // Configurações adicionais
+        [key: string]: any;
     };
 }
 
