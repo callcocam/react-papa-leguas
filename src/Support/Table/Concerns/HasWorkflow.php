@@ -151,8 +151,8 @@ trait HasWorkflow
 
     protected function getModelWithWorkflowSupport(): array
     {
-
-        // Carregar relacionamentos apenas se workflow existe
+        // Se esta trait está sendo usada, significa que queremos workflow
+        // Retornar relacionamentos necessários para workflow
         return ['workflowables.workflow', 'workflowables.currentTemplate'];
     }
 }
