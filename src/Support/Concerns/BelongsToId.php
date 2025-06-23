@@ -44,6 +44,11 @@ trait BelongsToId
         return $this->evaluate($this->id, $this->context ?? []);
     }
 
+    public function getKey(): ?string
+    {
+        return $this->getId();
+    }
+
     /**
      * Verifica se tem ID definido
      */

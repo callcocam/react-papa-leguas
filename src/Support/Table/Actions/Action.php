@@ -18,6 +18,7 @@ use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToOrder;
 use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToGroup;
 use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToTooltip;
 use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToAttributes;
+use Callcocam\ReactPapaLeguas\Support\Concerns\BelongsToId;
 use Closure;
 
 /**
@@ -28,7 +29,9 @@ use Closure;
  */
 abstract class Action
 {
-    use EvaluatesClosures, 
+    use 
+        BelongsToId,
+        EvaluatesClosures, 
         FactoryPattern,
         BelongsToLabel,
         BelongsToIcon,
