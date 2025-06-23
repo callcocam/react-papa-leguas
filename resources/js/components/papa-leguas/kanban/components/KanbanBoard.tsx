@@ -19,7 +19,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
-import { useDragDrop } from '../hooks';
+import { useDragDrop } from '../hooks/useDragDrop';
 import type { KanbanBoardProps, DragDropConfig } from '../types';
 
 /**
@@ -45,6 +45,14 @@ export default function KanbanBoard({
     onRefresh
 }: KanbanBoardProps) {  
 
+    // Estado local para os dados (para permitir movimentação imediata)
+    const [localData, setLocalData] = useState(data);
+
+    // Atualizar dados locais quando dados externos mudam
+    React.useEffect(() => {
+        setLocalData(data);
+    }, [data]);
+
     // Configurações padrão
     const { 
         height = '700px', 
@@ -53,39 +61,109 @@ export default function KanbanBoard({
         onMoveCard
     } = config;
 
+    // 🎯 Função para mapear coluna ID para current_step
+    const getStepFromColumnId = (columnId: string): number => {
+        const stepMap: Record<string, number> = {
+            'aberto': 1,
+            'em-andamento': 2,
+            'aguardando-cliente': 3,
+            'resolvido': 4,
+            'fechado': 5
+        };
+        return stepMap[columnId] || 1;
+    };
+
     // 🎯 Configuração do Drag & Drop
     const dragConfig: DragDropConfig = {
         enabled: dragAndDrop,
         validateTransition: validateTransition || ((from, to, item) => {
             // Validação padrão: permitir qualquer transição
-            // TODO: Implementar validações específicas de workflow
             console.log('🔍 Validating transition:', from, '→', to, 'for item:', item?.id);
             return true;
         }),
         onMoveCard: onMoveCard || (async (cardId, fromColumnId, toColumnId, item) => {
             console.log('🎯 Moving card:', { cardId, fromColumnId, toColumnId, item });
             
-            // TODO: Implementar chamada para backend
+            // Atualizar dados localmente IMEDIATAMENTE
+            const newStep = getStepFromColumnId(toColumnId);
+            
+            setLocalData(prevData => {
+                return prevData.map(dataItem => {
+                    if (dataItem.id === cardId) {
+                        return {
+                            ...dataItem,
+                            currentWorkflow: {
+                                ...dataItem.currentWorkflow,
+                                current_step: newStep,
+                                current_template_id: `step-${newStep}-${toColumnId}`
+                            }
+                        };
+                    }
+                    return dataItem;
+                });
+            });
+            
+            // TODO: Implementar chamada real para backend
             // Por enquanto, simular sucesso
             return new Promise(resolve => {
                 setTimeout(() => {
-                    console.log('✅ Card moved successfully (simulated)');
+                    console.log('✅ Card moved successfully (simulated) - new step:', newStep);
                     resolve(true);
                 }, 500);
             });
         })
     };
 
-    // Hook de drag & drop
-    const {
+    // 🎯 Filtrar dados por coluna com base no workflow
+    const filteredDataByColumn = useMemo(() => {
+        return columns.reduce((acc, column) => {
+            const filtered = localData.filter(item => {
+                // Se tem workflow, filtrar por current_step
+                if (item.currentWorkflow) {
+                    const step = item.currentWorkflow.current_step;
+                    
+                    // Mapear steps para IDs de coluna
+                    const stepToColumnMap: Record<number, string> = {
+                        1: 'aberto',
+                        2: 'em-andamento', 
+                        3: 'aguardando-cliente',
+                        4: 'resolvido',
+                        5: 'fechado'
+                    };
+                    
+                    const expectedColumnId = stepToColumnMap[step];
+                    return expectedColumnId === column.id;
+                }
+                
+                // Fallback: filtrar por status se não tem workflow
+                return item.status === column.id;
+            });
+            
+            acc[column.id] = filtered;
+            return acc;
+        }, {} as Record<string, any[]>);
+    }, [localData, columns]);
+
+    // 🚀 Estatísticas corrigidas - calcular por coluna com dados filtrados
+    const stats = useMemo(() => {
+        return columns.reduce((acc, column) => {
+            const columnData = filteredDataByColumn[column.id] || [];
+            acc[column.id] = {
+                total: columnData.length,
+                percentage: localData.length > 0 ? Math.round((columnData.length / localData.length) * 100) : 0
+            };
+            return acc;
+        }, {} as Record<string, { total: number; percentage: number }>);
+    }, [filteredDataByColumn, columns, localData.length]);
+
+    // 🎯 Hook de Drag & Drop
+    const { 
         activeId,
         isDragging,
         draggedItem,
-        handleDragStart,
-        handleDragOver,
-        handleDragEnd,
-        handleDragCancel,
-        isCardDragging
+        handleDragStart, 
+        handleDragEnd, 
+        handleDragOver 
     } = useDragDrop(dragConfig);
 
     // Sensores para drag & drop
@@ -100,160 +178,57 @@ export default function KanbanBoard({
         })
     );
 
-    // 🚀 Sistema de filtro corrigido - aplicar filtro de cada coluna aos dados
-    const filteredDataByColumn = useMemo(() => {
-        const result = new Map();
-        
-        columns.forEach(column => {
-            let columnData = [];
-            
-            if (column.filter && typeof column.filter === 'function') {
-                // Usar função de filtro personalizada da coluna
-                columnData = data.filter(column.filter);
-            } else if (column.key) {
-                // Fallback: filtrar por key/value se não tiver função personalizada
-                // Este caso pode ser usado para filtros simples baseados em propriedades
-                columnData = data.filter(item => {
-                    const value = item[column.key];
-                    return value === column.id || (value && value.value === column.id);
-                });
-            } else {
-                // Se não tiver filtro, não mostrar dados (evita duplicação)
-                columnData = [];
-            }
-            
-            result.set(column.id, columnData);
-        });
-        
-        return result;
-    }, [data, columns]);
-
-    // 🚀 Estatísticas corrigidas - calcular por coluna com dados filtrados
-    const stats = useMemo(() => {
-        const total = data.length;
-        const byColumn = columns.map(column => ({
-            id: column.id,
-            title: column.title,
-            count: filteredDataByColumn.get(column.id)?.length || 0
-        }));
-
-        return { total, byColumn };
-    }, [data, columns, filteredDataByColumn]);
-  
-
     // Handler para ações
     const handleAction = (actionId: string, item: any, extra?: any) => {
         onAction?.(actionId, item, extra);
     };
 
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
-        >
-            <div className="kanban-board space-y-4">
-                {/* Header do Board - Estilo da segunda imagem */}
-                <div className="flex items-center justify-between bg-white p-4 border-b">
-                    <div className="flex items-center gap-6">
-                        <div>
-                            <h1 className="text-2xl font-semibold text-gray-900">
-                                {meta.title || 'Quadro Kanban'}
-                            </h1>
-                            <p className="text-sm text-gray-500 mt-1">
-                                {meta.description || `Visualização em Kanban com ${stats.total} itens`}
-                                {dragAndDrop && ' • Arraste cards entre colunas'}
-                            </p>
-                        </div>
-
-                        {/* Estatísticas por coluna - Estilo badges inline */}
-                        <div className="flex items-center gap-4 text-sm">
-                            {stats.byColumn.map((stat, index) => {
-                                const column = columns[index];
-                                return (
-                                    <div key={stat.id} className="flex items-center gap-2">
-                                        <span 
-                                            className="text-sm font-medium"
-                                            style={{ color: column?.color || '#6b7280' }}
-                                        >
-                                            {stat.title}: {stat.count}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2"> 
-                        {/* Indicador de drag ativo */}
-                        {isDragging && (
-                            <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                                Movendo card...
-                            </div>
-                        )}
-                        
-                        {/* Refresh */}
-                        <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={onRefresh}
-                            disabled={isDragging}
-                        >
-                            <RefreshCw className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Board Content - Layout Horizontal com Scroll */}
+        <div className="kanban-board h-full">
+            <DndContext
+                sensors={sensors}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragOver={handleDragOver}
+            >
+                {/* Layout horizontal com rolagem */}
                 <div 
-                    className="flex gap-4 overflow-x-auto pb-4"
+                    className="flex gap-4 overflow-x-auto pb-4 h-full"
                     style={{ height: height }}
                 >
-                    {columns.map(column => (
-                        <KanbanColumn
-                            key={column.id}
-                            column={column}
-                            data={filteredDataByColumn.get(column.id) || []}
-                            tableColumns={tableColumns}
-                            actions={actions}
-                            onAction={handleAction}
-                            dragAndDrop={dragAndDrop}
-                            isDragActive={isDragging}
-                        />
-                    ))}
+                    {columns.map((column) => {
+                        const columnData = filteredDataByColumn[column.id] || [];
+                        
+                        return (
+                            <KanbanColumn
+                                key={column.id}
+                                column={column}
+                                data={columnData}
+                                tableColumns={tableColumns}
+                                actions={actions}
+                                onAction={onAction}
+                                dragAndDrop={dragAndDrop}
+                                isDragActive={isDragging}
+                            />
+                        );
+                    })}
                 </div>
-
-                {/* Empty State */}
-                {data.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                            <Grid3X3 className="h-8 w-8" />
-                        </div>
-                        <p className="text-lg font-medium">Nenhum dado disponível</p>
-                        <p className="text-sm">Adicione alguns itens para visualizar no Kanban</p>
-                    </div>
-                )}
-            </div>
-
-            {/* Drag Overlay - Card sendo arrastado */}
-            <DragOverlay>
-                {activeId && draggedItem ? (
-                    <div className="rotate-6 opacity-90 shadow-2xl">
+                
+                {/* Drag Overlay - Card sendo arrastado */}
+                <DragOverlay>
+                    {activeId && draggedItem ? (
                         <KanbanCard
                             item={draggedItem}
-                            tableColumns={tableColumns || []}
+                            tableColumns={tableColumns}
                             actions={actions}
-                            onAction={handleAction}
+                            onAction={onAction}
+                            draggable={true}
                             isDragging={true}
                             dragOverlay={true}
                         />
-                    </div>
-                ) : null}
-            </DragOverlay>
-        </DndContext>
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
+        </div>
     );
 } 

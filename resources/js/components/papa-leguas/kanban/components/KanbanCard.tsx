@@ -50,7 +50,18 @@ export default function KanbanCard({
         data: {
             type: 'card',
             item: item,
-            columnId: item.currentWorkflow?.current_template_id || 'unknown'
+            columnId: (() => {
+                // Mapear current_step para columnId
+                const step = item.currentWorkflow?.current_step || 1;
+                const stepToColumnMap: Record<number, string> = {
+                    1: 'aberto',
+                    2: 'em-andamento',
+                    3: 'aguardando-cliente',
+                    4: 'resolvido',
+                    5: 'fechado'
+                };
+                return stepToColumnMap[step] || 'aberto';
+            })()
         },
         disabled: !draggable
     });
@@ -82,7 +93,21 @@ export default function KanbanCard({
     // Cores (já calculadas no backend)
     const statusColor = kanbanData.status_color || '#3b82f6';
     const priorityColor = kanbanData.priority_color || '#6b7280';
-    const columnColor = statusColor; // Usar cor do status como cor da coluna
+    
+    // Determinar cor da coluna baseada no current_step
+    const getColumnColor = () => {
+        const step = currentWorkflow.current_step || 1;
+        const colors: Record<number, string> = {
+            1: '#ef4444', // Aberto - Vermelho
+            2: '#f59e0b', // Em Andamento - Amarelo
+            3: '#8b5cf6', // Aguardando Cliente - Roxo
+            4: '#10b981', // Resolvido - Verde
+            5: '#6b7280', // Fechado - Cinza
+        };
+        return colors[step] || statusColor;
+    };
+    
+    const columnColor = getColumnColor();
 
     // Determinar se está sendo arrastado
     const isBeingDragged = isDragging || isDraggingFromHook;
