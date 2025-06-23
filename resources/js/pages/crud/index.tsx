@@ -7,6 +7,8 @@ import TabbedInterface from '../../components/ui/tabbed-interface';
 import ViewSelector from '../../components/ui/view-selector';
 import CardView from '../../components/ui/card-view';
 import KanbanView from '../../components/ui/kanban-view';
+import { KanbanBoard } from '../../components/papa-leguas/kanban';
+import type { KanbanColumn } from '../../components/papa-leguas/kanban/types';
 import { TabConfig, TabsConfig, TabbedTableData, ViewConfig, ViewsConfig } from '../../types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -71,32 +73,118 @@ interface CrudIndexProps extends TabbedTableData {
 
 export default function CrudIndex({ table, routes, config, capabilities, error, tabs, tabsConfig, views, viewsConfig, activeView }: CrudIndexProps) {
     
-    // 🔍 DEBUG: Ver dados vindos do backend
-    // React.useEffect(() => {
-    //     console.log('📊 DEBUG - Dados do Backend:');
-    //     console.log('table?.actions:', table?.actions.bulk);
-    //     console.log('table?.route_execute_action:', table?.route_execute_action);
-        // console.log('table?.data:', table?.data?.length, 'items'); 
-    //     console.log('table?.columns:', table?.columns?.length, 'columns');
-    //     console.log('config:', config);
-    //     console.log('routes:', routes);
-    //     console.log('🔗 tabs:', tabs?.length, 'tabs configuradas');
-    //     console.log('⚙️ tabsConfig:', tabsConfig);
-    //     console.log('👁️ views:', views?.length, 'views configuradas');
-    //     console.log('🎨 viewsConfig:', viewsConfig);
-    //     console.log('🎯 activeView:', activeView);
-    // }, [table, config, routes, tabs, tabsConfig, views, viewsConfig, activeView]);
-    
-    // ✅ USAR AÇÕES DO BACKEND - Sistema de Ações Avançado
+    // 🔍 DEBUG: Ver dados vindos do backend (simplificado)
+    React.useEffect(() => {
+        if (table?.data && table.data.length > 0) {
+            console.log('📊 CRUD carregado:', table.data.length, 'itens');
+        }
+    }, [table?.data]);
+
+    // 🎯 Definir colunas Kanban baseadas no workflow (se houver currentWorkflow nos dados)
+    const getKanbanColumns = (): KanbanColumn[] => {
+        // Verificar se os dados têm currentWorkflow (sistema de tickets/workflows)
+        const hasWorkflow = table?.data?.some(item => item.currentWorkflow);
+        
+        if (hasWorkflow) {
+            // Colunas específicas para workflow
+            return [
+                {
+                    id: 'aberto',
+                    title: 'Aberto',
+                    key: 'status',
+                    color: '#ef4444',
+                    icon: 'AlertCircle',
+                    filter: (item) => {
+                        return item.currentWorkflow?.status === 'active' && 
+                               (item.currentWorkflow?.current_step === 1 || 
+                                item.currentWorkflow?.current_template_id?.includes('aberto'));
+                    }
+                },
+                {
+                    id: 'em-andamento',
+                    title: 'Em Andamento',
+                    key: 'status',
+                    color: '#f59e0b',
+                    icon: 'Clock',
+                    filter: (item) => {
+                        return item.currentWorkflow?.status === 'active' && 
+                               (item.currentWorkflow?.current_step === 2 || 
+                                item.currentWorkflow?.current_template_id?.includes('em-andamento'));
+                    }
+                },
+                {
+                    id: 'aguardando-cliente',
+                    title: 'Aguardando Cliente',
+                    key: 'status',
+                    color: '#8b5cf6',
+                    icon: 'User',
+                    filter: (item) => {
+                        return item.currentWorkflow?.status === 'active' && 
+                               (item.currentWorkflow?.current_step === 3 || 
+                                item.currentWorkflow?.current_template_id?.includes('aguardando'));
+                    }
+                },
+                {
+                    id: 'resolvido',
+                    title: 'Resolvido',
+                    key: 'status',
+                    color: '#10b981',
+                    icon: 'CheckCircle',
+                    filter: (item) => {
+                        return item.currentWorkflow?.status === 'active' && 
+                               (item.currentWorkflow?.current_step === 4 || 
+                                item.currentWorkflow?.current_template_id?.includes('resolvido'));
+                    }
+                },
+                {
+                    id: 'fechado',
+                    title: 'Fechado',
+                    key: 'status',
+                    color: '#6b7280',
+                    icon: 'Archive',
+                    filter: (item) => {
+                        return item.currentWorkflow?.status === 'completed' || 
+                               item.currentWorkflow?.current_step === 5 ||
+                               item.currentWorkflow?.current_template_id?.includes('fechado');
+                    }
+                }
+            ];
+        }
+        
+        // Colunas genéricas baseadas no campo 'status' tradicional
+        return [
+            {
+                id: 'ativo',
+                title: 'Ativo',
+                key: 'status',
+                color: '#10b981',
+                icon: 'CheckCircle',
+                filter: (item) => item.status === 'active' || item.status?.value === 'active'
+            },
+            {
+                id: 'inativo',
+                title: 'Inativo',
+                key: 'status',
+                color: '#6b7280',
+                icon: 'XCircle',
+                filter: (item) => item.status === 'inactive' || item.status?.value === 'inactive'
+            },
+            {
+                id: 'pendente',
+                title: 'Pendente',
+                key: 'status',
+                color: '#f59e0b',
+                icon: 'Clock',
+                filter: (item) => item.status === 'pending' || item.status?.value === 'pending'
+            }
+        ];
+    };
     
     // 🎨 Renderizar view baseada na view ativa
     const renderView = (tabData?: any, viewId?: string) => {
         const currentView = viewId || activeView || 'list';
-        // const data = tabData?.data || table?.data || [];
-        const data =   table?.data || [];
-        // const columns = tabData?.columns || table?.columns || [];
+        const data = table?.data || [];
         const columns = table?.columns || [];
-        // const actions = tabData?.actions || table?.actions || [];
         const actions = table?.actions || [];
         
         // Encontrar configuração da view ativa
@@ -114,12 +202,25 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                 );
                 
             case 'kanban':
+                // Usar KanbanBoard avançado com filtros inteligentes
                 return (
-                    <KanbanView
+                    <KanbanBoard
                         data={data}
-                        columns={columns}
-                        config={viewConfig?.config || {}}
+                        columns={getKanbanColumns()}
                         actions={actions}
+                        config={{
+                            title: table?.meta?.title || config?.page_title || 'Kanban',
+                            description: table?.meta?.description || config?.page_description || 'Visualização em quadro',
+                            searchable: true,
+                            refreshable: true,
+                        }}
+                        onAction={(actionId, item, extra) => {
+                            console.log('Ação Kanban:', { actionId, item, extra });
+                        }}
+                        onRefresh={() => {
+                            console.log('Refresh Kanban');
+                            window.location.reload();
+                        }}
                     />
                 );
                 
@@ -144,7 +245,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
             breadcrumbs={breadcrumbs}
             title={config?.page_title || 'CRUD'}
         >
-            <Head title={`${config?.page_title || 'CRUD'} - Lista`} />
+            <Head title={`${config?.page_title || 'CRUD'} - ${activeView === 'kanban' ? 'Kanban' : activeView === 'cards' ? 'Cards' : 'Lista'}`} />
             
             <div className="space-y-6">
                 {/* Header */}
@@ -175,9 +276,6 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                     defaultContent={renderView()}
                 >
                     {(activeTab, tabContent) => {
-                        console.log('🎯 DEBUG - Tab Ativa:', activeTab.id, activeTab.label);
-                        console.log('📋 DEBUG - Conteúdo da Tab:', tabContent);
-                        
                         // Se a tab tem conteúdo próprio, renderizar ele
                         if (tabContent) {
                             return renderView(tabContent);

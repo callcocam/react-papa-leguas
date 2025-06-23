@@ -38,17 +38,45 @@ export default function KanbanBoard({
         dragAndDrop = false
     } = config;
 
-    // 🚀 Sistema simplificado - data direto para as colunas
+    // 🚀 Sistema de filtro corrigido - aplicar filtro de cada coluna aos dados
+    const filteredDataByColumn = useMemo(() => {
+        const result = new Map();
+        
+        columns.forEach(column => {
+            let columnData = [];
+            
+            if (column.filter && typeof column.filter === 'function') {
+                // Usar função de filtro personalizada da coluna
+                columnData = data.filter(column.filter);
+            } else if (column.key) {
+                // Fallback: filtrar por key/value se não tiver função personalizada
+                // Este caso pode ser usado para filtros simples baseados em propriedades
+                columnData = data.filter(item => {
+                    const value = item[column.key];
+                    return value === column.id || (value && value.value === column.id);
+                });
+            } else {
+                // Se não tiver filtro, não mostrar dados (evita duplicação)
+                columnData = [];
+            }
+            
+            result.set(column.id, columnData);
+        });
+        
+        return result;
+    }, [data, columns]);
+
+    // 🚀 Estatísticas corrigidas - calcular por coluna com dados filtrados
     const stats = useMemo(() => {
         const total = data.length;
         const byColumn = columns.map(column => ({
             id: column.id,
             title: column.title,
-            count: data.length // Será calculado individualmente por coluna
+            count: filteredDataByColumn.get(column.id)?.length || 0
         }));
 
         return { total, byColumn };
-    }, [data, columns]);
+    }, [data, columns, filteredDataByColumn]);
   
 
     // Handler para ações
@@ -109,7 +137,7 @@ export default function KanbanBoard({
                     <KanbanColumn
                         key={column.id}
                         column={column}
-                        data={data}
+                        data={filteredDataByColumn.get(column.id) || []}
                         tableColumns={tableColumns}
                         actions={actions}
                         onAction={handleAction}
