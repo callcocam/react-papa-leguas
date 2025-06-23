@@ -508,8 +508,10 @@ class Workflowable extends Model
      */
     public function isUrgent(): bool
     {
-        $metadata = $this->metadata ?? [];
-        return $metadata['is_urgent'] === true || $metadata['is_urgent'] === 'true';
+        if ($metadata = $this->metadata) {
+            return $metadata['is_urgent'] === true || $metadata['is_urgent'] === 'true';
+        }
+        return false;
     }
 
     /**
@@ -517,8 +519,10 @@ class Workflowable extends Model
      */
     public function isInternal(): bool
     {
-        $metadata = $this->metadata ?? [];
-        return $metadata['is_internal'] === true || $metadata['is_internal'] === 'true';
+        if ($metadata = $this->metadata) {
+            return $metadata['is_internal'] === true || $metadata['is_internal'] === 'true';
+        }
+        return false;
     }
 
     /**
@@ -536,15 +540,15 @@ class Workflowable extends Model
 
             // Dados principais
             'title' => $this->getKanbanTitle(),
-            'ticket_number' => $metadata['ticket_number'] ?? $this->workflowable_id,
+            'ticket_number' => data_get($metadata, 'ticket_number', $this->workflowable_id),
             'status' => $this->getStatusFormatted(),
             'status_raw' => $this->status,
             'status_color' => $this->getStatusColor(),
 
             // Prioridade e categoria
-            'priority' => $metadata['priority'] ?? 'Normal',
+            'priority' => data_get($metadata, 'priority', 'Normal'),
             'priority_color' => $this->getPriorityColor(),
-            'category' => $metadata['category'] ?? 'Sem categoria',
+            'category' => data_get($metadata, 'category', 'Sem categoria'),
 
             // Responsável
             'assigned_to' => $this->getAssignedUserName(),
@@ -572,7 +576,7 @@ class Workflowable extends Model
             'is_assigned' => $this->isAssigned(),
 
             // Metadados adicionais
-            'contact_email' => $metadata['contact_email'] ?? null,
+            'contact_email' => data_get($metadata, 'contact_email', null),
             'notes' => $this->notes,
             'metadata' => $metadata,
         ];
