@@ -2,8 +2,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Plus,
+import { 
+    Plus, 
     MoreVertical
 } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
@@ -230,18 +230,18 @@ const colorClasses = WORKFLOW_COLORS.find(color => color.value === columnColor) 
 
                     <div className="flex items-center gap-1">
                         {/* Botão Adicionar */}
-                        <Button
-                            variant="ghost"
-                            size="sm"
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
                             className={`h-7 w-7 p-0 ${colorClasses.hoverBg} ${colorClasses.textLight}`}
                         >
                             <Plus className="h-4 w-4" />
                         </Button>
 
                         {/* Menu da Coluna */}
-                        <Button
-                            variant="ghost"
-                            size="sm"
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
                             className={`h-7 w-7 p-0 ${colorClasses.hoverBg} ${colorClasses.textLight}`}
                         >
                             <MoreVertical className="h-4 w-4" />

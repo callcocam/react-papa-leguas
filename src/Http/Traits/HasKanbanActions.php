@@ -20,10 +20,15 @@ use Illuminate\Validation\ValidationException;
  * Adiciona funcionalidades completas de Kanban a qualquer controller CRUD.
  * Sistema genérico que funciona com qualquer modelo e workflow real.
  * 
+ * IMPORTANTE: Esta trait assume que os itens JÁ POSSUEM workflowables criados.
+ * - Para aparecer no Kanban, o item deve ter um currentWorkflow ativo
+ * - A criação de workflowables deve ser feita na criação do item (ex: ao criar ticket)
+ * - Esta trait apenas move itens entre templates existentes
+ * 
  * Integra com:
  * - Workflow: Define o processo de negócio
  * - WorkflowTemplate: Define as colunas/etapas do Kanban
- * - Workflowable: Relaciona entidades com workflows
+ * - Workflowable: Relaciona entidades com workflows (deve existir previamente)
  * 
  * @package Callcocam\ReactPapaLeguas\Http\Traits
  */
@@ -86,8 +91,16 @@ trait HasKanbanActions
             DB::beginTransaction();
 
             try {
-                // Buscar ou criar workflowable
-                $workflowable = $item->currentWorkflow ?? $this->createWorkflowable($item, $workflowSlug);
+                // Buscar workflowable existente (deve existir se está no Kanban)
+                $workflowable = $item->currentWorkflow;
+                
+                if (!$workflowable) {
+                    DB::rollback();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Item não possui workflow ativo. Workflowable deve ser criado antes da movimentação.',
+                    ], 422);
+                }
 
                 // Mover para novo template
                 $workflowable->moveToTemplate($toTemplate);
@@ -365,7 +378,8 @@ trait HasKanbanActions
 
         // Validação de limite de itens no template de destino
         if ($toTemplate->max_items) {
-            $currentCount = $this->model()::whereHas('currentWorkflow', function ($q) use ($toTemplate) {
+            $modelClass = $this->resolveModelClass();
+            $currentCount = $modelClass::whereHas('currentWorkflow', function ($q) use ($toTemplate) {
                 $q->where('current_template_id', $toTemplate->id);
             })->count();
 
@@ -403,14 +417,48 @@ trait HasKanbanActions
 
     /**
      * Criar um novo workflowable para um card
+     * 
+     * @deprecated Este método não deveria ser usado durante movimentação no Kanban.
+     * Workflowables devem ser criados na criação do item (ex: ao criar ticket).
+     * Mantido apenas para compatibilidade, mas será removido em versões futuras.
      */
     protected function createWorkflowable($card, string $workflowSlug): Workflowable
     {
-        // Implementação padrão: criar um novo workflowable
+        Log::warning('⚠️ createWorkflowable() chamado durante movimentação Kanban', [
+            'card_id' => $card->id,
+            'card_type' => get_class($card),
+            'workflow_slug' => $workflowSlug,
+            'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)
+        ]);
+
+        // Buscar workflow pelo slug
+        $workflow = Workflow::where('slug', $workflowSlug)->first();
+        if (!$workflow) {
+            throw new \Exception("Workflow não encontrado: {$workflowSlug}");
+        }
+
+        // Buscar primeiro template do workflow (template inicial)
+        $initialTemplate = WorkflowTemplate::where('workflow_id', $workflow->id)
+            ->orderBy('sort_order')
+            ->first();
+
+        if (!$initialTemplate) {
+            throw new \Exception("Nenhum template encontrado para o workflow: {$workflowSlug}");
+        }
+
+        // Criar workflowable com dados corretos
         return Workflowable::create([
             'workflowable_type' => get_class($card),
             'workflowable_id' => $card->id,
-            'workflow_slug' => $workflowSlug,
+            'workflow_id' => $workflow->id,
+            'current_template_id' => $initialTemplate->id,
+            'current_step' => 1,
+            'total_steps' => WorkflowTemplate::where('workflow_id', $workflow->id)->count(),
+            'progress_percentage' => 0,
+            'status' => 'active',
+            'started_at' => now(),
+            'assigned_to' => auth()->id(),
+            'assigned_at' => now(),
         ]);
     }
 }

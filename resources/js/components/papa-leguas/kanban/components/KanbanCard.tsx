@@ -138,7 +138,7 @@ export default function KanbanCard({
         return classes;
     };
 
-    return (
+        return (
         <Card 
             ref={setNodeRef}
             style={style}
@@ -184,7 +184,7 @@ export default function KanbanCard({
                     </Badge>
                     <Badge 
                         className="text-xs px-2 py-1"
-                        style={{
+                            style={{
                             backgroundColor: priorityColor + '20',
                             color: priorityColor,
                             border: `1px solid ${priorityColor}40`
@@ -224,7 +224,7 @@ export default function KanbanCard({
                             <Clock className="w-3 h-3 text-gray-400" />
                             <span className="text-gray-600 flex-1">
                                 {timeSpent}
-                            </span>
+                        </span>
                         </div>
                     )}
                 </div>
@@ -255,7 +255,7 @@ export default function KanbanCard({
 
                 {/* Menu de ações - Apenas no overlay ou quando não está sendo arrastado */}
                 {actions && actions.length > 0 && !isBeingDragged && (
-                    <div className="pt-2 border-t border-gray-100">
+                <div className="pt-2 border-t border-gray-100">
                         <Button
                             variant="ghost"
                             size="sm"
@@ -273,29 +273,29 @@ export default function KanbanCard({
                                 <ChevronRight className="w-3 h-3 ml-1" />
                             )}
                         </Button>
-                        
+
                         {showActions && (
                             <div className="mt-2 space-y-1">
                                 {actions.map((action, index) => (
-                                    <Button
+                    <Button
                                         key={index}
-                                        variant="ghost"
-                                        size="sm"
+                        variant="ghost"
+                        size="sm"
                                         className="w-full h-6 text-xs justify-start text-gray-600 hover:text-gray-800"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             onAction?.(action.id, item);
                                         }}
-                                    >
+                    >
                                         {action.icon && (
                                             <span className="w-3 h-3 mr-2">
                                                 {/* Ícone da ação */}
                                             </span>
                                         )}
                                         {action.label}
-                                    </Button>
+                    </Button>
                                 ))}
-                            </div>
+            </div>
                         )}
                     </div>
                 )}
