@@ -43,11 +43,15 @@ return new class extends Migration
             $table->boolean('is_required_by_default')->default(false)->comment('Etapa obrigatória por padrão');
             $table->integer('sort_order')->default(0)->comment('Ordem de exibição no Kanban');
             
+            // Workflow flow control - Definição clara de fluxo
+            $table->foreignUlid('next_template_id')->nullable()->constrained('workflow_templates')->nullOnDelete()->comment('Próxima etapa padrão no fluxo');
+            $table->foreignUlid('previous_template_id')->nullable()->constrained('workflow_templates')->nullOnDelete()->comment('Etapa anterior no fluxo (para voltar)');
+            
             // Workflow rules
             $table->integer('max_items')->nullable()->comment('Limite máximo de itens na coluna');
             $table->boolean('auto_assign')->default(false)->comment('Atribuição automática');
             $table->boolean('requires_approval')->default(false)->comment('Requer aprovação');
-            $table->json('transition_rules')->nullable()->comment('Regras de transição');
+            $table->json('transition_rules')->nullable()->comment('Regras de transição avançadas (para admins)');
             
             // Advanced configuration
             $table->json('metadata')->nullable()->comment('Metadados adicionais');
