@@ -1,3 +1,5 @@
+import { UniqueIdentifier } from '@dnd-kit/core';
+
 // Tipos base importados do sistema de tabelas
 export interface KanbanColumn {
     /** ID único da coluna */
@@ -154,38 +156,133 @@ export interface KanbanBoardProps {
     onRefresh?: () => void;
 }
 
+/**
+ * Props para o componente KanbanColumn
+ */
 export interface KanbanColumnProps {
     /** Configuração da coluna */
     column: KanbanColumn;
-    /** Dados desta coluna */
+    /** Dados filtrados para esta coluna */
     data: any[];
-    /** Colunas formatadas do backend (sistema Papa Leguas) */
+    /** Colunas da tabela para renderização */
     tableColumns?: any[];
     /** Ações disponíveis */
     actions?: KanbanAction[];
-    /** Callback para ações */
-    onAction?: (action: string, item: any, extra?: any) => void;
-    /** Callback para drag and drop */
+    /** Handler para ações */
+    onAction?: (actionId: string, item: any, extra?: any) => void;
+    /** Handler para drop (legacy) */
     onDrop?: (item: any, fromColumn: string, toColumn: string) => void;
+    /** Se drag & drop está habilitado */
+    dragAndDrop?: boolean;
+    /** Se há um drag ativo no board */
+    isDragActive?: boolean;
 }
 
+/**
+ * Props para o componente KanbanCard
+ */
 export interface KanbanCardProps {
-    /** Item de dados do card */
+    /** Item de dados */
     item: any;
-    /** Configuração da coluna pai */
-    column: KanbanColumn;
-    /** Colunas formatadas do backend (sistema Papa Leguas) */
+    /** Colunas da tabela para renderização */
     tableColumns?: any[];
-    /** Ações disponíveis */
+    /** Ações disponíveis para o card */
     actions?: KanbanAction[];
-    /** Se o card está expandido */
-    isExpanded?: boolean;
-    /** Callback para toggle expansão */
-    onToggleExpansion?: () => void;
-    /** Callback para ações */
-    onAction?: (action: string, item: any, extra?: any) => void;
-    /** Callback para drag and drop */
-    onDragStart?: (item: any) => void;
+    /** Handler para ações */
+    onAction?: (actionId: string, item: any, extra?: any) => void;
     /** Se o card é arrastável */
     draggable?: boolean;
+    /** Se o card está sendo arrastado */
+    isDragging?: boolean;
+    /** Se é um overlay de drag */
+    dragOverlay?: boolean;
+}
+
+/**
+ * Tipos para Drag & Drop usando @dnd-kit
+ */
+export interface DragStartEvent {
+    active: {
+        id: UniqueIdentifier;
+        data: {
+            current?: any;
+        };
+    };
+}
+
+export interface DragEndEvent {
+    active: {
+        id: UniqueIdentifier;
+        data: {
+            current?: any;
+        };
+    };
+    over: {
+        id: UniqueIdentifier;
+        data: {
+            current?: any;
+        };
+    } | null;
+}
+
+export interface DragOverEvent {
+    active: {
+        id: UniqueIdentifier;
+        data: {
+            current?: any;
+        };
+    };
+    over: {
+        id: UniqueIdentifier;
+        data: {
+            current?: any;
+        };
+    } | null;
+}
+
+/**
+ * Props para componentes com drag & drop
+ */
+export interface DraggableKanbanCardProps extends KanbanCardProps {
+    isDragging?: boolean;
+    dragOverlay?: boolean;
+}
+
+export interface DroppableKanbanColumnProps extends KanbanColumnProps {
+    isOver?: boolean;
+    canDrop?: boolean;
+}
+
+/**
+ * Configurações de drag & drop
+ */
+export interface DragDropConfig {
+    enabled?: boolean;
+    validateTransition?: (fromColumnId: string, toColumnId: string, item: any) => boolean;
+    onDragStart?: (event: DragStartEvent) => void;
+    onDragEnd?: (event: DragEndEvent) => void;
+    onDragOver?: (event: DragOverEvent) => void;
+    onMoveCard?: (cardId: string, fromColumnId: string, toColumnId: string, item: any) => Promise<boolean>;
+}
+
+/**
+ * Dados de movimento de card
+ */
+export interface CardMoveData {
+    cardId: string;
+    fromColumnId: string;
+    toColumnId: string;
+    fromIndex: number;
+    toIndex: number;
+    item: any;
+}
+
+/**
+ * Resposta da API de movimento
+ */
+export interface MoveCardResponse {
+    success: boolean;
+    message?: string;
+    data?: any;
+    errors?: Record<string, string[]>;
 } 

@@ -73,13 +73,6 @@ interface CrudIndexProps extends TabbedTableData {
 
 export default function CrudIndex({ table, routes, config, capabilities, error, tabs, tabsConfig, views, viewsConfig, activeView }: CrudIndexProps) {
     
-    // 🔍 DEBUG: Ver dados vindos do backend (simplificado)
-    React.useEffect(() => {
-        if (table?.data && table.data.length > 0) {
-            console.log('📊 CRUD carregado:', table.data.length, 'itens');
-        }
-    }, [table?.data]);
-
     // 🎯 Definir colunas Kanban baseadas no workflow (se houver currentWorkflow nos dados)
     const getKanbanColumns = (): KanbanColumn[] => {
         // Verificar se os dados têm currentWorkflow (sistema de tickets/workflows)
@@ -215,10 +208,9 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                             refreshable: true,
                         }}
                         onAction={(actionId, item, extra) => {
-                            console.log('Ação Kanban:', { actionId, item, extra });
+                            // TODO: Implementar ações do Kanban
                         }}
                         onRefresh={() => {
-                            console.log('Refresh Kanban');
                             window.location.reload();
                         }}
                     />

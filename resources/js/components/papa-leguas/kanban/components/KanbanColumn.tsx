@@ -6,19 +6,21 @@ import {
     Plus,
     MoreVertical
 } from 'lucide-react';
+import { useDroppable } from '@dnd-kit/core';
 import { Icons } from '../../icons';
 import KanbanCard from './KanbanCard';
 import type { KanbanColumnProps } from '../types';
 
 /**
- * Componente que representa uma coluna individual do Kanban.
+ * Componente que representa uma coluna individual do Kanban com suporte a Drag & Drop.
  * 
  * Funcionalidades:
  * - Header com título, ícone e contador
  * - Lista de cards da coluna
  * - Ações do backend integradas
- * - Suporte a drag and drop (futuro)
+ * - Suporte a drag and drop com @dnd-kit
  * - Limite máximo de itens
+ * - Feedback visual durante drag
  */
 export default function KanbanColumn({
     column,
@@ -26,8 +28,24 @@ export default function KanbanColumn({
     tableColumns = [],
     actions = [],
     onAction,
-    onDrop
+    onDrop,
+    dragAndDrop = false,
+    isDragActive = false
 }: KanbanColumnProps) {
+    
+    // Setup do droppable para esta coluna
+    const {
+        isOver,
+        setNodeRef,
+    } = useDroppable({
+        id: column.id,
+        data: {
+            type: 'column',
+            columnId: column.id,
+            accepts: ['card']
+        },
+        disabled: !dragAndDrop
+    });
      
     const IconComponent = column.icon && typeof column.icon === 'string'
         ? (Icons[column.icon as keyof typeof Icons] as any)
@@ -153,8 +171,34 @@ const colorClasses = WORKFLOW_COLORS.find(color => color.value === columnColor) 
     hoverBg: 'hover:bg-gray-50'
 };
 
+    // Classes dinâmicas baseadas no estado de drag
+    const getColumnClasses = () => {
+        let classes = `kanban-column flex flex-col h-full min-w-[300px] flex-shrink-0 rounded-lg bg-white shadow-sm border transition-all duration-200`;
+        
+        if (dragAndDrop) {
+            if (isOver) {
+                // Quando um card está sendo arrastado sobre esta coluna
+                classes += ` ${colorClasses.border} border-2 ${colorClasses.bgLight} shadow-lg scale-105`;
+            } else if (isDragActive) {
+                // Quando há um drag ativo mas não está sobre esta coluna
+                classes += ` ${colorClasses.borderDashed} border-2 opacity-80`;
+            } else {
+                // Estado normal com drag habilitado
+                classes += ` ${colorClasses.borderDashed} hover:${colorClasses.border}`;
+            }
+        } else {
+            // Estado normal sem drag
+            classes += ` ${colorClasses.borderDashed}`;
+        }
+        
+        return classes;
+    };
+
     return (
-        <div className={`kanban-column flex flex-col h-full min-w-[300px] flex-shrink-0 rounded-lg bg-white shadow-sm border ${colorClasses.borderDashed}`}>
+        <div 
+            ref={setNodeRef}
+            className={getColumnClasses()}
+        >
             {/* Header da Coluna - Branco separado da borda */}
             <div className={`p-3 bg-white rounded-t-lg border-b ${colorClasses.border}`}>
                 <div className="flex items-center justify-between">
@@ -174,6 +218,14 @@ const colorClasses = WORKFLOW_COLORS.find(color => color.value === columnColor) 
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${colorClasses.bgBadge} ${colorClasses.text}`}>
                             {data.length}
                         </span>
+                        
+                        {/* Indicador de drop ativo */}
+                        {isOver && (
+                            <div className="flex items-center gap-1 text-xs text-blue-600">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                                Soltar aqui
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -210,8 +262,12 @@ const colorClasses = WORKFLOW_COLORS.find(color => color.value === columnColor) 
                 {data.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                         <div className="text-center">
-                            <p className="text-sm font-medium mb-1">Vazio</p>
-                            <p className="text-xs">Arraste aqui</p>
+                            <p className="text-sm font-medium mb-1">
+                                {isOver ? 'Solte o card aqui' : 'Vazio'}
+                            </p>
+                            <p className="text-xs">
+                                {dragAndDrop ? 'Arraste cards aqui' : 'Nenhum item'}
+                            </p>
                         </div>
                     </div>
                 ) : (
@@ -219,15 +275,10 @@ const colorClasses = WORKFLOW_COLORS.find(color => color.value === columnColor) 
                         <KanbanCard
                             key={item.id || index}
                             item={item}
-                            column={column}
                             tableColumns={tableColumns}
                             actions={actions}
                             onAction={onAction}
-                            draggable={!!onDrop}
-                            onDragStart={onDrop ? (draggedItem) => {
-                                // Implementar drag start no futuro
-                                console.log('Drag start:', draggedItem);
-                            } : undefined}
+                            draggable={dragAndDrop}
                         />
                     ))
                 )}
