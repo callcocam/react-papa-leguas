@@ -84,7 +84,7 @@ export default function KanbanBoard({
         onMoveCard: onMoveCard || (async (cardId, fromColumnId, toColumnId, item) => {
             console.log('🎯 Moving card:', { cardId, fromColumnId, toColumnId, item });
             
-            // Atualizar dados localmente IMEDIATAMENTE
+            // Atualizar dados localmente IMEDIATAMENTE para UX fluida
             const newStep = getStepFromColumnId(toColumnId);
             
             setLocalData(prevData => {
@@ -103,14 +103,72 @@ export default function KanbanBoard({
                 });
             });
             
-            // TODO: Implementar chamada real para backend
-            // Por enquanto, simular sucesso
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    console.log('✅ Card moved successfully (simulated) - new step:', newStep);
-                    resolve(true);
-                }, 500);
-            });
+            // Chamar API real do backend
+            try {
+                const response = await fetch('/admin/tickets/kanban/move-card', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        card_id: cardId,
+                        from_column_id: fromColumnId,
+                        to_column_id: toColumnId,
+                        item: item
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('✅ Card moved successfully (backend confirmed):', result.data);
+                    return true;
+                } else {
+                    console.error('❌ Backend rejected card movement:', result.message);
+                    
+                    // Reverter mudança local se backend falhou
+                    setLocalData(prevData => {
+                        return prevData.map(dataItem => {
+                            if (dataItem.id === cardId) {
+                                return {
+                                    ...dataItem,
+                                    currentWorkflow: {
+                                        ...dataItem.currentWorkflow,
+                                        current_step: getStepFromColumnId(fromColumnId), // Reverter
+                                        current_template_id: `step-${getStepFromColumnId(fromColumnId)}-${fromColumnId}`
+                                    }
+                                };
+                            }
+                            return dataItem;
+                        });
+                    });
+                    
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Network error moving card:', error);
+                
+                // Reverter mudança local em caso de erro de rede
+                setLocalData(prevData => {
+                    return prevData.map(dataItem => {
+                        if (dataItem.id === cardId) {
+                            return {
+                                ...dataItem,
+                                currentWorkflow: {
+                                    ...dataItem.currentWorkflow,
+                                    current_step: getStepFromColumnId(fromColumnId), // Reverter
+                                    current_template_id: `step-${getStepFromColumnId(fromColumnId)}-${fromColumnId}`
+                                }
+                            };
+                        }
+                        return dataItem;
+                    });
+                });
+                
+                return false;
+            }
         })
     };
 

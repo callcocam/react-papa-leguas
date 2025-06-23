@@ -1,4 +1,3 @@
-
 <?php
 /**
  * Created by Claudio Campos.
@@ -53,5 +52,24 @@ Route::prefix(ReactPapaLeguas::getPrefix())
                     ]
                 ]);
             })->name('crud');
+
+            // 🎯 Rotas do Kanban - Podem ser usadas por qualquer CRUD
+            Route::prefix('kanban')->name('kanban.')->group(function () {
+                // Mover card entre colunas
+                Route::post('/move-card', function () {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Rota deve ser implementada no controller específico'
+                    ], 501);
+                })->name('move-card');
+
+                // Obter estatísticas do Kanban
+                Route::get('/stats', function () {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Rota deve ser implementada no controller específico'
+                    ], 501);
+                })->name('stats');
+            });
         });
     });
