@@ -21,7 +21,7 @@ class KanbanView extends View
 
     public function columns(array $columns): self
     {
-        $this->columns = array_merge($this->columns, $columns);
+        $this->config['columns'] = $columns;
         return $this;
     }
 
@@ -49,6 +49,6 @@ class KanbanView extends View
 
     public function getColumns(): array
     {
-        return $this->columns;
+        return $this->config['columns'];
     }
 }

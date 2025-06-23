@@ -78,8 +78,7 @@ trait InteractsWithTable
 
             // Adicionar sistemas configuráveis
             $result = array_merge($result, $this->getTabsConfiguration());
-            $result = array_merge($result, $this->getViewsConfiguration());
-
+            $result = array_merge($result, $this->getViewsConfiguration()); 
             return $result;
             
         } catch (\Exception $e) {
