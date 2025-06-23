@@ -11,6 +11,7 @@ namespace Callcocam\ReactPapaLeguas\Support\Table\Concerns;
 use Illuminate\Support\Facades\Log;
 use Callcocam\ReactPapaLeguas\Models\Workflow; 
 use Callcocam\ReactPapaLeguas\Support\Table\Views\KanbanView;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Trait para adicionar suporte a views condicionais baseadas em workflows
@@ -146,5 +147,10 @@ trait HasWorkflow
     protected function getColumnsWithWorkflowSupport(array $columns): array
     {
         return $columns;
+    }
+
+    protected function getModelWithWorkflowSupport(Model $model): Model
+    {
+        return $model->load('workflowables.workflow', 'workflowables.currentTemplate');
     }
 }

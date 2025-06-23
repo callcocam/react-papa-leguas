@@ -208,7 +208,7 @@ trait HasDataSource
     /**
      * Obter dados paginados da tabela
      */
-    protected function getPaginatedData(int $page = 1, int $perPage = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    protected function getPaginatedData(int $page = 1, ?int $perPage = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         try {
             if (!$this->dataSource) {
