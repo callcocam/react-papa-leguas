@@ -214,6 +214,25 @@ class WorkflowTemplate extends AbstractModel
     }
 
     /**
+     * Obter IDs dos próximos templates possíveis (para compatibilidade com HasKanbanActions).
+     */
+    public function getNextTemplateIds(): array
+    {
+        if (!$this->transition_rules) {
+            // Se não há regras de transição definidas, permitir transição para o próximo template na ordem
+            $nextTemplate = $this->workflow->templates()
+                ->where('sort_order', '>', $this->sort_order)
+                ->active()
+                ->ordered()
+                ->first();
+                
+            return $nextTemplate ? [$nextTemplate->id] : [];
+        }
+
+        return $this->transition_rules['allowed_next'] ?? [];
+    }
+
+    /**
      * Verificar se pode transicionar para outro template.
      */
     public function canTransitionTo(WorkflowTemplate $target): bool

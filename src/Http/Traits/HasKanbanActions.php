@@ -51,7 +51,8 @@ trait HasKanbanActions
             $workflowSlug = $validated['workflow_slug'] ?? $this->detectWorkflowSlug();
 
             // 🔍 Buscar o item
-            $item = $this->model()::find($cardId);
+            $modelClass = $this->resolveModelClass();
+            $item = $modelClass::find($cardId);
             if (!$item) {
                 return response()->json([
                     'success' => false,
@@ -87,10 +88,10 @@ trait HasKanbanActions
             try {
                 // Buscar ou criar workflowable
                 $workflowable = $item->currentWorkflow ?? $this->createWorkflowable($item, $workflowSlug);
-                
+
                 // Mover para novo template
                 $workflowable->moveToTemplate($toTemplate);
-                
+
                 // Aplicar mudanças específicas do modelo
                 $this->onKanbanCardMoved($item, $fromTemplate, $toTemplate, $validated);
 
@@ -114,19 +115,16 @@ trait HasKanbanActions
                         'next_templates' => $toTemplate->getNextTemplateIds(),
                     ]
                 ]);
-
             } catch (\Exception $e) {
                 DB::rollback();
                 throw $e;
             }
-
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Dados inválidos',
                 'errors' => $e->errors(),
             ], 422);
-
         } catch (\Exception $e) {
             Log::error('❌ Erro ao mover card no Kanban', [
                 'error' => $e->getMessage(),
@@ -165,7 +163,8 @@ trait HasKanbanActions
                 ->get();
 
             // Contar itens por template
-            $query = $this->model()::whereHas('currentWorkflow', function ($q) use ($workflow) {
+            $modelClass = $this->resolveModelClass();
+            $query = $modelClass::whereHas('currentWorkflow', function ($q) use ($workflow) {
                 $q->where('workflow_id', $workflow->id);
             });
 
@@ -207,7 +206,6 @@ trait HasKanbanActions
                     'updated_at' => now()->toISOString(),
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('❌ Erro ao buscar estatísticas do Kanban', [
                 'error' => $e->getMessage(),
@@ -245,7 +243,8 @@ trait HasKanbanActions
                 ->get();
 
             // Contar total de itens
-            $totalItems = $this->model()::whereHas('currentWorkflow', function ($q) use ($workflow) {
+            $modelClass = $this->resolveModelClass();
+            $totalItems = $modelClass::whereHas('currentWorkflow', function ($q) use ($workflow) {
                 $q->where('workflow_id', $workflow->id);
             })->count();
 
@@ -282,7 +281,6 @@ trait HasKanbanActions
                     'updated_at' => now()->toISOString(),
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('❌ Erro ao buscar colunas do Kanban', [
                 'error' => $e->getMessage(),
@@ -321,7 +319,7 @@ trait HasKanbanActions
         ];
 
         $slug = $workflowSlugs[$crudType] ?? $workflowSlugs['generic'];
-        
+
         $workflow = Workflow::where('slug', $slug)->first();
         return $workflow?->id;
     }
@@ -397,20 +395,10 @@ trait HasKanbanActions
     /**
      * Detectar workflow slug baseado no tipo de CRUD
      */
-    protected function detectWorkflowSlug(): string
+    protected function detectWorkflowSlug(): ?string
     {
-        // Mapear tipos de CRUD para slugs de workflow
-        $workflowSlugs = [
-            'tickets' => 'suporte-tecnico',
-            'sales' => 'pipeline-vendas',
-            'orders' => 'processamento-pedidos',
-            'pipeline' => 'desenvolvimento',
-            'generic' => 'processo-generico',
-        ];
-
-        $slug = $workflowSlugs[$this->crudType] ?? $workflowSlugs['generic'];
         
-        return $slug;
+        return null;
     }
 
     /**
@@ -425,4 +413,4 @@ trait HasKanbanActions
             'workflow_slug' => $workflowSlug,
         ]);
     }
-} 
+}

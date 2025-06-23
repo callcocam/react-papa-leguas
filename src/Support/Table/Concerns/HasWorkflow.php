@@ -36,18 +36,11 @@ trait HasWorkflow
 
         // Buscar no banco de dados usando models implementados
         try {
-            // Buscar workflows ativos que possam corresponder ao model
-            $modelBasename = class_basename($modelClass);
-
-            // Mapeamento simples de models para slugs de workflow
-            $modelToSlugMap = [
-                'Ticket' => 'suporte-tecnico',
-                'Product' => 'pipeline-produtos',
-                'Lead' => 'pipeline-vendas',
-            ];
-
-            $expectedSlug = $modelToSlugMap[$modelBasename] ?? null;
-
+            // Buscar workflows ativos que possam corresponder ao model 
+            if (!method_exists($this, 'detectWorkflowSlug')) {
+                throw new \Exception('Method detectWorkflowSlug not found in ' . get_class($this));
+            }
+            $expectedSlug = $this->detectWorkflowSlug();
             if (!$expectedSlug) {
                 return null;
             }
@@ -145,8 +138,8 @@ trait HasWorkflow
     }
 
     protected function getColumnsWithWorkflowSupport(Model $row): array
-    { 
-        $data = $row->toArray(); 
+    {
+        $data = $row->toArray();
         return [
             'workflowables' => data_get($data, 'workflowables') ?? [],
             'currentWorkflow' => data_get($data, 'current_workflow') ?? null,
