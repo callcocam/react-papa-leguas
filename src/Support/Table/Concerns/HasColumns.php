@@ -76,16 +76,12 @@ trait HasColumns
             // We pass the full original row here too, so formatters can access any field.
             $formatted[$key] = $column->formatValue($row, $castedValue);
         }
-dd($row->toArray());
-        // 3. Process columns with workflow support
-        if(method_exists($this, 'getColumnsWithWorkflowSupport')){
-            $formatted = array_merge($formatted, $this->getColumnsWithWorkflowSupport($row));
-        }
+ 
 
-        // 4. Process actions for the item.
+        // 3. Process actions for the item.
         $formatted['_actions'] = $this->getActionsForItem($row);
 
-        // 5. Return the complete data packet for the frontend.
+        // 4. Return the complete data packet for the frontend.
         return $formatted;
     }
 
