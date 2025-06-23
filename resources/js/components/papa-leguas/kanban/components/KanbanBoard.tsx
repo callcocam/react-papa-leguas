@@ -20,49 +20,172 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
 import { useDragDrop } from '../hooks/useDragDrop';
+import axios from 'axios';
 import type { KanbanBoardProps, DragDropConfig } from '../types';
 
 /**
- * Componente Kanban Board genérico com Drag & Drop implementado.
+ * Componente principal do Kanban Board
  * 
- * Funcionalidades:
- * - Dados via eager loading (não API)
- * - Columns, actions e filters do backend
- * - Drag & Drop entre colunas com @dnd-kit
- * - Validação de transições
- * - Suporte a qualquer tipo de CRUD (tickets, sales, orders, pipeline, etc.)
- * - Integração com sistema existente
+ * Sistema dinâmico que funciona com qualquer tipo de CRUD e workflow.
+ * Suporta drag & drop, filtros inteligentes e integração com APIs.
  */
-export default function KanbanBoard({
-    data,
-    columns,
-    tableColumns,
-    actions = [],
-    filters = [],
-    config = {},
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ 
+    data, 
+    columns, 
+    tableColumns = [], 
+    actions = [], 
+    config = {}, 
     meta = {},
     onAction,
-    onFilter,
-    onRefresh
-}: KanbanBoardProps) {  
-
-    // Estado local para os dados (para permitir movimentação imediata)
+    onRefresh 
+}) => {
+    // Estados locais
+    const [searchTerm, setSearchTerm] = useState('');
     const [localData, setLocalData] = useState(data);
-
-    // Atualizar dados locais quando dados externos mudam
-    React.useEffect(() => {
-        setLocalData(data);
-    }, [data]);
 
     // Configurações padrão
     const { 
         height = '700px', 
-        dragAndDrop = true, // Ativado por padrão agora
+        dragAndDrop = true,
         validateTransition,
         onMoveCard,
-        crudType = 'generic', // Tipo do CRUD (tickets, sales, orders, pipeline, etc.)
-        apiEndpoint = '/admin/kanban/move-card' // Endpoint genérico
+        workflowSlug = 'generic',
+        apiEndpoint = '/api/admin/kanban/move-card'
     } = config;
+
+    // 🎯 Criar instância da API dinâmica
+    const kanbanApi = useMemo(() => {
+        // Detectar recurso baseado na URL atual
+        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+        const adminIndex = pathSegments.indexOf('admin');
+        
+        let resource = 'kanban';
+        let detectedWorkflowSlug = workflowSlug;
+        
+        if (adminIndex !== -1 && pathSegments[adminIndex + 1]) {
+            resource = pathSegments[adminIndex + 1];
+            
+            // Mapear recursos para slugs de workflow
+            const resourceToWorkflowSlug: Record<string, string> = {
+                tickets: 'suporte-tecnico',
+                sales: 'pipeline-vendas',
+                orders: 'processamento-pedidos',
+                pipeline: 'desenvolvimento',
+                projects: 'gestao-projetos',
+                leads: 'captacao-leads',
+                support: 'atendimento-cliente',
+            };
+            
+            detectedWorkflowSlug = resourceToWorkflowSlug[resource] || resource;
+        }
+
+        // Configurar Axios com headers padrão
+        const apiInstance = axios.create({
+            baseURL: '/api/admin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        // Interceptor para CSRF token
+        apiInstance.interceptors.request.use((config) => {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (csrfToken) {
+                config.headers['X-CSRF-TOKEN'] = csrfToken;
+            }
+            return config;
+        });
+
+        return {
+            resource,
+            workflowSlug: detectedWorkflowSlug,
+            api: apiInstance,
+        };
+    }, [workflowSlug]);
+
+    // 🎯 Função para mover card usando Axios
+    const handleMoveCard = async (cardId: string, fromColumnId: string, toColumnId: string, item: any): Promise<boolean> => {
+        try {
+            console.log('🚀 Movendo card via Axios:', {
+                cardId,
+                fromColumnId,
+                toColumnId,
+                workflowSlug: kanbanApi.workflowSlug,
+                resource: kanbanApi.resource
+            });
+
+            const response = await kanbanApi.api.post(`/${kanbanApi.resource}/kanban/move-card`, {
+                card_id: cardId,
+                from_template_id: fromColumnId,
+                to_template_id: toColumnId,
+                workflow_slug: kanbanApi.workflowSlug,
+                item: item,
+                workflow_data: {
+                    // Dados adicionais do workflow se necessário
+                    moved_at: new Date().toISOString(),
+                    user_agent: navigator.userAgent,
+                }
+            });
+
+            const result = response.data;
+            
+            if (result.success) {
+                console.log('✅ Card movido com sucesso (Axios):', result.data);
+                
+                // Atualizar dados locais com resposta do backend
+                setLocalData(prevData => {
+                    return prevData.map(dataItem => {
+                        if (dataItem.id === cardId) {
+                            return {
+                                ...dataItem,
+                                currentWorkflow: {
+                                    ...dataItem.currentWorkflow,
+                                    current_template_id: result.data?.current_template_id || toColumnId,
+                                    current_step: result.data?.current_step || 1,
+                                    template_slug: result.data?.template_slug || toColumnId,
+                                    updated_at: result.data?.moved_at || new Date().toISOString(),
+                                }
+                            };
+                        }
+                        return dataItem;
+                    });
+                });
+                
+                return true;
+            } else {
+                console.error('❌ Backend rejeitou movimento:', result.message);
+                throw new Error(result.message || 'Erro ao mover card');
+            }
+
+        } catch (error: any) {
+            console.error('❌ Erro ao mover card (Axios):', error);
+            
+            // Reverter mudança local se backend falhou
+            setLocalData(prevData => {
+                return prevData.map(dataItem => {
+                    if (dataItem.id === cardId) {
+                        return {
+                            ...dataItem,
+                            currentWorkflow: {
+                                ...dataItem.currentWorkflow,
+                                current_template_id: fromColumnId,
+                                // Manter dados originais
+                            }
+                        };
+                    }
+                    return dataItem;
+                });
+            });
+            
+            // Mostrar erro para o usuário
+            const errorMessage = error.response?.data?.message || error.message || 'Erro ao mover card';
+            alert(`Erro: ${errorMessage}`);
+            
+            return false;
+        }
+    };
 
     // 🎯 Função para mapear coluna ID para current_step (genérica)
     const getStepFromColumnId = (columnId: string): number => {
@@ -105,158 +228,8 @@ export default function KanbanBoard({
             }
         };
 
-        const mapping = mappings[crudType] || mappings.generic;
+        const mapping = mappings[workflowSlug] || mappings.generic;
         return mapping[columnId] || 1;
-    };
-
-    // 🎯 Função para mapear current_step para coluna ID (genérica)
-    const getColumnIdFromStep = (step: number): string => {
-        // Mapeamentos inversos por tipo de CRUD
-        const mappings: Record<string, Record<number, string>> = {
-            tickets: {
-                1: 'aberto',
-                2: 'em-andamento',
-                3: 'aguardando-cliente',
-                4: 'resolvido',
-                5: 'fechado'
-            },
-            sales: {
-                1: 'lead',
-                2: 'contato',
-                3: 'proposta',
-                4: 'negociacao',
-                5: 'fechado'
-            },
-            orders: {
-                1: 'pedido',
-                2: 'producao',
-                3: 'qualidade',
-                4: 'entrega',
-                5: 'finalizado'
-            },
-            pipeline: {
-                1: 'inicio',
-                2: 'desenvolvimento',
-                3: 'teste',
-                4: 'homologacao',
-                5: 'producao'
-            },
-            generic: {
-                1: 'inicio',
-                2: 'andamento',
-                3: 'revisao',
-                4: 'aprovado',
-                5: 'finalizado'
-            }
-        };
-
-        const mapping = mappings[crudType] || mappings.generic;
-        return mapping[step] || 'inicio';
-    };
-
-    // 🎯 Configuração do Drag & Drop
-    const dragConfig: DragDropConfig = {
-        enabled: dragAndDrop,
-        validateTransition: validateTransition || ((from, to, item) => {
-            // Validação padrão: permitir qualquer transição
-            console.log('🔍 Validating transition:', from, '→', to, 'for item:', item?.id, 'crud_type:', crudType);
-            return true;
-        }),
-        onMoveCard: onMoveCard || (async (cardId, fromColumnId, toColumnId, item) => {
-            console.log('🎯 Moving card:', { cardId, fromColumnId, toColumnId, item, crudType });
-            
-            // Atualizar dados localmente IMEDIATAMENTE para UX fluida
-            const newStep = getStepFromColumnId(toColumnId);
-            
-            setLocalData(prevData => {
-                return prevData.map(dataItem => {
-                    if (dataItem.id === cardId) {
-                        return {
-                            ...dataItem,
-                            currentWorkflow: {
-                                ...dataItem.currentWorkflow,
-                                current_step: newStep,
-                                current_template_id: `step-${newStep}-${toColumnId}`
-                            }
-                        };
-                    }
-                    return dataItem;
-                });
-            });
-            
-            // Chamar API genérica do backend
-            try {
-                const response = await fetch(apiEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        card_id: cardId,
-                        from_column_id: fromColumnId,
-                        to_column_id: toColumnId,
-                        item: item,
-                        crud_type: crudType,
-                        workflow_data: {
-                            // Dados adicionais do workflow se necessário
-                            previous_step: getStepFromColumnId(fromColumnId),
-                            new_step: newStep,
-                        }
-                    })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    console.log('✅ Card moved successfully (backend confirmed):', result.data);
-                    return true;
-                } else {
-                    console.error('❌ Backend rejected card movement:', result.message);
-                    
-                    // Reverter mudança local se backend falhou
-                    setLocalData(prevData => {
-                        return prevData.map(dataItem => {
-                            if (dataItem.id === cardId) {
-                                return {
-                                    ...dataItem,
-                                    currentWorkflow: {
-                                        ...dataItem.currentWorkflow,
-                                        current_step: getStepFromColumnId(fromColumnId), // Reverter
-                                        current_template_id: `step-${getStepFromColumnId(fromColumnId)}-${fromColumnId}`
-                                    }
-                                };
-                            }
-                            return dataItem;
-                        });
-                    });
-                    
-                    return false;
-                }
-            } catch (error) {
-                console.error('❌ Network error moving card:', error);
-                
-                // Reverter mudança local em caso de erro de rede
-                setLocalData(prevData => {
-                    return prevData.map(dataItem => {
-                        if (dataItem.id === cardId) {
-                            return {
-                                ...dataItem,
-                                currentWorkflow: {
-                                    ...dataItem.currentWorkflow,
-                                    current_step: getStepFromColumnId(fromColumnId), // Reverter
-                                    current_template_id: `step-${getStepFromColumnId(fromColumnId)}-${fromColumnId}`
-                                }
-                            };
-                        }
-                        return dataItem;
-                    });
-                });
-                
-                return false;
-            }
-        })
     };
 
     // 🎯 Filtrar dados por coluna com base no workflow (genérico)
@@ -301,6 +274,19 @@ export default function KanbanBoard({
         }, {} as Record<string, { total: number; percentage: number }>);
     }, [filteredDataByColumn, columns, localData.length]);
 
+    // 🎯 Configuração do Drag & Drop com Axios
+    const dragConfig: DragDropConfig = {
+        enabled: dragAndDrop,
+        validateTransition: validateTransition || (async (from, to, item) => {
+            // Validação padrão: permitir qualquer transição
+            console.log('🔍 Validando transição:', from, '→', to, 'para item:', item?.id, 'workflow:', kanbanApi.workflowSlug);
+            return true;
+        }),
+        onMoveCard: onMoveCard || handleMoveCard,
+        workflowSlug: kanbanApi.workflowSlug,
+        apiEndpoint: apiEndpoint,
+    };
+
     // 🎯 Hook de Drag & Drop
     const { 
         activeId,
@@ -327,6 +313,11 @@ export default function KanbanBoard({
     const handleAction = (actionId: string, item: any, extra?: any) => {
         onAction?.(actionId, item, extra);
     };
+
+    // Atualizar dados locais quando dados externos mudam
+    React.useEffect(() => {
+        setLocalData(data);
+    }, [data]);
 
     return (
         <div className="kanban-board h-full">
@@ -376,4 +367,6 @@ export default function KanbanBoard({
             </DndContext>
         </div>
     );
-} 
+};
+
+export default KanbanBoard; 

@@ -10,6 +10,7 @@ import KanbanView from '../../components/ui/kanban-view';
 import { KanbanBoard } from '../../components/papa-leguas/kanban';
 import type { KanbanColumn } from '../../components/papa-leguas/kanban/types';
 import { TabConfig, TabsConfig, TabbedTableData, ViewConfig, ViewsConfig } from '../../types';
+import { KanbanBoardProps } from '../../components/papa-leguas/kanban';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -253,20 +254,82 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
             
             if (adminIndex !== -1 && pathSegments[adminIndex + 1]) {
                 const resource = pathSegments[adminIndex + 1];
-                return `/admin/${resource}/kanban/move-card`;
+                return `/api/admin/${resource}/kanban/move-card`;
             }
             
-            // Fallback baseado no tipo
-            const endpoints: Record<string, string> = {
-                tickets: '/admin/tickets/kanban/move-card',
-                sales: '/admin/sales/kanban/move-card',
-                orders: '/admin/orders/kanban/move-card',
-                pipeline: '/admin/pipeline/kanban/move-card',
-                generic: '/admin/kanban/move-card'
-            };
-            
-            return endpoints[crudType] || endpoints.generic;
+            // Fallback genérico
+            return '/api/admin/kanban/move-card';
         };
+
+        // 🎯 Detectar workflow slug baseado no recurso
+        const getWorkflowSlug = (): string => {
+            const pathSegments = window.location.pathname.split('/').filter(Boolean);
+            const adminIndex = pathSegments.indexOf('admin');
+            
+            if (adminIndex !== -1 && pathSegments[adminIndex + 1]) {
+                const resource = pathSegments[adminIndex + 1];
+                
+                // Mapear recursos para slugs de workflow
+                const resourceToWorkflowSlug: Record<string, string> = {
+                    tickets: 'suporte-tecnico',
+                    sales: 'pipeline-vendas',
+                    orders: 'processamento-pedidos',
+                    pipeline: 'desenvolvimento',
+                    projects: 'gestao-projetos',
+                    leads: 'captacao-leads',
+                    support: 'atendimento-cliente',
+                };
+                
+                return resourceToWorkflowSlug[resource] || resource;
+            }
+            
+            return 'processo-generico';
+        };
+
+        // 🎯 Configuração do Kanban dinâmica
+        const kanbanConfig = {
+            height: '700px',
+            dragAndDrop: true,
+            apiEndpoint: getApiEndpoint(detectCrudType()),
+            workflowSlug: getWorkflowSlug(),
+            validateTransition: async (fromColumnId: string, toColumnId: string, item: any) => {
+                // Validação no frontend pode ser implementada aqui
+                return true;
+            },
+            onMoveCard: async (cardId: string, fromColumnId: string, toColumnId: string, item: any) => {
+                try {
+                    const response = await fetch(getApiEndpoint(detectCrudType()), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        },
+                        body: JSON.stringify({
+                            card_id: cardId,
+                            from_template_id: fromColumnId,
+                            to_template_id: toColumnId,
+                            workflow_slug: getWorkflowSlug(),
+                            item: item,
+                        }),
+                    });
+
+                    const result = await response.json();
+                    
+                    if (!result.success) {
+                        console.error('❌ Erro ao mover card:', result.message);
+                        throw new Error(result.message || 'Erro ao mover card');
+                    }
+
+                    console.log('✅ Card movido com sucesso:', result.data);
+                    return result;
+                } catch (error) {
+                    console.error('❌ Erro na requisição:', error);
+                    throw error;
+                }
+            }
+        } as KanbanBoardProps['config'];
         
         switch (currentView) {
             case 'cards':
@@ -280,37 +343,23 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                 );
                 
             case 'kanban':
-                const crudType = detectCrudType();
-                const apiEndpoint = getApiEndpoint(crudType);
-                
-                // Usar KanbanBoard avançado com filtros inteligentes
                 return (
                     <KanbanBoard
                         data={data}
                         columns={getKanbanColumns()}
                         tableColumns={columns}
                         actions={actions}
-                        config={{
-                            title: table?.meta?.title || config?.page_title || 'Kanban',
-                            description: table?.meta?.description || config?.page_description || 'Visualização em quadro',
-                            searchable: true,
-                            refreshable: true,
-                            dragAndDrop: true,
-                            crudType: crudType,
-                            apiEndpoint: apiEndpoint,
-                            height: '700px',
-                            ...viewConfig?.config
-                        }}
+                        config={kanbanConfig}
                         meta={{
                             ...table?.meta,
-                            crudType: crudType
+                            crudType: detectCrudType()
                         }}
                         onAction={(actionId, item, extra) => {
-                            console.log('🎯 Kanban Action:', { actionId, item, extra, crudType });
+                            console.log('🎯 Kanban Action:', { actionId, item, extra, crudType: detectCrudType() });
                             // TODO: Implementar ações do Kanban
                         }}
                         onRefresh={() => {
-                            console.log('🔄 Refreshing Kanban for:', crudType);
+                            console.log('🔄 Refreshing Kanban for:', detectCrudType());
                             window.location.reload();
                         }}
                     />

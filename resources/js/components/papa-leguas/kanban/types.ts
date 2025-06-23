@@ -81,6 +81,8 @@ export interface KanbanConfig {
     dragAndDrop?: boolean;
     /** Tipo de CRUD (tickets, sales, orders, pipeline, generic, etc.) */
     crudType?: string;
+    /** Slug do workflow para identificação dinâmica */
+    workflowSlug?: string;
     /** Endpoint da API para mover cards */
     apiEndpoint?: string;
     /** Configurações de paginação */
@@ -95,9 +97,9 @@ export interface KanbanConfig {
         headerHeight?: string;
     };
     /** Validação de transições personalizada */
-    validateTransition?: (fromColumnId: string, toColumnId: string, item: any) => boolean;
+    validateTransition?: (fromColumnId: string, toColumnId: string, item: any) => Promise<boolean>;
     /** Callback personalizado para mover cards */
-    onMoveCard?: (cardId: string, fromColumnId: string, toColumnId: string, item: any) => Promise<boolean>;
+    onMoveCard?: (cardId: string, fromColumnId: string, toColumnId: string, item: any) => Promise<any>;
     /** Configurações específicas */
     [key: string]: any;
 }
@@ -268,13 +270,13 @@ export interface DroppableKanbanColumnProps extends KanbanColumnProps {
  */
 export interface DragDropConfig {
     enabled?: boolean;
-    validateTransition?: (fromColumnId: string, toColumnId: string, item: any) => boolean;
+    validateTransition?: (fromColumnId: string, toColumnId: string, item: any) => boolean | Promise<boolean>;
     onDragStart?: (event: DragStartEvent) => void;
     onDragEnd?: (event: DragEndEvent) => void;
     onDragOver?: (event: DragOverEvent) => void;
-    onMoveCard?: (cardId: string, fromColumnId: string, toColumnId: string, item: any) => Promise<boolean>;
-    /** Tipo de CRUD para contexto */
-    crudType?: string;
+    onMoveCard?: (cardId: string, fromColumnId: string, toColumnId: string, item: any) => Promise<boolean> | Promise<any>;
+    /** Slug do workflow para contexto */
+    workflowSlug?: string;
     /** Endpoint da API */
     apiEndpoint?: string;
 }
