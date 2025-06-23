@@ -13,7 +13,7 @@ use Callcocam\ReactPapaLeguas\Support\Table\Actions\CallbackAction;
 trait HasColumns
 {
     use HasCasts;
-    
+
     protected array $columns = [];
 
     /**
@@ -53,7 +53,7 @@ trait HasColumns
      */
     protected function formatRow($row): array
     {
-         
+
         // 1. Get all required fields to build the base payload.
         $requiredFields = $this->getAllRequiredFields();
         $formatted = [];
@@ -66,18 +66,20 @@ trait HasColumns
         // overwriting the raw data in the $formatted array.
         foreach ($this->getVisibleColumns() as $column) {
             $key = $column->getKey();
-            
+
             // Get value from the original, full row object
             $value = $this->getColumnValue($row, $key);
             // Pass the original row for context
             $castedValue = $this->applyCastsToColumn($value, $key, $row);
-            
+
             // Overwrite the key in our payload with the fully processed value.
             // We pass the full original row here too, so formatters can access any field.
             $formatted[$key] = $column->formatValue($row, $castedValue);
         }
- 
 
+        if (method_exists($this, 'getColumnsWithWorkflowSupport')) {
+            $formatted = array_merge($formatted, $this->getColumnsWithWorkflowSupport($row));
+        } 
         // 3. Process actions for the item.
         $formatted['_actions'] = $this->getActionsForItem($row);
 
@@ -96,7 +98,7 @@ trait HasColumns
         }
         return array_unique($fields);
     }
-    
+
     /**
      * Obter apenas as colunas visíveis.
      */
@@ -125,7 +127,7 @@ trait HasColumns
     public function getColumnsConfig(): array
     {
         $config = [];
-        
+
         foreach ($this->columns as $column) {
             if (!$column->isHidden()) {
                 $config[] = $column->toArray();
@@ -244,7 +246,7 @@ trait HasColumns
     {
         // Obter instância da coluna
         $columnInstance = $this->getColumn($column);
-        
+
         if (!$columnInstance) {
             return $value;
         }
@@ -279,25 +281,25 @@ trait HasColumns
         if (is_array($row)) {
             return $row[$key] ?? null;
         }
-        
+
         if (is_object($row)) {
             // Tentar propriedade direta
             if (property_exists($row, $key)) {
                 return $row->{$key};
             }
-            
+
             // Tentar método getter
             $getter = 'get' . ucfirst($key);
             if (method_exists($row, $getter)) {
                 return $row->{$getter}();
             }
-            
+
             // Tentar acessor mágico
             if (method_exists($row, '__get')) {
                 return $row->{$key};
             }
         }
-        
+
         return null;
     }
 
@@ -307,13 +309,13 @@ trait HasColumns
     protected function getColumnCasts(): array
     {
         $casts = [];
-        
+
         foreach ($this->columns as $column) {
             $key = $column->getKey();
-            
+
             // Detectar cast baseado no tipo da coluna
             $columnType = $column->getType();
-            
+
             switch ($columnType) {
                 case 'date':
                     $casts[$key] = 'date';
@@ -329,7 +331,7 @@ trait HasColumns
                     break;
             }
         }
-        
+
         return $casts;
     }
 
@@ -348,7 +350,7 @@ trait HasColumns
     public function getCastsInfo(): array
     {
         $columnCastsInfo = [];
-        
+
         foreach ($this->getColumns() as $column) {
             $key = $column->getKey();
             $columnCastsInfo[$key] = $column->getCastsConfig();
@@ -373,7 +375,7 @@ trait HasColumns
         /** @var Column $column */
         foreach ($this->getColumns() as $column) {
             if ($column instanceof EditableColumn && $column->hasUpdateCallback()) {
-                
+
                 $actionKey = $column->getKey();
 
                 $actions[$actionKey] = CallbackAction::make($actionKey)
@@ -383,7 +385,7 @@ trait HasColumns
                     ->variant('ghost') // Variante discreta
                     ->callback(function ($item, $context) use ($column) {
                         $newValue = data_get($context, 'data.value');
-                        
+
                         // Validar se o valor foi recebido
                         if ($newValue === null) {
                             return ['success' => false, 'message' => 'Nenhum valor recebido.'];

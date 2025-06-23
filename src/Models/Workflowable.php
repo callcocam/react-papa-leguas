@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Claudio Campos.
  * User: callcocam@gmail.com, contato@sigasmart.com.br
@@ -92,6 +93,16 @@ class Workflowable extends Model
         'total_steps' => 'integer',
         'progress_percentage' => 'decimal:2',
         'time_spent_minutes' => 'integer',
+    ];
+
+    /**
+     * The accessors to append to the model's array form.
+     */
+    protected $appends = [
+        'kanban_data',
+        'assigned_user_name',
+        'status_formatted',
+        'time_spent_formatted',
     ];
 
     /**
@@ -201,6 +212,18 @@ class Workflowable extends Model
     }
 
     /**
+     * Scope para carregar relacionamentos necessários para o Kanban.
+     */
+    public function scopeWithKanbanRelations(Builder $query): Builder
+    {
+        return $query->with([
+            'assignedUser:id,name,email',
+            'workflow:id,name,slug',
+            'currentTemplate:id,name,color,icon,sort_order',
+        ]);
+    }
+
+    /**
      * Verificar se está ativo.
      */
     public function isActive(): bool
@@ -237,9 +260,9 @@ class Workflowable extends Model
      */
     public function isOverdue(): bool
     {
-        return $this->due_at && 
-               $this->due_at->isPast() && 
-               in_array($this->status, ['active', 'paused']);
+        return $this->due_at &&
+            $this->due_at->isPast() &&
+            in_array($this->status, ['active', 'paused']);
     }
 
     /**
@@ -261,7 +284,7 @@ class Workflowable extends Model
         }
 
         $oldTemplateId = $this->current_template_id;
-        
+
         $this->update(array_merge([
             'current_template_id' => $template->id,
             'current_step' => $template->sort_order,
@@ -333,7 +356,7 @@ class Workflowable extends Model
     /**
      * Pausar workflow.
      */
-    public function pause(string $reason = null): bool
+    public function pause(?string $reason = null): bool
     {
         $metadata = $this->metadata ?? [];
         $metadata['paused_reason'] = $reason;
@@ -362,7 +385,7 @@ class Workflowable extends Model
     /**
      * Cancelar workflow.
      */
-    public function cancel(string $reason = null): bool
+    public function cancel(?string $reason = null): bool
     {
         $metadata = $this->metadata ?? [];
         $metadata['cancelled_reason'] = $reason;
@@ -409,6 +432,185 @@ class Workflowable extends Model
     }
 
     /**
+     * Obter nome do responsável atribuído.
+     */
+    public function getAssignedUserName(): string
+    {
+        return $this->assignedUser?->name ?? 'Não atribuído';
+    }
+
+    /**
+     * Obter título formatado para o Kanban.
+     */
+    public function getKanbanTitle(): string
+    {
+        $metadata = $this->metadata ?? [];
+
+        // Prioridade: título dos metadados > categoria + número > ID
+        if (!empty($metadata['title'])) {
+            return $metadata['title'];
+        }
+
+        if (!empty($metadata['ticket_number'])) {
+            $category = $metadata['category'] ?? 'Item';
+            return "{$category} - {$metadata['ticket_number']}";
+        }
+
+        return "Workflow " . substr($this->id, -4);
+    }
+
+    /**
+     * Obter status formatado para exibição.
+     */
+    public function getStatusFormatted(): string
+    {
+        return match ($this->status) {
+            'active' => 'Ativo',
+            'completed' => 'Concluído',
+            'paused' => 'Pausado',
+            'cancelled' => 'Cancelado',
+            default => ucfirst($this->status)
+        };
+    }
+
+    /**
+     * Obter cor do status para o frontend.
+     */
+    public function getStatusColor(): string
+    {
+        return match ($this->status) {
+            'active' => '#3b82f6',      // Azul
+            'completed' => '#10b981',   // Verde
+            'paused' => '#f59e0b',      // Amarelo
+            'cancelled' => '#6b7280',   // Cinza
+            default => '#3b82f6'
+        };
+    }
+
+    /**
+     * Obter cor da prioridade baseada nos metadados.
+     */
+    public function getPriorityColor(): string
+    {
+        $priority = $this->metadata['priority'] ?? 'Normal';
+
+        return match (strtolower($priority)) {
+            'crítica', 'critical' => '#dc2626',     // Vermelho
+            'alta', 'high' => '#ea580c',            // Laranja
+            'média', 'medium' => '#d97706',         // Amarelo escuro
+            'baixa', 'low' => '#16a34a',            // Verde
+            default => '#6b7280'                    // Cinza
+        };
+    }
+
+    /**
+     * Verificar se é urgente baseado nos metadados.
+     */
+    public function isUrgent(): bool
+    {
+        $metadata = $this->metadata ?? [];
+        return $metadata['is_urgent'] === true || $metadata['is_urgent'] === 'true';
+    }
+
+    /**
+     * Verificar se é interno baseado nos metadados.
+     */
+    public function isInternal(): bool
+    {
+        $metadata = $this->metadata ?? [];
+        return $metadata['is_internal'] === true || $metadata['is_internal'] === 'true';
+    }
+
+    /**
+     * Obter dados formatados para o Kanban (frontend).
+     */
+    public function getKanbanData(): array
+    {
+        $metadata = $this->metadata ?? [];
+
+        return [
+            // Identificadores
+            'workflow_id' => $this->id,
+            'workflowable_id' => $this->workflowable_id,
+            'workflowable_type' => $this->workflowable_type,
+
+            // Dados principais
+            'title' => $this->getKanbanTitle(),
+            'ticket_number' => $metadata['ticket_number'] ?? $this->workflowable_id,
+            'status' => $this->getStatusFormatted(),
+            'status_raw' => $this->status,
+            'status_color' => $this->getStatusColor(),
+
+            // Prioridade e categoria
+            'priority' => $metadata['priority'] ?? 'Normal',
+            'priority_color' => $this->getPriorityColor(),
+            'category' => $metadata['category'] ?? 'Sem categoria',
+
+            // Responsável
+            'assigned_to' => $this->getAssignedUserName(),
+            'assigned_to_id' => $this->assigned_to,
+            'assigned_at' => $this->assigned_at?->format('d/m/Y H:i'),
+
+            // Progresso
+            'progress_percentage' => (float) $this->progress_percentage,
+            'current_step' => $this->current_step,
+            'total_steps' => $this->total_steps,
+            'progress_text' => "{$this->current_step}/{$this->total_steps}",
+
+            // Timing
+            'time_spent' => $this->getTimeSpentFormatted(),
+            'time_spent_minutes' => $this->time_spent_minutes,
+            'due_at' => $this->due_at?->format('d/m/Y'),
+            'due_at_raw' => $this->due_at,
+            'started_at' => $this->started_at?->format('d/m/Y H:i'),
+            'completed_at' => $this->completed_at?->format('d/m/Y H:i'),
+
+            // Flags
+            'is_overdue' => $this->isOverdue(),
+            'is_urgent' => $this->isUrgent(),
+            'is_internal' => $this->isInternal(),
+            'is_assigned' => $this->isAssigned(),
+
+            // Metadados adicionais
+            'contact_email' => $metadata['contact_email'] ?? null,
+            'notes' => $this->notes,
+            'metadata' => $metadata,
+        ];
+    }
+
+    /**
+     * Accessor para kanban_data.
+     */
+    public function getKanbanDataAttribute(): array
+    {
+        return $this->getKanbanData();
+    }
+
+    /**
+     * Accessor para assigned_user_name.
+     */
+    public function getAssignedUserNameAttribute(): string
+    {
+        return $this->getAssignedUserName();
+    }
+
+    /**
+     * Accessor para status_formatted.
+     */
+    public function getStatusFormattedAttribute(): string
+    {
+        return $this->getStatusFormatted();
+    }
+
+    /**
+     * Accessor para time_spent_formatted.
+     */
+    public function getTimeSpentFormattedAttribute(): string
+    {
+        return $this->getTimeSpentFormatted();
+    }
+
+    /**
      * Boot do model.
      */
     protected static function boot()
@@ -428,4 +630,4 @@ class Workflowable extends Model
             }
         });
     }
-} 
+}

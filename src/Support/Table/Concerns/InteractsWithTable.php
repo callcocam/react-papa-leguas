@@ -78,7 +78,7 @@ trait InteractsWithTable
 
             // Adicionar sistemas configuráveis
             $result = array_merge($result, $this->getTabsConfiguration());
-            $result = array_merge($result, $this->getViewsConfiguration()); 
+            $result = array_merge($result, $this->getViewsConfiguration());  
             return $result;
             
         } catch (\Exception $e) {
@@ -110,8 +110,7 @@ trait InteractsWithTable
     protected function getPaginatedDataResult(): array
     {
         $paginatedData = $this->getPaginatedData();
-        $formattedData = $paginatedData->getCollection()->map(fn($row) => $this->formatRow($row))->values();
-
+        $formattedData = $paginatedData->getCollection()->map(fn($row) => $this->formatRow($row))->values(); 
         return [
             'table' => [
                 'data' => $formattedData,

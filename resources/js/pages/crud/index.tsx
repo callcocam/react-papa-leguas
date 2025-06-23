@@ -72,34 +72,35 @@ interface CrudIndexProps extends TabbedTableData {
 export default function CrudIndex({ table, routes, config, capabilities, error, tabs, tabsConfig, views, viewsConfig, activeView }: CrudIndexProps) {
     
     // 🔍 DEBUG: Ver dados vindos do backend
-    React.useEffect(() => {
-        console.log('📊 DEBUG - Dados do Backend:');
-        console.log('table?.actions:', table?.actions.bulk);
-        console.log('table?.route_execute_action:', table?.route_execute_action);
-        console.log('table?.data:', table?.data?.length, 'items');
-        console.log('table?.columns:', table?.columns?.length, 'columns');
-        console.log('config:', config);
-        console.log('routes:', routes);
-        console.log('🔗 tabs:', tabs?.length, 'tabs configuradas');
-        console.log('⚙️ tabsConfig:', tabsConfig);
-        console.log('👁️ views:', views?.length, 'views configuradas');
-        console.log('🎨 viewsConfig:', viewsConfig);
-        console.log('🎯 activeView:', activeView);
-    }, [table, config, routes, tabs, tabsConfig, views, viewsConfig, activeView]);
+    // React.useEffect(() => {
+    //     console.log('📊 DEBUG - Dados do Backend:');
+    //     console.log('table?.actions:', table?.actions.bulk);
+    //     console.log('table?.route_execute_action:', table?.route_execute_action);
+        // console.log('table?.data:', table?.data?.length, 'items'); 
+    //     console.log('table?.columns:', table?.columns?.length, 'columns');
+    //     console.log('config:', config);
+    //     console.log('routes:', routes);
+    //     console.log('🔗 tabs:', tabs?.length, 'tabs configuradas');
+    //     console.log('⚙️ tabsConfig:', tabsConfig);
+    //     console.log('👁️ views:', views?.length, 'views configuradas');
+    //     console.log('🎨 viewsConfig:', viewsConfig);
+    //     console.log('🎯 activeView:', activeView);
+    // }, [table, config, routes, tabs, tabsConfig, views, viewsConfig, activeView]);
     
     // ✅ USAR AÇÕES DO BACKEND - Sistema de Ações Avançado
     
     // 🎨 Renderizar view baseada na view ativa
     const renderView = (tabData?: any, viewId?: string) => {
         const currentView = viewId || activeView || 'list';
-        const data = tabData?.data || table?.data || [];
-        const columns = tabData?.columns || table?.columns || [];
-        const actions = tabData?.actions || table?.actions || [];
+        // const data = tabData?.data || table?.data || [];
+        const data =   table?.data || [];
+        // const columns = tabData?.columns || table?.columns || [];
+        const columns = table?.columns || [];
+        // const actions = tabData?.actions || table?.actions || [];
+        const actions = table?.actions || [];
         
         // Encontrar configuração da view ativa
-        const viewConfig = views?.find(v => v.id === currentView);
-        
-        console.log('🎯 Renderizando view:', currentView, 'com', data.length, 'items');
+        const viewConfig = views?.find(v => v.id === currentView); 
         
         switch (currentView) {
             case 'cards':

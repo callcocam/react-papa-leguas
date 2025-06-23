@@ -144,15 +144,19 @@ trait HasWorkflow
         return $views;
     }
 
-    protected function getColumnsWithWorkflowSupport(array $columns): array
-    {
-        return $columns;
+    protected function getColumnsWithWorkflowSupport(Model $row): array
+    { 
+        $data = $row->toArray(); 
+        return [
+            'workflowables' => data_get($data, 'workflowables') ?? [],
+            'currentWorkflow' => data_get($data, 'current_workflow') ?? null,
+        ];
     }
 
     protected function getModelWithWorkflowSupport(): array
     {
         // Se esta trait está sendo usada, significa que queremos workflow
         // Retornar relacionamentos necessários para workflow
-        return ['workflowables.workflow', 'workflowables.currentTemplate'];
+        return ['workflowables', 'currentWorkflow'];
     }
 }

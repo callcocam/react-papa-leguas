@@ -5,10 +5,10 @@ export { default as CompactCardRenderer } from './CompactCardRenderer';
 
 // Mapeamento de renderers por tipo (similar às tabelas)
 export const KanbanRenderers = {
-    'default': CardRenderer,
-    'card': CardRenderer,
-    'compact': CompactCardRenderer,
-    'kanban': KanbanRenderer
+    // 'default': CardRenderer,
+    // 'card': CardRenderer,
+    // 'compact': CompactCardRenderer,
+    // 'kanban': KanbanRenderer
 };
 
 // Função para resolver renderer (similar às tabelas)

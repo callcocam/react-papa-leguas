@@ -12,8 +12,6 @@ export { useKanbanData } from './hooks/useKanbanData';
 // Tipos e interfaces
 export * from './types';
 
-// Exemplos de uso
-export { default as UserPostsKanban } from './examples/UserPostsKanban';
 
 // Principais exports para uso externo
 export { default as KanbanRenderer } from './renderers/KanbanRenderer';

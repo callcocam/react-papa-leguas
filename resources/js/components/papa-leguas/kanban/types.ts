@@ -16,6 +16,10 @@ export interface KanbanColumn {
     maxItems?: number;
     /** Se a coluna é ordenável */
     sortable?: boolean;
+    /** Ordem da coluna (número sequencial) */
+    order?: number;
+    /** Ordem de classificação alternativa */
+    sort_order?: number;
     /** Configurações específicas da coluna */
     config?: Record<string, any>;
 }
@@ -132,6 +136,8 @@ export interface KanbanBoardProps {
     data: any[];
     /** Configuração das colunas */
     columns: KanbanColumn[];
+    /** Colunas formatadas do backend (sistema Papa Leguas) */
+    tableColumns?: any[];
     /** Ações disponíveis */
     actions?: KanbanAction[];
     /** Filtros disponíveis */
@@ -153,6 +159,8 @@ export interface KanbanColumnProps {
     column: KanbanColumn;
     /** Dados desta coluna */
     data: any[];
+    /** Colunas formatadas do backend (sistema Papa Leguas) */
+    tableColumns?: any[];
     /** Ações disponíveis */
     actions?: KanbanAction[];
     /** Callback para ações */
@@ -166,6 +174,8 @@ export interface KanbanCardProps {
     item: any;
     /** Configuração da coluna pai */
     column: KanbanColumn;
+    /** Colunas formatadas do backend (sistema Papa Leguas) */
+    tableColumns?: any[];
     /** Ações disponíveis */
     actions?: KanbanAction[];
     /** Se o card está expandido */

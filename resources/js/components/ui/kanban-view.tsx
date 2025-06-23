@@ -1,15 +1,43 @@
 import React from 'react';
 import { ViewConfig } from '../../types';
-import KanbanBoard from './kanban/kanban-board';
+
+// 🚀 USANDO PAPA LEGUAS KANBAN DIRETAMENTE
+import { KanbanBoard } from '../papa-leguas/kanban';
+
+// Tipo mais flexível para configuração Kanban
+interface KanbanConfig extends Record<string, any> {
+    searchable?: boolean;
+    filterable?: boolean;
+    height?: string;
+    columnsPerRow?: number;
+    dragAndDrop?: boolean;
+    workflowBased?: boolean;
+    groupBy?: string;
+    title?: string;
+    description?: string;
+    columns?: any[];
+    tableColumns?: any[];
+}
 
 interface KanbanViewProps {
     data: any[];
     columns: any[];
-    config: ViewConfig['config'];
+    config: KanbanConfig;
     actions?: any;
     className?: string;
 }
 
+/**
+ * 🚀 PAPA LEGUAS KANBAN - CONFIA NO BACKEND
+ * 
+ * SE CHEGOU AQUI, BACKEND JÁ VALIDOU TUDO
+ * 
+ * REGRAS:
+ * ✅ Backend só envia view=kanban se tudo estiver configurado
+ * ✅ Frontend não faz validações, só renderiza
+ * ✅ Papa Leguas Kanban direto
+ * ✅ Debug para acompanhar dados recebidos
+ */
 export default function KanbanView({
     data = [],
     columns = [],
@@ -17,46 +45,64 @@ export default function KanbanView({
     actions = {},
     className = ''
 }: KanbanViewProps) {
-    // Transformar configuração das views em configuração do KanbanBoard
+    
+    // 🎯 DEBUG: Dados recebidos
+    // React.useEffect(() => {
+    //     console.log('🚀 PAPA LEGUAS KANBAN - Dados recebidos:');
+    //     console.log('📊 Data:', data.length, 'itens');
+    //     console.log('📋 Columns:', columns.length, 'colunas');
+    //     console.log('⚙️ Config:', config);
+    //     console.log('🎭 Actions:', actions);
+    // }, [data, columns, config, actions]);
+    
+    // 🔧 Preparar colunas Kanban - Backend já validou
+    const kanbanColumns = React.useMemo(() => {
+        console.log('✅ Colunas do backend:', config.columns);
+        return config.columns || [];
+    }, [config.columns]);
+    
+    // ⚙️ Configuração do Papa Leguas Kanban
     const kanbanConfig = {
-        searchable: true,
-        filterable: true,
-        height: '700px',
-        columnsPerRow: 4,
-        dragAndDrop: false,
+        searchable: config.searchable ?? true,
+        filterable: config.filterable ?? true,
+        height: config.height || '700px',
+        columnsPerRow: config.columnsPerRow || 4,
+        dragAndDrop: config.dragAndDrop || false,
         ...config
     };
-
-    // Transformar colunas das views em colunas do Kanban
-    const kanbanColumns = Array.isArray(config.columns) ? config.columns : [];
-
-    // Meta informações
+    
+    // 📋 Meta informações
     const meta = {
-        title: 'Quadro Kanban',
-        description: `Visualização em Kanban com ${data.length} itens`
-    };
+        title: config.title || 'Quadro Kanban',
+        description: config.description || `Visualização em Kanban com ${data.length} itens`,
+        key: 'papa-leguas-kanban'
+    }; 
 
     return (
         <div className={className}>
             <KanbanBoard
                 data={data}
-                columns={columns}
-                config={kanbanConfig}
+                columns={kanbanColumns}
+                tableColumns={columns}
                 actions={actions}
+                config={kanbanConfig}
                 meta={meta}
                 onAction={(actionId, item, extra) => {
-                    console.log('Ação Kanban:', actionId, item, extra);
+                    console.log('🎯 Papa Leguas Kanban - Ação:', actionId, item, extra);
                     // TODO: Implementar handler de ações
                 }}
                 onFilter={(filters) => {
-                    console.log('Filtros Kanban:', filters);
+                    console.log('🔍 Papa Leguas Kanban - Filtros:', filters);
                     // TODO: Implementar handler de filtros
                 }}
                 onRefresh={() => {
-                    console.log('Refresh Kanban');
+                    console.log('🔄 Papa Leguas Kanban - Refresh');
                     // TODO: Implementar refresh
                 }}
             />
         </div>
     );
-} 
+}
+
+// ⚠️ FUNÇÃO REMOVIDA: generateFallbackKanbanColumns
+// Frontend confia que backend já validou tudo 
