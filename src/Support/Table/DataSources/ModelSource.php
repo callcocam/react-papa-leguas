@@ -41,6 +41,18 @@ class ModelSource extends DataSource
     }
 
     /**
+     * Adicionar relacionamentos para eager loading
+     */
+    public function with(array $relations): static
+    {
+        $currentEagerLoad = $this->config['eager_load'] ?? [];
+        $this->config['eager_load'] = array_unique(array_merge($currentEagerLoad, $relations));
+        $this->baseQuery = null; // Reset query cache
+        $this->clearCache();
+        return $this;
+    }
+
+    /**
      * Obter dados da fonte
      */
     public function getData(): Collection

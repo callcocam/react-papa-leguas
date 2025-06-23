@@ -9,7 +9,7 @@
 namespace Callcocam\ReactPapaLeguas\Support\Table\Concerns;
 
 use Illuminate\Support\Facades\Log;
-use Callcocam\ReactPapaLeguas\Models\Workflow; 
+use Callcocam\ReactPapaLeguas\Models\Workflow;
 use Callcocam\ReactPapaLeguas\Support\Table\Views\KanbanView;
 use Illuminate\Database\Eloquent\Model;
 
@@ -58,7 +58,7 @@ trait HasWorkflow
                 ->with('activeTemplates')
                 ->first();
 
-            if ($workflow && $workflow->activeTemplates->count() > 0) { 
+            if ($workflow && $workflow->activeTemplates->count() > 0) {
                 return [
                     'slug' => $workflow->slug,
                     'name' => $workflow->name,
@@ -83,7 +83,7 @@ trait HasWorkflow
      */
     protected function getKanbanColumnsFromWorkflow(): array
     {
-        $workflow = $this->getWorkflowForCurrentTable(); 
+        $workflow = $this->getWorkflowForCurrentTable();
         if (!$workflow) {
             Log::info('Sem workflow configurado - colunas Kanban não geradas');
             return [];
@@ -127,7 +127,7 @@ trait HasWorkflow
      * Kanban só aparece se houver workflow configurado no banco
      */
     protected function getViewsWithWorkflowSupport(array $views): array
-    { 
+    {
         // Verificar se há workflow configurado
         $workflow = $this->getWorkflowForCurrentTable();
 
@@ -138,8 +138,8 @@ trait HasWorkflow
                 ->description("Quadro Kanban - {$workflow['name']}")
                 ->workflow_slug($workflow['slug'])
                 ->workflow_name($workflow['name'])
-                ->columns($this->getKanbanColumnsFromWorkflow())->toArray(); 
-        } 
+                ->columns($this->getKanbanColumnsFromWorkflow())->toArray();
+        }
 
         return $views;
     }
@@ -149,8 +149,10 @@ trait HasWorkflow
         return $columns;
     }
 
-    protected function getModelWithWorkflowSupport(Model $model): Model
+    protected function getModelWithWorkflowSupport(): array
     {
-        return $model->load('workflowables.workflow', 'workflowables.currentTemplate');
+
+        // Carregar relacionamentos apenas se workflow existe
+        return ['workflowables.workflow', 'workflowables.currentTemplate'];
     }
 }

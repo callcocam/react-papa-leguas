@@ -30,7 +30,7 @@ trait HasDataSource
     protected array $searchableColumns = [];
     protected array $sortableColumns = [];
     protected array $filterableColumns = [];
-    
+
     // Propriedades para compatibilidade com código existente
     protected ?string $modelClass = null;
     protected ?Closure $queryCallback = null;
@@ -51,12 +51,12 @@ trait HasDataSource
     {
         $this->modelClass = $modelClass;
         $this->dataSource = new ModelSource($modelClass);
-        
+
         // Aplicar query callback se já foi definido
         if ($this->queryCallback) {
             $this->dataSource->query($this->queryCallback);
         }
-        
+
         return $this;
     }
 
@@ -66,12 +66,12 @@ trait HasDataSource
     public function query(Closure $callback): static
     {
         $this->queryCallback = $callback;
-        
+
         // Se já temos uma fonte de dados do tipo ModelSource, aplicar a query
         if ($this->dataSource instanceof ModelSource) {
             $this->dataSource->query($callback);
         }
-        
+
         return $this;
     }
 
@@ -166,6 +166,11 @@ trait HasDataSource
                 throw new \RuntimeException('Nenhuma fonte de dados configurada');
             }
 
+            // 🎯 WORKFLOW SUPPORT - Carregar relacionamentos automaticamente se workflow configurado
+            if (method_exists($this, 'getModelWithWorkflowSupport') && $this->dataSource instanceof ModelSource) {
+                $this->dataSource->with($this->getModelWithWorkflowSupport());
+            }
+
             // 🎯 FILTROS POR TAB - Aplicar filtros baseados na tab ativa
             $this->applyTabFiltersToDataSource();
 
@@ -216,6 +221,11 @@ trait HasDataSource
             }
 
             $perPage = $perPage ?? $this->perPage;
+
+            // 🎯 WORKFLOW SUPPORT - Carregar relacionamentos automaticamente se workflow configurado
+            if (method_exists($this, 'getModelWithWorkflowSupport') && $this->dataSource instanceof ModelSource) {
+                $this->dataSource->with($this->getModelWithWorkflowSupport());
+            }
 
             // 🎯 FILTROS POR TAB - Aplicar filtros baseados na tab ativa
             $this->applyTabFiltersToDataSource();
@@ -271,7 +281,7 @@ trait HasDataSource
             // Para compatibilidade, retornar null se não for ModelSource
             return null;
         }
-        
+
         // Fallback para método antigo se não há fonte de dados configurada
         if (!$this->dataSource && $this->modelClass) {
             if (!class_exists($this->modelClass)) {
@@ -280,11 +290,11 @@ trait HasDataSource
 
             if ($this->queryCallback) {
                 $query = call_user_func($this->queryCallback);
-                
+
                 if (!$query instanceof Builder) {
                     throw new \InvalidArgumentException("Callback de query deve retornar uma instância de Builder");
                 }
-                
+
                 return $query;
             }
 
@@ -311,12 +321,12 @@ trait HasDataSource
     protected function detectColumnCapabilities(): void
     {
         $columns = $this->getColumns();
-        
+
         foreach ($columns as $column) {
             if (method_exists($column, 'isSearchable') && $column->isSearchable()) {
                 $this->searchableColumns[] = $column->getKey();
             }
-            
+
             if (method_exists($column, 'isSortable') && $column->isSortable()) {
                 $this->sortableColumns[] = $column->getKey();
             }
@@ -433,17 +443,16 @@ trait HasDataSource
         try {
             // Obter query atual da fonte de dados
             $query = $this->dataSource->getBuilder();
-            
+
             // Aplicar filtros da tab usando o método da classe
             $this->applyTabFilters($query, $activeTab);
-            
+
             // Log para debug
             Log::info("Filtros de tab aplicados", [
                 'tab' => $activeTab,
                 'table_class' => get_class($this),
                 'model' => $this->getModelClass()
             ]);
-            
         } catch (\Exception $e) {
             Log::warning("Erro ao aplicar filtros de tab", [
                 'tab' => $activeTab,
@@ -452,4 +461,4 @@ trait HasDataSource
             ]);
         }
     }
-} 
+}
