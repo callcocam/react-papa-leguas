@@ -29,7 +29,8 @@ export default function KanbanCard({
     onAction,
     draggable = false,
     isDragging = false,
-    dragOverlay = false
+    dragOverlay = false,
+    isProcessing = false
 }: KanbanCardProps) {
     const [showActions, setShowActions] = useState(false);
 
@@ -98,7 +99,10 @@ export default function KanbanCard({
     const getCardClasses = () => {
         let classes = "kanban-card transition-all duration-200 bg-white border border-gray-200 rounded-lg";
 
-        if (dragOverlay) {
+        if (isProcessing) {
+            // Card sendo processado - indicador visual discreto
+            classes += " opacity-75 ring-2 ring-blue-200 bg-blue-50";
+        } else if (dragOverlay) {
             classes += " shadow-2xl rotate-6 opacity-90";
         } else if (isBeingDragged) {
             classes += " opacity-50 scale-95 shadow-lg";
@@ -136,7 +140,10 @@ export default function KanbanCard({
                             #{ticketNumber}
                         </p>
                     </div>
-                    {isOverdue && (
+                    {isProcessing && (
+                        <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin flex-shrink-0" />
+                    )}
+                    {!isProcessing && isOverdue && (
                         <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                     )}
                 </div>

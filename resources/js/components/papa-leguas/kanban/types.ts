@@ -190,6 +190,8 @@ export interface KanbanColumnProps {
     dragAndDrop?: boolean;
     /** Se há um drag ativo no board */
     isDragActive?: boolean;
+    /** Set de IDs de cards sendo processados (atualização otimista) */
+    processingCards?: Set<string>;
 }
 
 /**
@@ -212,6 +214,8 @@ export interface KanbanCardProps {
     isDragging?: boolean;
     /** Se é um overlay de drag */
     dragOverlay?: boolean;
+    /** Se o card está sendo processado (atualização otimista) */
+    isProcessing?: boolean;
 }
 
 /**

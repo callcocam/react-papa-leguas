@@ -39,6 +39,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 }) => {
     // Estados locais 
     const [localData, setLocalData] = useState(data);
+    const [processingCards, setProcessingCards] = useState<Set<string>>(new Set());
 
     // Hook para toasts
     const { error, success } = useToast();
@@ -53,11 +54,73 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         onMoveCard
     } = config;
 
-    // 🎯 Função simples para mover card (se drag & drop estiver habilitado)
-    const handleMoveCard = async (cardId: string, fromColumnId: string, toColumnId: string, item: any): Promise<boolean> => {
-        try {
-            console.log('🚀 Movendo card:', { cardId, fromColumnId, toColumnId }); 
+    // 🎯 Função para mapear columnId para template slug
+    const getTemplateSlugFromColumnId = (columnId: string): string | null => {
+        const column = columns.find(col => col.id === columnId);
+        return column?.slug || null;
+    };
 
+    // 🎯 Função para atualizar item localmente (atualização otimista)
+    const updateItemLocally = (cardId: string, toColumnSlug: string) => {
+        setLocalData(prevData => 
+            prevData.map(dataItem => {
+                if (dataItem.id === cardId && dataItem.currentWorkflow) {
+                    return {
+                        ...dataItem,
+                        currentWorkflow: {
+                            ...dataItem.currentWorkflow,
+                            currentTemplate: {
+                                ...dataItem.currentWorkflow.currentTemplate,
+                                slug: toColumnSlug
+                            }
+                        }
+                    };
+                }
+                return dataItem;
+            })
+        );
+    };
+
+    // 🎯 Função para reverter mudança local em caso de erro
+    const revertItemLocally = (cardId: string, originalColumnSlug: string) => {
+        setLocalData(prevData => 
+            prevData.map(dataItem => {
+                if (dataItem.id === cardId && dataItem.currentWorkflow) {
+                    return {
+                        ...dataItem,
+                        currentWorkflow: {
+                            ...dataItem.currentWorkflow,
+                            currentTemplate: {
+                                ...dataItem.currentWorkflow.currentTemplate,
+                                slug: originalColumnSlug
+                            }
+                        }
+                    };
+                }
+                return dataItem;
+            })
+        );
+    };
+
+    // 🎯 Função com atualização otimista para mover card
+    const handleMoveCard = async (cardId: string, fromColumnId: string, toColumnId: string, item: any): Promise<boolean> => {
+        const fromColumnSlug = getTemplateSlugFromColumnId(fromColumnId);
+        const toColumnSlug = getTemplateSlugFromColumnId(toColumnId);
+
+        if (!fromColumnSlug || !toColumnSlug) {
+            console.error('❌ Não foi possível mapear colunas para slugs');
+            return false;
+        }
+
+        console.log('🚀 Movendo card (otimista):', { cardId, fromColumnSlug, toColumnSlug });
+
+        // 🎯 Marcar card como processando
+        setProcessingCards(prev => new Set(prev).add(cardId));
+
+        // 🎯 ATUALIZAÇÃO OTIMISTA: Mover card visualmente primeiro
+        updateItemLocally(cardId, toColumnSlug);
+
+        try {
             const response = await axios.post(apiEndpoint, {
                 card_id: cardId,
                 from_column_id: fromColumnId,
@@ -69,15 +132,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             const result = response.data;
 
             if (result.success) {
-                console.log('✅ Card movido com sucesso:', result.data);
+                console.log('✅ Card movido com sucesso (confirmado pelo backend):', result.data);
 
                 // 🎉 Toast de sucesso com mensagem do backend
                 const successMessage = result.message || 'Card movido com sucesso';
                 success('Movimentação realizada', successMessage);
 
-                // Atualizar dados locais se necessário
+                // Atualizar dados completos se necessário (para pegar mudanças do backend)
                 if (onRefresh) {
-                    onRefresh();
+                    setTimeout(() => onRefresh(), 100); // Pequeno delay para UX fluida
                 }
 
                 return true;
@@ -86,7 +149,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             }
 
         } catch (err: any) {
-            console.error('❌ Erro ao mover card:', err);
+            console.error('❌ Erro ao mover card - revertendo mudança local:', err);
+            
+            // 🎯 REVERTER MUDANÇA OTIMISTA: Voltar card para coluna original
+            revertItemLocally(cardId, fromColumnSlug);
             
             // 🎯 Extrair mensagens específicas do backend
             const response = err.response?.data;
@@ -156,6 +222,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             // 🚨 Exibir toast com mensagens contextuais
             error(title, description);
             return false;
+        } finally {
+            // 🎯 Remover card do estado de processamento
+            setProcessingCards(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(cardId);
+                return newSet;
+            });
         }
     };
 
@@ -265,6 +338,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 onAction={onAction}
                                 dragAndDrop={dragAndDrop}
                                 isDragActive={isDragging}
+                                processingCards={processingCards}
                             />
                         );
                     })}

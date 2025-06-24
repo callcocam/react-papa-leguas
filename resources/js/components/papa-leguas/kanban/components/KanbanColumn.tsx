@@ -24,7 +24,8 @@ export default function KanbanColumn({
     onAction,
     onDrop,
     dragAndDrop = false,
-    isDragActive = false
+    isDragActive = false,
+    processingCards = new Set()
 }: KanbanColumnProps) { 
     // Setup do droppable para esta coluna
     const {
@@ -180,6 +181,7 @@ export default function KanbanColumn({
                             actions={actions}
                             onAction={onAction}
                             draggable={dragAndDrop}
+                            isProcessing={processingCards.has(item.id)}
                         />
                     ))
                 )}
