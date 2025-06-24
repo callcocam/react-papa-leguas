@@ -173,7 +173,7 @@ const colorClasses = WORKFLOW_COLORS.find(color => color.value === columnColor) 
 
     // Classes dinâmicas baseadas no estado de drag
     const getColumnClasses = () => {
-        let classes = `kanban-column flex flex-col h-full min-w-[300px] flex-shrink-0 rounded-lg bg-white shadow-sm border transition-all duration-200`;
+        let classes = `kanban-column flex flex-col h-full min-w-[300px] flex-shrink-0 rounded-lg bg-white shadow-sm border transition-all duration-200 overflow-hidden`;
         
         if (dragAndDrop) {
             if (isOver) {
@@ -258,7 +258,7 @@ const colorClasses = WORKFLOW_COLORS.find(color => color.value === columnColor) 
             </div>
 
             {/* Lista de Cards */}
-            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+            <div className="flex-1 space-y-3 overflow-y-auto p-4 overflow-x-hidden">
                 {data.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                         <div className="text-center">

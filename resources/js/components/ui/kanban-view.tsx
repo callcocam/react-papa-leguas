@@ -45,22 +45,15 @@ export default function KanbanView({
     actions = {},
     className = ''
 }: KanbanViewProps) {
-    
-    // 🎯 DEBUG: Dados recebidos
-    // React.useEffect(() => {
-    //     console.log('🚀 PAPA LEGUAS KANBAN - Dados recebidos:');
-    //     console.log('📊 Data:', data.length, 'itens');
-    //     console.log('📋 Columns:', columns.length, 'colunas');
-    //     console.log('⚙️ Config:', config);
-    //     console.log('🎭 Actions:', actions);
-    // }, [data, columns, config, actions]);
-    
+
+    console.log(data);
+
     // 🔧 Preparar colunas Kanban - Backend já validou
     const kanbanColumns = React.useMemo(() => {
         console.log('✅ Colunas do backend:', config.columns);
         return config.columns || [];
     }, [config.columns]);
-    
+
     // ⚙️ Configuração do Papa Leguas Kanban
     const kanbanConfig = {
         searchable: config.searchable ?? true,
@@ -70,13 +63,13 @@ export default function KanbanView({
         dragAndDrop: config.dragAndDrop || false,
         ...config
     };
-    
+
     // 📋 Meta informações
     const meta = {
         title: config.title || 'Quadro Kanban',
         description: config.description || `Visualização em Kanban com ${data.length} itens`,
         key: 'papa-leguas-kanban'
-    }; 
+    };
 
     return (
         <div className={className}>

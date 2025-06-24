@@ -2,13 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-    Search, 
+import {
+    Search,
     RefreshCw,
     Grid3X3
 } from 'lucide-react';
-import { 
-    DndContext, 
+import {
+    DndContext,
     DragOverlay,
     closestCenter,
     KeyboardSensor,
@@ -29,18 +29,17 @@ import type { KanbanBoardProps, DragDropConfig } from '../types';
  * Sistema dinâmico que funciona com qualquer tipo de CRUD e workflow.
  * Suporta drag & drop, filtros inteligentes e integração com APIs.
  */
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ 
+const KanbanBoard: React.FC<KanbanBoardProps> = ({
     data,
     columns,
-    tableColumns = [], 
+    tableColumns = [],
     actions = [],
     config = {},
     meta = {},
     onAction,
     onRefresh
 }) => {
-    // Estados locais
-    const [searchTerm, setSearchTerm] = useState('');
+    // Estados locais 
     const [localData, setLocalData] = useState(data);
 
     // Configurações padrão
@@ -58,13 +57,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         // Detectar recurso baseado na URL atual
         const pathSegments = window.location.pathname.split('/').filter(Boolean);
         const adminIndex = pathSegments.indexOf('admin');
-        
+
         let resource = 'kanban';
         let detectedWorkflowSlug = workflowSlug;
-        
+
         if (adminIndex !== -1 && pathSegments[adminIndex + 1]) {
             resource = pathSegments[adminIndex + 1];
-            
+
             // Mapear recursos para slugs de workflow
             const resourceToWorkflowSlug: Record<string, string> = {
                 tickets: 'suporte-tecnico',
@@ -75,7 +74,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 leads: 'captacao-leads',
                 support: 'atendimento-cliente',
             };
-            
+
             detectedWorkflowSlug = resourceToWorkflowSlug[resource] || resource;
         }
 
@@ -130,10 +129,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             });
 
             const result = response.data;
-            
+
             if (result.success) {
                 console.log('✅ Card movido com sucesso (Axios):', result.data);
-                
+
                 // Atualizar dados locais com resposta do backend
                 setLocalData(prevData => {
                     return prevData.map(dataItem => {
@@ -154,7 +153,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         return dataItem;
                     });
                 });
-                
+
                 return true;
             } else {
                 console.error('❌ Backend rejeitou movimento:', result.message);
@@ -163,7 +162,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
         } catch (error: any) {
             console.error('❌ Erro ao mover card (Axios):', error);
-            
+
             // Reverter mudança local se backend falhou
             setLocalData(prevData => {
                 return prevData.map(dataItem => {
@@ -184,7 +183,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             // Mostrar erro para o usuário
             const errorMessage = error.response?.data?.message || error.message || 'Erro ao mover card';
             alert(`Erro: ${errorMessage}`);
-            
+
             return false;
         }
     };
@@ -237,10 +236,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     // 🎯 Filtrar dados por coluna com base no workflow (genérico)
     const filteredDataByColumn = useMemo(() => {
         console.log('🎯 Kanban: Filtrando', localData.length, 'items em', columns.length, 'colunas');
-        
+
         return columns.reduce((acc, column) => {
             let filtered = [];
-            
+
             // 🎯 SEMPRE usar o filtro da coluna se ele existir
             if (column.filter && typeof column.filter === 'function') {
                 filtered = localData.filter(column.filter);
@@ -249,7 +248,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 console.log(`⚠️ "${column.title}": sem filtro definido`);
                 filtered = [];
             }
-            
+
             acc[column.id] = filtered;
             return acc;
         }, {} as Record<string, any[]>);
@@ -281,13 +280,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     };
 
     // 🎯 Hook de Drag & Drop
-    const { 
+    const {
         activeId,
         isDragging,
         draggedItem,
-        handleDragStart, 
-        handleDragEnd, 
-        handleDragOver 
+        handleDragStart,
+        handleDragEnd,
+        handleDragOver
     } = useDragDrop(dragConfig);
 
     // Sensores para drag & drop
@@ -302,10 +301,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         })
     );
 
-    // Handler para ações
-    const handleAction = (actionId: string, item: any, extra?: any) => {
-        onAction?.(actionId, item, extra);
-    };
+
 
     // Atualizar dados locais quando dados externos mudam
     React.useEffect(() => {
@@ -319,22 +315,22 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 onDragOver={handleDragOver}
-                    >
-                {/* Layout horizontal com rolagem */}
-            <div 
-                    className="flex gap-4 overflow-x-auto pb-4 h-full"
-                style={{ height: height }}
             >
+                {/* Layout horizontal com rolagem */}
+                <div
+                    className="flex gap-4 overflow-x-auto pb-4 h-full"
+                    style={{ height: height }}
+                >
                     {columns.map((column) => {
                         const columnData = filteredDataByColumn[column.id] || [];
-                        
+
                         return (
-                    <KanbanColumn
-                        key={column.id}
-                        column={column}
+                            <KanbanColumn
+                                key={column.id}
+                                column={column}
                                 data={columnData}
                                 tableColumns={tableColumns}
-                        actions={actions}
+                                actions={actions}
                                 onAction={onAction}
                                 dragAndDrop={dragAndDrop}
                                 isDragActive={isDragging}
@@ -342,7 +338,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         );
                     })}
                 </div>
-                
+
                 {/* Drag Overlay - Card sendo arrastado */}
                 <DragOverlay>
                     {activeId && draggedItem ? (

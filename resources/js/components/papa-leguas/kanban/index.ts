@@ -18,6 +18,10 @@ export { default as KanbanRenderer } from './renderers/KanbanRenderer';
 export { resolveKanbanRenderer } from './renderers';
 export type { KanbanRendererType } from './renderers';
 
+// Exemplo temporário até implementar UserPostsKanban
+import KanbanBoardComponent from './components/KanbanBoard';
+export const UserPostsKanban = KanbanBoardComponent;
+
 // Tipos e interfaces (para futuras expansões)
 export type KanbanColumnConfig = {
     id: string;
