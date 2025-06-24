@@ -310,6 +310,81 @@ class WorkflowTemplate extends AbstractModel
     }
 
     /**
+     * Obter mensagem específica para transição negada.
+     */
+    public function getTransitionMessage(WorkflowTemplate $target = null): string
+    {
+        if (!$target) {
+            return "Transição não permitida a partir de '{$this->name}'";
+        }
+
+        // 🎯 Mensagens específicas baseadas no contexto
+        $allowedNext = $this->getNextTemplateIds();
+        
+        if (empty($allowedNext)) {
+            return "'{$this->name}' é uma etapa final - não permite movimentação para outras etapas";
+        }
+
+        // 🎯 Verificar se é tentativa de pular etapas
+        if ($this->next_template_id && $target->id !== $this->next_template_id) {
+            $nextTemplate = $this->workflow->templates()->find($this->next_template_id);
+            if ($nextTemplate) {
+                return "Não é possível mover de '{$this->name}' diretamente para '{$target->name}'. A próxima etapa deve ser '{$nextTemplate->name}'";
+            }
+        }
+
+        // 🎯 Verificar se está tentando voltar quando não permitido
+        if ($target->sort_order < $this->sort_order && !$this->previous_template_id) {
+            return "Não é possível voltar de '{$this->name}' para '{$target->name}' - esta etapa não permite retrocesso";
+        }
+
+        // 🎯 Verificar regras de aprovação
+        if ($target->requires_approval && !auth()->user()?->hasRole('admin')) {
+            return "A etapa '{$target->name}' requer aprovação de administrador para movimentação";
+        }
+
+        // 🎯 Verificar se template de destino está inativo
+        if (!$target->isActive()) {
+            return "A etapa '{$target->name}' está inativa e não aceita novos itens";
+        }
+
+        // 🎯 Mensagem genérica
+        return "Movimentação de '{$this->name}' para '{$target->name}' não permitida pelas regras do workflow";
+    }
+
+    /**
+     * Obter mensagem para limite de itens atingido.
+     */
+    public function getLimitMessage(): string
+    {
+        $currentCount = $this->getCurrentCount();
+        $maxItems = $this->max_items;
+
+        if ($currentCount >= $maxItems) {
+            return "A coluna '{$this->name}' atingiu o limite máximo de {$maxItems} itens. Para adicionar novos itens, mova ou remova alguns dos {$currentCount} itens existentes.";
+        }
+
+        $remaining = $maxItems - $currentCount;
+        return "A coluna '{$this->name}' está próxima do limite ({$currentCount}/{$maxItems}). Restam {$remaining} vagas disponíveis.";
+    }
+
+    /**
+     * Obter mensagem para aprovação necessária.
+     */
+    public function getApprovalMessage(): string
+    {
+        return "A movimentação para '{$this->name}' requer aprovação de um administrador. Entre em contato com sua equipe de gestão para prosseguir.";
+    }
+
+    /**
+     * Obter mensagem para template inativo.
+     */
+    public function getInactiveMessage(): string
+    {
+        return "A coluna '{$this->name}' está temporariamente inativa e não aceita novos itens. Aguarde a reativação ou escolha outra coluna.";
+    }
+
+    /**
      * Obter configuração para coluna Kanban.
      */
     public function getKanbanColumnConfig(): array

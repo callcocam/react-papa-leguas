@@ -77,9 +77,9 @@ trait HasKanbanActions
             if (!$item) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Item não encontrado',
+                    'message' => 'Item não encontrado no sistema',
                     'errors' => [
-                        'card_id' => ['Item com ID ' . $cardId . ' não encontrado']
+                        'card_id' => ["O item com ID '{$cardId}' não foi encontrado ou foi removido"]
                     ]
                 ], 404);
             }
@@ -101,9 +101,9 @@ trait HasKanbanActions
                 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Template de origem não encontrado',
+                    'message' => 'Coluna de origem não encontrada',
                     'errors' => [
-                        'from_template_id' => ['Template com ID/slug ' . $fromTemplateId . ' não encontrado']
+                        'from_template_id' => ["A coluna origem '{$fromTemplateId}' não foi encontrada no workflow"]
                     ]
                 ], 404);
             }
@@ -116,9 +116,9 @@ trait HasKanbanActions
                 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Template de destino não encontrado',
+                    'message' => 'Coluna de destino não encontrada',
                     'errors' => [
-                        'to_template_id' => ['Template com ID/slug ' . $toTemplateId . ' não encontrado']
+                        'to_template_id' => ["A coluna destino '{$toTemplateId}' não foi encontrada no workflow"]
                     ]
                 ], 404);
             }
@@ -150,9 +150,9 @@ trait HasKanbanActions
                     DB::rollback();
                     return response()->json([
                         'success' => false,
-                        'message' => 'Item não possui workflow ativo. Workflowable deve ser criado antes da movimentação.',
+                        'message' => 'Item não está vinculado a um workflow',
                         'errors' => [
-                            'workflow' => ['Item não está associado a nenhum workflow ativo']
+                            'workflow' => ['Este item não está associado a nenhum workflow ativo. Configure o workflow antes de usar o Kanban.']
                         ]
                     ], 422);
                 }
@@ -254,9 +254,7 @@ trait HasKanbanActions
     { 
         // Validação básica: verificar se a transição é permitida pelo template
         if ($fromTemplate && !$fromTemplate->canTransitionTo($toTemplate)) {
-            if(method_exists($fromTemplate, 'getTransitionMessage')){
-                $this->workflowMessage = $fromTemplate->getTransitionMessage();
-            }
+            $this->workflowMessage = $fromTemplate->getTransitionMessage($toTemplate);
             return false;
         } 
         // Validação de limite de itens no template de destino
@@ -268,10 +266,22 @@ trait HasKanbanActions
                 })->count();
 
                 if ($currentCount >= $toTemplate->max_items) {
-                    $this->workflowMessage = 'Limite de itens atingido no template de destino';
+                    $this->workflowMessage = $toTemplate->getLimitMessage();
                     return false;
                 }
             }
+        }
+
+        // Validação de aprovação necessária
+        if ($toTemplate->requires_approval && !auth()->user()?->hasRole('admin')) {
+            $this->workflowMessage = $toTemplate->getApprovalMessage();
+            return false;
+        }
+
+        // Validação se template de destino está ativo
+        if (!$toTemplate->isActive()) {
+            $this->workflowMessage = $toTemplate->getInactiveMessage();
+            return false;
         }
 
         // Outras validações podem ser implementadas aqui

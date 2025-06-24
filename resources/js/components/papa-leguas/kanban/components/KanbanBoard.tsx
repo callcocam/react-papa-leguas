@@ -84,6 +84,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         } catch (err: any) {
             console.error('❌ Erro ao mover card:', err);
             const errorMessage = err.response?.data?.message || err.message || 'Erro ao mover card';
+            console.log('❌ Erro ao mover card:', errorMessage);
             error('Erro ao mover card', errorMessage);
             return false;
         }
