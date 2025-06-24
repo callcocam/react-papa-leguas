@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import AppLayout from '../../layouts/react-app-layout';
 import { type BreadcrumbItem } from '../../types';
 import { DataTable } from '../../components/papa-leguas';
@@ -116,7 +116,8 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                         }}
                         onRefresh={() => {
                             console.log('🔄 Refreshing Kanban');
-                            window.location.reload();
+                            router.reload();
+                            // window.location.reload();
                         }}
                     />
                 );
