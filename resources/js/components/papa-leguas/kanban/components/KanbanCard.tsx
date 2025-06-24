@@ -45,14 +45,13 @@ export default function KanbanCard({
         data: {
             type: 'card',
             item: item,
-            // Usar dados diretos do item ao invés de mapeamento hardcoded
-            columnId: item.currentWorkflow?.currentTemplate?.slug || item.status || 'default'
+            // Usar o ID da coluna atual onde o card está (com fallback)
+            columnId: column?.id || 'unknown'
         },
         disabled: !draggable
     });
     // 🎯 Usar dados formatados do kanban_data (já processados pelo backend)
     const kanbanData = item.currentWorkflow?.kanban_data || {};
-    console.log('🔍 Dados kanban_data:', kanbanData);
     
     // Dados principais do card (usar kanban_data)
     const ticketNumber = kanbanData.ticket_number || item.ticket_number || item.id?.slice(-8) || 'N/A';
@@ -85,14 +84,7 @@ export default function KanbanCard({
     const isOverdue = dueAt ? new Date(dueAt) < new Date() : false;
 
     // Cor da coluna (usar cor da coluna passada nas props como prioridade)
-    const columnColor = column.color || kanbanData.status_color || item.currentWorkflow?.currentTemplate?.color || priorityColor || '#6b7280';
-    console.log('🎨 Cor do card:', {
-        columnColor: column.color,
-        kanbanDataColor: kanbanData.status_color,
-        templateColor: item.currentWorkflow?.currentTemplate?.color,
-        priorityColor,
-        final: columnColor
-    });
+    const columnColor = column?.color || kanbanData.status_color || item.currentWorkflow?.currentTemplate?.color || priorityColor || '#6b7280';
 
     // Determinar se está sendo arrastado
     const isBeingDragged = isDragging || isDraggingFromHook;

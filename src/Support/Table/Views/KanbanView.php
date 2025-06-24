@@ -17,6 +17,10 @@ class KanbanView extends View
     {
         parent::__construct($id, $label);
         $this->icon('Kanban');
+        // Habilitar drag and drop por padrão
+        $this->config['dragAndDrop'] = true;
+        $this->config['height'] = '700px';
+        $this->config['apiEndpoint'] = '/api/admin/tickets/kanban/move-card';
     }
 
     public function columns(array $columns): self
@@ -50,5 +54,23 @@ class KanbanView extends View
     public function getColumns(): array
     {
         return $this->config['columns'];
+    }
+
+    public function dragAndDrop(bool $enabled = true): self
+    {
+        $this->config['dragAndDrop'] = $enabled;
+        return $this;
+    }
+
+    public function height(string $height): self
+    {
+        $this->config['height'] = $height;
+        return $this;
+    }
+
+    public function apiEndpoint(string $endpoint): self
+    {
+        $this->config['apiEndpoint'] = $endpoint;
+        return $this;
     }
 }

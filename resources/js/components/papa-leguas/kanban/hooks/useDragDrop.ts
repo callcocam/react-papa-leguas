@@ -19,6 +19,7 @@ export function useDragDrop(config: DragDropConfig) {
     const [activeId, setActiveId] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [draggedItem, setDraggedItem] = useState<any>(null);
+    const [draggedFromColumnId, setDraggedFromColumnId] = useState<string | null>(null);
 
     /**
      * Inicia o arraste
@@ -29,13 +30,15 @@ export function useDragDrop(config: DragDropConfig) {
         setActiveId(active.id as string);
         setIsDragging(true);
         setDraggedItem(active.data.current?.item || null);
+        setDraggedFromColumnId(active.data.current?.columnId || null);
         
         // Callback customizado
         config.onDragStart?.(event);
         
         console.log('🎯 Drag Start:', {
             id: active.id,
-            item: active.data.current?.item
+            item: active.data.current?.item,
+            fromColumnId: active.data.current?.columnId
         });
     }, [config]);
 
@@ -68,6 +71,7 @@ export function useDragDrop(config: DragDropConfig) {
         if (!over) {
             console.log('🎯 Drag cancelled - no drop target');
             setDraggedItem(null);
+            setDraggedFromColumnId(null);
             return;
         }
 
@@ -123,6 +127,7 @@ export function useDragDrop(config: DragDropConfig) {
         config.onDragEnd?.(event);
         
         setDraggedItem(null);
+        setDraggedFromColumnId(null);
     }, [config]);
 
     /**
@@ -132,6 +137,7 @@ export function useDragDrop(config: DragDropConfig) {
         setActiveId(null);
         setIsDragging(false);
         setDraggedItem(null);
+        setDraggedFromColumnId(null);
         
         console.log('🎯 Drag cancelled');
     }, []);
@@ -141,6 +147,7 @@ export function useDragDrop(config: DragDropConfig) {
         activeId,
         isDragging,
         draggedItem,
+        draggedFromColumnId,
         
         // Handlers
         handleDragStart,

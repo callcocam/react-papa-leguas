@@ -143,6 +143,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         activeId,
         isDragging,
         draggedItem,
+        draggedFromColumnId,
         handleDragStart,
         handleDragEnd,
         handleDragOver
@@ -169,6 +170,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         <div className="kanban-board h-full">
             <DndContext
                 sensors={sensors}
+                collisionDetection={closestCenter}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 onDragOver={handleDragOver}
@@ -198,10 +200,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
                 {/* Drag Overlay - Card sendo arrastado */}
                 <DragOverlay>
-                    {activeId && draggedItem ? (
+                    {activeId && draggedItem && draggedFromColumnId ? (
                         <KanbanCard
                             item={draggedItem}
-                            column={columns.find(c => c.id === activeId) as any}
+                            column={columns.find(c => c.id === draggedFromColumnId) || columns[0]}
                             tableColumns={tableColumns}
                             actions={actions}
                             onAction={onAction}
