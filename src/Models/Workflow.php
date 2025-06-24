@@ -104,7 +104,8 @@ class Workflow extends AbstractModel
     {
         return $this->activeTemplates->map(function (WorkflowTemplate $template) {
             return [
-                'id' => $template->slug,
+                'id' => $template->id,
+                'slug' => $template->slug,
                 'title' => $template->name,
                 'color' => $template->color,
                 'icon' => $template->icon,

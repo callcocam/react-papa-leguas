@@ -137,11 +137,11 @@ trait HasWorkflow
     }
 
     protected function getColumnsWithWorkflowSupport(Model $row): array
-    {
+    { 
         $data = $row->toArray(); 
         return [
             'workflowables' => data_get($data, 'workflowables') ?? [],
-            'currentWorkflow' => data_get($data, 'current_workflow') ?? null,
+            'currentWorkflow' => data_get($data, 'current_workflow') ?? data_get($data, 'currentWorkflow') ?? null,
         ];
     }
 

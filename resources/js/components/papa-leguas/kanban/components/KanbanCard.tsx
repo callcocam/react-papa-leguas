@@ -14,21 +14,16 @@ import {
 } from 'lucide-react';
 import { useDraggable } from '@dnd-kit/core';
 import { Icons } from '../../icons';
-import ColumnRenderer from '../columns/ColumnRenderer';
 import type { KanbanCardProps } from '../types';
 
 /**
  * Componente que representa um card individual no Kanban com suporte a Drag & Drop.
  * 
- * Funcionalidades:
- * - Exibe informações principais do item (ticket)
- * - Integração com dados do currentWorkflow
- * - Progresso visual baseado em workflow
- * - Ações do backend integradas
- * - Suporte a drag and drop com @dnd-kit
+ * Sistema simplificado que usa diretamente os dados formatados vindos do backend.
  */
 export default function KanbanCard({
     item,
+    column,
     tableColumns = [],
     actions = [],
     onAction,
@@ -50,84 +45,54 @@ export default function KanbanCard({
         data: {
             type: 'card',
             item: item,
-            columnId: (() => {
-                // Mapear current_step para columnId
-                const step = item.currentWorkflow?.current_step || 1;
-                const stepToColumnMap: Record<number, string> = {
-                    1: 'aberto',
-                    2: 'em-andamento',
-                    3: 'aguardando-cliente',
-                    4: 'resolvido',
-                    5: 'fechado'
-                };
-                return stepToColumnMap[step] || 'aberto';
-            })()
+            // Usar dados diretos do item ao invés de mapeamento hardcoded
+            columnId: item.currentWorkflow?.currentTemplate?.slug || item.status || 'default'
         },
         disabled: !draggable
     });
-
-    // 🎯 Usar dados do kanban_data como fonte principal (já formatados)
-    const currentWorkflow = item.currentWorkflow || {};
-    const kanbanData = currentWorkflow.kanban_data || {};
-
-    // Dados básicos do ticket (kanban_data primeiro, depois fallbacks)
-    const ticketNumber = String(kanbanData.ticket_number || item.ticket_number || item.id?.slice(-8) || 'N/A');
+    // 🎯 Usar dados formatados do kanban_data (já processados pelo backend)
+    const kanbanData = item.currentWorkflow?.kanban_data || {};
+    console.log('🔍 Dados kanban_data:', kanbanData);
+    
+    // Dados principais do card (usar kanban_data)
+    const ticketNumber = kanbanData.ticket_number || item.ticket_number || item.id?.slice(-8) || 'N/A';
     const title = kanbanData.title || item.title || 'Sem título';
-    const description = kanbanData.description || item.description || '';
+    const description = item.description || '';
 
-    // Dados do workflow (kanban_data como fonte principal)
-    const workflowTitle = kanbanData.title || title;
-    const workflowStatus = kanbanData.status || 'Ativo';
-
-    // Prioridade (kanban_data primeiro, depois relacionamento)
+    // Dados do workflow (usar kanban_data formatado)
+    const workflowStatus = kanbanData.status || item.currentWorkflow?.status || 'Ativo';
+    
+    // Prioridade (usar kanban_data)
     const priority = kanbanData.priority || item.priority?.name || 'Normal';
-    const priorityLevel = kanbanData.priority_level || item.priority?.level || 1;
-    const priorityColor = (() => {
-        const colors: Record<number, string> = {
-            1: '#16a34a', // Baixa - Verde
-            2: '#3b82f6', // Normal - Azul  
-            3: '#f59e0b', // Alta - Amarelo
-            4: '#ef4444', // Crítica - Vermelho
-            5: '#dc2626', // Urgente - Vermelho escuro
-        };
-        return colors[priorityLevel] || '#6b7280';
-    })();
+    const priorityColor = kanbanData.priority_color || item.priority?.color || '#6b7280';
 
-    // Categoria (kanban_data primeiro, depois relacionamento)
+    // Categoria (usar kanban_data)
     const category = kanbanData.category || item.category?.name || 'Geral';
 
-    // Responsável (kanban_data primeiro, depois relacionamento)
+    // Responsável (usar kanban_data)
     const assignedTo = kanbanData.assigned_to || item.assignee?.name || 'Não atribuído';
 
-    // Datas e prazos (kanban_data como fonte principal)
-    const dueAt = kanbanData.due_at || item.due_date || null;
-    const timeSpent = kanbanData.time_spent || null;
+    // Datas e prazos (usar kanban_data)
+    const dueAt = kanbanData.due_at_raw || item.due_date || item.due_at || null;
+    const timeSpent = kanbanData.time_spent || item.time_spent || null;
 
-    // Progresso (kanban_data primeiro, depois cálculo)
-    const currentStep = kanbanData.current_step || currentWorkflow.current_step || 1;
-    const totalSteps = kanbanData.total_steps || 4;
-    const progressPercentage = kanbanData.progress_percentage || currentWorkflow.progress_percentage || ((currentStep / totalSteps) * 100);
+    // Progresso (usar kanban_data)
+    const currentStep = kanbanData.current_step || item.currentWorkflow?.current_step || 1;
+    const totalSteps = kanbanData.total_steps || item.currentWorkflow?.total_steps || 4;
+    const progressPercentage = kanbanData.progress_percentage || item.currentWorkflow?.progress_percentage || 0;
 
-    // Flags calculadas
+    // Flags calculadas simples
     const isOverdue = dueAt ? new Date(dueAt) < new Date() : false;
 
-    // Status color baseado no workflow ou prioridade
-    const statusColor = kanbanData.status_color || priorityColor;
-
-    // Determinar cor da coluna baseada no current_step
-    const getColumnColor = () => {
-        const step = currentWorkflow.current_step || 1;
-        const colors: Record<number, string> = {
-            1: '#ef4444', // Aberto - Vermelho
-            2: '#f59e0b', // Em Andamento - Amarelo
-            3: '#8b5cf6', // Aguardando Cliente - Roxo
-            4: '#10b981', // Resolvido - Verde
-            5: '#6b7280', // Fechado - Cinza
-        };
-        return colors[step] || statusColor;
-    };
-
-    const columnColor = getColumnColor();
+    // Cor da coluna (usar cor da coluna passada nas props como prioridade)
+    const columnColor = column.color || kanbanData.status_color || item.currentWorkflow?.currentTemplate?.color || priorityColor || '#6b7280';
+    console.log('🎨 Cor do card:', {
+        columnColor: column.color,
+        kanbanDataColor: kanbanData.status_color,
+        templateColor: item.currentWorkflow?.currentTemplate?.color,
+        priorityColor,
+        final: columnColor
+    });
 
     // Determinar se está sendo arrastado
     const isBeingDragged = isDragging || isDraggingFromHook;
@@ -142,16 +107,12 @@ export default function KanbanCard({
         let classes = "kanban-card transition-all duration-200 bg-white border border-gray-200 rounded-lg";
 
         if (dragOverlay) {
-            // Card no overlay de drag
             classes += " shadow-2xl rotate-6 opacity-90";
         } else if (isBeingDragged) {
-            // Card sendo arrastado
             classes += " opacity-50 scale-95 shadow-lg";
         } else if (draggable) {
-            // Card arrastável em estado normal
             classes += " hover:shadow-md cursor-grab active:cursor-grabbing";
         } else {
-            // Card não arrastável
             classes += " hover:shadow-md cursor-pointer";
         }
 
@@ -177,10 +138,10 @@ export default function KanbanCard({
                     </div>
                     <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-sm text-gray-900 leading-tight line-clamp-2">
-                            {workflowTitle}
+                            {title}
                         </h3>
                         <p className="text-xs text-gray-500 mt-1">
-                            {ticketNumber}
+                            #{ticketNumber}
                         </p>
                     </div>
                     {isOverdue && (
@@ -195,9 +156,9 @@ export default function KanbanCard({
                     <Badge
                         className="text-xs px-2 py-1"
                         style={{
-                            backgroundColor: statusColor + '20',
-                            color: statusColor,
-                            border: `1px solid ${statusColor}40`
+                            backgroundColor: columnColor + '20',
+                            color: columnColor,
+                            border: `1px solid ${columnColor}40`
                         }}
                     >
                         {workflowStatus}
@@ -250,30 +211,32 @@ export default function KanbanCard({
                 </div>
 
                 {/* Progresso do Workflow */}
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600">
-                            Progresso ({currentStep}/{totalSteps})
-                        </span>
-                        <span
-                            className="font-medium"
-                            style={{ color: columnColor }}
-                        >
-                            {Math.round(progressPercentage)}%
-                        </span>
+                {progressPercentage > 0 && (
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-600">
+                                Progresso ({currentStep}/{totalSteps})
+                            </span>
+                            <span
+                                className="font-medium"
+                                style={{ color: columnColor }}
+                            >
+                                {Math.round(progressPercentage)}%
+                            </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                                className="h-2 rounded-full transition-all duration-300"
+                                style={{
+                                    width: `${Math.min(progressPercentage, 100)}%`,
+                                    backgroundColor: columnColor
+                                }}
+                            />
+                        </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                            className="h-2 rounded-full transition-all duration-300"
-                            style={{
-                                width: `${Math.min(progressPercentage, 100)}%`,
-                                backgroundColor: columnColor
-                            }}
-                        />
-                    </div>
-                </div>
+                )}
 
-                {/* Menu de ações - Apenas no overlay ou quando não está sendo arrastado */}
+                {/* Menu de ações */}
                 {actions && actions.length > 0 && !isBeingDragged && (
                     <div className="pt-2 border-t border-gray-100">
                         <Button

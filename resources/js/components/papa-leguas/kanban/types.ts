@@ -4,6 +4,8 @@ import { UniqueIdentifier } from '@dnd-kit/core';
 export interface KanbanColumn {
     /** ID único da coluna */
     id: string;
+    /** Slug da coluna para matching */
+    slug?: string;
     /** Título exibido na coluna */
     title: string;
     /** Chave do campo para filtrar dados */
@@ -196,6 +198,8 @@ export interface KanbanColumnProps {
 export interface KanbanCardProps {
     /** Item de dados */
     item: any;
+    /** Coluna */
+    column: KanbanColumn;
     /** Colunas da tabela para renderização */
     tableColumns?: any[];
     /** Ações disponíveis para o card */

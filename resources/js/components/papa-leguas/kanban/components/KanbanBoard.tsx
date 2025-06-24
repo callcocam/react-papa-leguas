@@ -87,38 +87,47 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         }
     };
 
-    // 🎯 Filtrar dados por coluna usando os filtros definidos no backend
-    const filteredDataByColumn = useMemo(() => {
-        console.log('🎯 Kanban: Filtrando', localData.length, 'items em', columns.length, 'colunas');
+    // 🎯 Filtrar dados por coluna usando configurações do backend
+    const filteredDataByColumn = useMemo(() => { 
 
         return columns.reduce((acc, column) => {
-            let filtered = [];
+            const filtered = localData.filter(function(item: any) {
+                // Verificar se o item tem currentWorkflow
+                if (!item.currentWorkflow) {
+                    console.log('⚠️ Item sem currentWorkflow:', item.id);
+                    return false;
+                } 
+                // Método 1: Comparar currentTemplate.slug com column.slug (PRINCIPAL)
+                const currentTemplateSlug = item.currentWorkflow.currentTemplate?.slug;
+                if (currentTemplateSlug === column.slug) {
+                    console.log('✅ Match por template slug:', item.id, 'slug:', currentTemplateSlug, 'coluna:', column.slug);
+                    return true;
+                }
 
-            // Usar o filtro da coluna se ele existir (vem do backend)
-            if (column.filter && typeof column.filter === 'function') {
-                filtered = localData.filter(column.filter);
-                console.log(`📊 "${column.title}": ${filtered.length} items`);
-            } else {
-                console.log(`⚠️ "${column.title}": sem filtro definido`);
-                filtered = [];
-            }
+                // Método 2: Fallback - Comparar current_template_id com column.id (se slug não existir)
+                const currentTemplateId = item.currentWorkflow.current_template_id;
+                if (currentTemplateId === column.id) { 
+                    return true;
+                }
 
+                // Método 3: Usar current_step se a coluna tiver sort_order
+                const currentStep = item.currentWorkflow.current_step;
+                if (column.sort_order && currentStep === column.sort_order) { 
+                    return true;
+                }
+
+                // Método 4: Fallback para status (se não houver workflow específico)
+                if (item.status === column.id) { 
+                    return true;
+                }
+
+                return false;
+            }); 
             acc[column.id] = filtered;
             return acc;
         }, {} as Record<string, any[]>);
     }, [localData, columns]);
-
-    // 🎯 Estatísticas simples por coluna
-    const stats = useMemo(() => {
-        return columns.reduce((acc, column) => {
-            const columnData = filteredDataByColumn[column.id] || [];
-            acc[column.id] = {
-                total: columnData.length,
-                percentage: localData.length > 0 ? Math.round((columnData.length / localData.length) * 100) : 0
-            };
-            return acc;
-        }, {} as Record<string, { total: number; percentage: number }>);
-    }, [filteredDataByColumn, columns, localData.length]);
+ 
 
     // 🎯 Configuração do Drag & Drop (apenas se habilitado)
     const dragConfig: DragDropConfig = {
@@ -169,7 +178,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     className="flex gap-4 overflow-x-auto pb-4 h-full"
                     style={{ height: height }}
                 >
-                    {columns.map((column) => {
+                    {columns.map((column) => { 
                         const columnData = filteredDataByColumn[column.id] || [];
 
                         return (
@@ -192,6 +201,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     {activeId && draggedItem ? (
                         <KanbanCard
                             item={draggedItem}
+                            column={columns.find(c => c.id === activeId) as any}
                             tableColumns={tableColumns}
                             actions={actions}
                             onAction={onAction}

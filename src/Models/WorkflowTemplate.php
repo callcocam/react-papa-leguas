@@ -249,15 +249,15 @@ class WorkflowTemplate extends AbstractModel
     {
 
         return [
-            'id' => $this->slug,
+            'id' => $this->id,
+            'slug' => $this->slug,
             'title' => $this->name,
-            'status' => $this->slug,
+            'status' => $this->status,
             'color' => $this->color ?? '#6B7280',
             'icon' => $this->icon ?? 'circle',
             'limit' => $this->max_items,
             'order' => $this->sort_order ?? 0,
-            'description' => $this->description,
-            'template_id' => $this->id,
+            'description' => $this->description, 
             'auto_assign' => $this->auto_assign ?? false,
             'requires_approval' => $this->requires_approval ?? false,
             'estimated_duration_days' => $this->estimated_duration_days,

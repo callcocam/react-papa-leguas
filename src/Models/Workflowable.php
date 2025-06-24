@@ -579,6 +579,7 @@ class Workflowable extends Model
             'contact_email' => data_get($metadata, 'contact_email', null),
             'notes' => $this->notes,
             'metadata' => $metadata,
+            'current_template_id' => $this->current_template_id,
         ];
     }
 
