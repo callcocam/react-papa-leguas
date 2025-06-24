@@ -80,20 +80,20 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
         const hasWorkflow = table?.data?.some(item => item.currentWorkflow);
         
         if (hasWorkflow && table?.data) {
-            // Buscar templates do primeiro item com workflow para determinar as colunas
-            const firstWorkflowItem = table.data.find(item => item.currentWorkflow);
-            const workflowId = firstWorkflowItem?.currentWorkflow?.workflow_id;
+            console.log('🔍 Dados com workflow detectados, extraindo templates...');
             
-            if (workflowId) {
-                // TODO: Fazer chamada para buscar colunas reais do workflow
-                // Por enquanto, usar estrutura baseada nos templates existentes
-                const uniqueTemplates = new Map();
-                
-                table.data.forEach(item => {
-                    if (item.currentWorkflow?.currentTemplate) {
-                        const template = item.currentWorkflow.currentTemplate;
-                        uniqueTemplates.set(template.slug, {
-                            id: template.slug,
+            // Extrair templates únicos dos dados reais
+            const uniqueTemplates = new Map();
+            
+            table.data.forEach(item => {
+                if (item.currentWorkflow?.currentTemplate) {
+                    const template = item.currentWorkflow.currentTemplate;
+                    const templateId = template.id;
+                    
+                    if (!uniqueTemplates.has(templateId)) {
+                        uniqueTemplates.set(templateId, {
+                            id: template.slug, // Usar slug como ID da coluna
+                            templateId: template.id, // ID real do template
                             title: template.name,
                             key: 'current_template_id',
                             color: template.color || '#6b7280',
@@ -102,22 +102,43 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                             sortable: true,
                             order: template.sort_order || 0,
                             filter: (item: any) => {
-                                return item.currentWorkflow?.current_template_id === template.id;
+                                // Filtro principal: comparar com template ID real
+                                if (item.currentWorkflow?.current_template_id === template.id) {
+                                    return true;
+                                }
+                                // Filtro secundário: comparar com template slug
+                                if (item.currentWorkflow?.currentTemplate?.slug === template.slug) {
+                                    return true;
+                                }
+                                // Filtro terciário: comparar current_step com sort_order
+                                if (item.currentWorkflow?.current_step === template.sort_order) {
+                                    return true;
+                                }
+                                return false;
                             }
                         });
                     }
-                });
-                
-                // Converter Map para array e ordenar
-                const columns = Array.from(uniqueTemplates.values())
-                    .sort((a, b) => a.order - b.order);
-                
-                if (columns.length > 0) {
-                    return columns;
                 }
+            });
+            
+            // Converter Map para array e ordenar por sort_order
+            const columns = Array.from(uniqueTemplates.values())
+                .sort((a, b) => a.order - b.order);
+            
+            if (columns.length > 0) {
+                console.log('✅ Templates extraídos dos dados:', columns.map(c => `${c.title} (${c.id})`));
+                return columns;
             }
             
-            // Fallback: colunas baseadas nos dados de workflow existentes
+            console.log('⚠️ Nenhum template encontrado nos dados, usando fallback...');
+        }
+        
+        // Fallback para dados sem workflow ou quando extração falha
+        const hasWorkflowData = table?.data?.some(item => item.currentWorkflow);
+        
+        if (hasWorkflowData) {
+            console.log('🔄 Usando colunas de fallback baseadas em workflow...');
+            // Colunas baseadas nos dados de workflow existentes (corrigidas)
             return [
                 {
                     id: 'aberto',
@@ -126,9 +147,10 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                     color: '#ef4444',
                     icon: 'AlertCircle',
                     filter: (item: any) => {
+                        // Filtro mais específico baseado nos dados reais
                         return item.currentWorkflow?.status === 'active' && 
                                (item.currentWorkflow?.current_step === 1 || 
-                                item.currentWorkflow?.current_template_id?.includes('aberto'));
+                                item.currentWorkflow?.currentTemplate?.slug === 'aberto');
                     }
                 },
                 {
@@ -140,7 +162,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                     filter: (item: any) => {
                         return item.currentWorkflow?.status === 'active' && 
                                (item.currentWorkflow?.current_step === 2 || 
-                                item.currentWorkflow?.current_template_id?.includes('em-andamento'));
+                                item.currentWorkflow?.currentTemplate?.slug === 'em-andamento');
                     }
                 },
                 {
@@ -152,7 +174,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                     filter: (item: any) => {
                         return item.currentWorkflow?.status === 'active' && 
                                (item.currentWorkflow?.current_step === 3 || 
-                                item.currentWorkflow?.current_template_id?.includes('aguardando'));
+                                item.currentWorkflow?.currentTemplate?.slug === 'aguardando-cliente');
                     }
                 },
                 {
@@ -164,7 +186,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                     filter: (item: any) => {
                         return item.currentWorkflow?.status === 'active' && 
                                (item.currentWorkflow?.current_step === 4 || 
-                                item.currentWorkflow?.current_template_id?.includes('resolvido'));
+                                item.currentWorkflow?.currentTemplate?.slug === 'resolvido');
                     }
                 },
                 {
@@ -176,12 +198,13 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                     filter: (item: any) => {
                         return item.currentWorkflow?.status === 'completed' || 
                                item.currentWorkflow?.current_step === 5 ||
-                               item.currentWorkflow?.current_template_id?.includes('fechado');
+                               item.currentWorkflow?.currentTemplate?.slug === 'fechado';
                     }
                 }
             ];
         }
         
+        console.log('🔄 Usando colunas genéricas baseadas em status...');
         // Colunas genéricas baseadas no campo 'status' tradicional
         return [
             {

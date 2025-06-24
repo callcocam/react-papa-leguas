@@ -66,33 +66,53 @@ export default function KanbanCard({
         disabled: !draggable
     });
 
-    // 🎯 Usar dados já formatados do backend (Workflowable.php)
+    // 🎯 Usar dados do kanban_data como fonte principal (já formatados)
     const currentWorkflow = item.currentWorkflow || {};
     const kanbanData = currentWorkflow.kanban_data || {};
     
-    // Dados já formatados e prontos para uso
-    const workflowTitle = kanbanData.title || 'Sem título';
-    const ticketNumber = kanbanData.ticket_number || '';
+    // Dados básicos do ticket (kanban_data primeiro, depois fallbacks)
+    const ticketNumber = String(kanbanData.ticket_number || item.ticket_number || item.id?.slice(-8) || 'N/A');
+    const title = kanbanData.title || item.title || 'Sem título';
+    const description = kanbanData.description || item.description || '';
+    
+    // Dados do workflow (kanban_data como fonte principal)
+    const workflowTitle = kanbanData.title || title;
     const workflowStatus = kanbanData.status || 'Ativo';
-    const priority = kanbanData.priority || 'Normal';
-    const category = kanbanData.category || 'Sem categoria';
-    const assignedTo = kanbanData.assigned_to || 'Não atribuído';
     
-    // Progresso
-    const progressPercentage = kanbanData.progress_percentage || 0;
-    const currentStep = kanbanData.current_step || 1;
-    const totalSteps = kanbanData.total_steps || 1;
+    // Prioridade (kanban_data primeiro, depois relacionamento)
+    const priority = kanbanData.priority || item.priority?.name || 'Normal';
+    const priorityLevel = kanbanData.priority_level || item.priority?.level || 1;
+    const priorityColor = (() => {
+        const colors: Record<number, string> = {
+            1: '#16a34a', // Baixa - Verde
+            2: '#3b82f6', // Normal - Azul  
+            3: '#f59e0b', // Alta - Amarelo
+            4: '#ef4444', // Crítica - Vermelho
+            5: '#dc2626', // Urgente - Vermelho escuro
+        };
+        return colors[priorityLevel] || '#6b7280';
+    })();
     
-    // Timing
-    const timeSpent = kanbanData.time_spent || '';
-    const dueAt = kanbanData.due_at || null;
+    // Categoria (kanban_data primeiro, depois relacionamento)
+    const category = kanbanData.category || item.category?.name || 'Geral';
     
-    // Flags
-    const isOverdue = kanbanData.is_overdue || false;
+    // Responsável (kanban_data primeiro, depois relacionamento)
+    const assignedTo = kanbanData.assigned_to || item.assignee?.name || 'Não atribuído';
     
-    // Cores (já calculadas no backend)
-    const statusColor = kanbanData.status_color || '#3b82f6';
-    const priorityColor = kanbanData.priority_color || '#6b7280';
+    // Datas e prazos (kanban_data como fonte principal)
+    const dueAt = kanbanData.due_at || item.due_date || null;
+    const timeSpent = kanbanData.time_spent || null;
+    
+    // Progresso (kanban_data primeiro, depois cálculo)
+    const currentStep = kanbanData.current_step || currentWorkflow.current_step || 1;
+    const totalSteps = kanbanData.total_steps || 4;
+    const progressPercentage = kanbanData.progress_percentage || currentWorkflow.progress_percentage || ((currentStep / totalSteps) * 100);
+    
+    // Flags calculadas
+    const isOverdue = dueAt ? new Date(dueAt) < new Date() : false;
+    
+    // Status color baseado no workflow ou prioridade
+    const statusColor = kanbanData.status_color || priorityColor;
     
     // Determinar cor da coluna baseada no current_step
     const getColumnColor = () => {
@@ -153,7 +173,7 @@ export default function KanbanCard({
                         className="flex-shrink-0 w-7 h-7 rounded text-xs font-bold flex items-center justify-center text-white"
                         style={{ backgroundColor: columnColor }}
                     >
-                        #{ticketNumber.slice(-2)}
+                        #{ticketNumber.length >= 2 ? ticketNumber.slice(-2) : ticketNumber}
                     </div>
                     <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-sm text-gray-900 leading-tight line-clamp-2">

@@ -236,39 +236,19 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
     // 🎯 Filtrar dados por coluna com base no workflow (genérico)
     const filteredDataByColumn = useMemo(() => {
+        console.log('🎯 Kanban: Filtrando', localData.length, 'items em', columns.length, 'colunas');
+        
         return columns.reduce((acc, column) => {
-            const filtered = localData.filter(item => {
-                // Se tem workflow, usar filtro específico da coluna
-                if (item.currentWorkflow && column.filter) {
-                    return column.filter(item);
-                }
-                
-                // Se tem workflow mas não tem filtro específico, filtrar por template
-                if (item.currentWorkflow) {
-                    // 1. Verificar se o template_slug corresponde ao ID da coluna (mais confiável)
-                    if (item.currentWorkflow.template_slug) {
-                        return item.currentWorkflow.template_slug === column.id;
-                    }
-                    
-                    // 2. Verificar se o template atual corresponde ao ID da coluna
-                    const currentTemplate = item.currentWorkflow.currentTemplate;
-                    if (currentTemplate && currentTemplate.slug) {
-                        return currentTemplate.slug === column.id;
-                    }
-                    
-                    // 3. Fallback: verificar por current_step mapeado para column.id
-                    const expectedStep = getStepFromColumnId(column.id);
-                    if (item.currentWorkflow.current_step) {
-                        return item.currentWorkflow.current_step === expectedStep;
-                    }
-                    
-                    // 4. Último fallback: verificar por current_template_id (ULID)
-                    return item.currentWorkflow.current_template_id === column.id;
-                }
-                
-                // Fallback: filtrar por status tradicional se não tem workflow
-                return item.status === column.id;
-            });
+            let filtered = [];
+            
+            // 🎯 SEMPRE usar o filtro da coluna se ele existir
+            if (column.filter && typeof column.filter === 'function') {
+                filtered = localData.filter(column.filter);
+                console.log(`📊 "${column.title}": ${filtered.length} items`);
+            } else {
+                console.log(`⚠️ "${column.title}": sem filtro definido`);
+                filtered = [];
+            }
             
             acc[column.id] = filtered;
             return acc;

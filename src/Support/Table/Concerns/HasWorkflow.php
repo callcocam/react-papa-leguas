@@ -92,8 +92,7 @@ trait HasWorkflow
                 }
 
                 // Ordenar por sort_order
-                usort($columns, fn($a, $b) => $a['order'] <=> $b['order']);
-
+                usort($columns, fn($a, $b) => $a['order'] <=> $b['order']); 
                 return $columns;
             }
         } catch (\Exception $e) {
@@ -139,7 +138,7 @@ trait HasWorkflow
 
     protected function getColumnsWithWorkflowSupport(Model $row): array
     {
-        $data = $row->toArray();
+        $data = $row->toArray(); 
         return [
             'workflowables' => data_get($data, 'workflowables') ?? [],
             'currentWorkflow' => data_get($data, 'current_workflow') ?? null,
