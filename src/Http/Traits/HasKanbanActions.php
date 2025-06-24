@@ -254,7 +254,38 @@ trait HasKanbanActions
     { 
         // Validação básica: verificar se a transição é permitida pelo template
         if ($fromTemplate && !$fromTemplate->canTransitionTo($toTemplate)) {
+            Log::info('🚫 Transição negada', [
+                'from_template' => [
+                    'id' => $fromTemplate->id,
+                    'name' => $fromTemplate->name,
+                    'status' => $fromTemplate->status,
+                    'is_active' => $fromTemplate->isActive(),
+                    'next_template_id' => $fromTemplate->next_template_id,
+                    'previous_template_id' => $fromTemplate->previous_template_id,
+                    'sort_order' => $fromTemplate->sort_order,
+                ],
+                'to_template' => [
+                    'id' => $toTemplate->id,
+                    'name' => $toTemplate->name,
+                    'status' => $toTemplate->status,
+                    'is_active' => $toTemplate->isActive(),
+                    'sort_order' => $toTemplate->sort_order,
+                    'requires_approval' => $toTemplate->requires_approval,
+                ],
+                'allowed_next_ids' => $fromTemplate->getNextTemplateIds(),
+                'can_go_back' => method_exists($fromTemplate, 'canGoBackTo') ? $fromTemplate->canGoBackTo($toTemplate) : false,
+                'can_go_forward' => method_exists($fromTemplate, 'canGoForwardTo') ? $fromTemplate->canGoForwardTo($toTemplate) : false,
+                'generated_message' => $fromTemplate->getTransitionMessage($toTemplate),
+            ]);
+            
             $this->workflowMessage = $fromTemplate->getTransitionMessage($toTemplate);
+            
+            Log::info('🎯 Mensagem de transição capturada', [
+                'message' => $this->workflowMessage,
+                'from' => $fromTemplate->name,
+                'to' => $toTemplate->name,
+            ]);
+            
             return false;
         } 
         // Validação de limite de itens no template de destino
@@ -278,11 +309,7 @@ trait HasKanbanActions
             return false;
         }
 
-        // Validação se template de destino está ativo
-        if (!$toTemplate->isActive()) {
-            $this->workflowMessage = $toTemplate->getInactiveMessage();
-            return false;
-        }
+        // NOTA: Validação de template ativo removida pois se está no Kanban, significa que está ativo
 
         // Outras validações podem ser implementadas aqui
         return true;

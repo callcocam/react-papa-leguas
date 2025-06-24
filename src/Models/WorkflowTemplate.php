@@ -271,18 +271,23 @@ class WorkflowTemplate extends AbstractModel
      */
     public function canTransitionTo(WorkflowTemplate $target): bool
     {
-        // 🎯 Método 1: Usar transition_rules se disponível
+        // 🎯 Prioridade 1: Verificar se é permitido voltar (previous_template_id)
+        if ($this->previous_template_id && $this->previous_template_id === $target->id) {
+            return true;
+        }
+
+        // 🎯 Prioridade 2: Verificar se é permitido avançar (next_template_id)
+        if ($this->next_template_id && $this->next_template_id === $target->id) {
+            return true;
+        }
+
+        // 🎯 Prioridade 3: Usar transition_rules se disponível
         if ($this->transition_rules) {
-            $nextTemplates = $this->getNextTemplates();
-            return collect($nextTemplates)->contains('id', $target->id);
+            $allowedIds = $this->transition_rules['allowed_next'] ?? [];
+            return in_array($target->id, $allowedIds);
         }
 
-        // 🎯 Método 2: Usar next_template_id se disponível
-        if ($this->next_template_id) {
-            return $this->next_template_id === $target->id;
-        }
-
-        // 🎯 Método 3: Fallback - permitir transição para próximo na ordem
+        // 🎯 Fallback 1: Permitir transição para próximo na ordem
         $nextTemplate = $this->workflow->templates()
             ->where('sort_order', '>', $this->sort_order)
             ->active()
@@ -293,20 +298,21 @@ class WorkflowTemplate extends AbstractModel
             return true;
         }
 
-        // 🎯 Método 4: Permitir transição para template anterior (para voltar)
-        if ($this->previous_template_id) {
-            return $this->previous_template_id === $target->id;
+        // 🎯 Fallback 2: Permitir transição para anterior na ordem (se não tem previous_template_id definido)
+        if (!$this->previous_template_id) {
+            $previousTemplate = $this->workflow->templates()
+                ->where('sort_order', '<', $this->sort_order)
+                ->active()
+                ->ordered()
+                ->latest('sort_order')
+                ->first();
+
+            if ($previousTemplate && $previousTemplate->id === $target->id) {
+                return true;
+            }
         }
 
-        // 🎯 Método 5: Fallback - permitir transição para anterior na ordem
-        $previousTemplate = $this->workflow->templates()
-            ->where('sort_order', '<', $this->sort_order)
-            ->active()
-            ->ordered()
-            ->latest('sort_order')
-            ->first();
-
-        return $previousTemplate && $previousTemplate->id === $target->id;
+        return false;
     }
 
     /**
@@ -325,27 +331,33 @@ class WorkflowTemplate extends AbstractModel
             return "'{$this->name}' é uma etapa final - não permite movimentação para outras etapas";
         }
 
-        // 🎯 Verificar se é tentativa de pular etapas
-        if ($this->next_template_id && $target->id !== $this->next_template_id) {
-            $nextTemplate = $this->workflow->templates()->find($this->next_template_id);
-            if ($nextTemplate) {
-                return "Não é possível mover de '{$this->name}' diretamente para '{$target->name}'. A próxima etapa deve ser '{$nextTemplate->name}'";
+        // 🎯 Verificar se está tentando voltar quando não permitido
+        if ($target->sort_order < $this->sort_order) {
+            if ($this->previous_template_id) {
+                if ($this->previous_template_id !== $target->id) {
+                    $previousTemplate = $this->workflow->templates()->find($this->previous_template_id);
+                    if ($previousTemplate) {
+                        return "Para voltar de '{$this->name}', você deve mover para '{$previousTemplate->name}' primeiro. Movimentação direta para '{$target->name}' não é permitida.";
+                    }
+                }
+            } else {
+                return "Não é possível voltar de '{$this->name}' para '{$target->name}' - esta etapa não permite retrocesso";
             }
         }
 
-        // 🎯 Verificar se está tentando voltar quando não permitido
-        if ($target->sort_order < $this->sort_order && !$this->previous_template_id) {
-            return "Não é possível voltar de '{$this->name}' para '{$target->name}' - esta etapa não permite retrocesso";
+        // 🎯 Verificar se é tentativa de pular etapas para frente
+        if ($target->sort_order > $this->sort_order) {
+            if ($this->next_template_id && $target->id !== $this->next_template_id) {
+                $nextTemplate = $this->workflow->templates()->find($this->next_template_id);
+                if ($nextTemplate) {
+                    return "Não é possível mover de '{$this->name}' diretamente para '{$target->name}'. A próxima etapa deve ser '{$nextTemplate->name}'";
+                }
+            }
         }
 
         // 🎯 Verificar regras de aprovação
         if ($target->requires_approval && !auth()->user()?->hasRole('admin')) {
             return "A etapa '{$target->name}' requer aprovação de administrador para movimentação";
-        }
-
-        // 🎯 Verificar se template de destino está inativo
-        if (!$target->isActive()) {
-            return "A etapa '{$target->name}' está inativa e não aceita novos itens";
         }
 
         // 🎯 Mensagem genérica
@@ -382,6 +394,42 @@ class WorkflowTemplate extends AbstractModel
     public function getInactiveMessage(): string
     {
         return "A coluna '{$this->name}' está temporariamente inativa e não aceita novos itens. Aguarde a reativação ou escolha outra coluna.";
+    }
+
+    /**
+     * Verificar se permite voltar para um template específico.
+     */
+    public function canGoBackTo(WorkflowTemplate $target): bool
+    {
+        // Verificar se tem previous_template_id definido e corresponde ao target
+        if ($this->previous_template_id && $this->previous_template_id === $target->id) {
+            return true;
+        }
+
+        // Se não tem previous_template_id, verificar se pode voltar pela ordem
+        if (!$this->previous_template_id && $target->sort_order < $this->sort_order) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Verificar se permite avançar para um template específico.
+     */
+    public function canGoForwardTo(WorkflowTemplate $target): bool
+    {
+        // Verificar se tem next_template_id definido e corresponde ao target
+        if ($this->next_template_id && $this->next_template_id === $target->id) {
+            return true;
+        }
+
+        // Se não tem next_template_id, verificar se pode avançar pela ordem
+        if (!$this->next_template_id && $target->sort_order > $this->sort_order) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

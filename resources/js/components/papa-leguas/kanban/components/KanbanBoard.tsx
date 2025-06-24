@@ -71,6 +71,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             if (result.success) {
                 console.log('✅ Card movido com sucesso:', result.data);
 
+                // 🎉 Toast de sucesso com mensagem do backend
+                const successMessage = result.message || 'Card movido com sucesso';
+                success('Movimentação realizada', successMessage);
+
                 // Atualizar dados locais se necessário
                 if (onRefresh) {
                     onRefresh();
@@ -83,9 +87,74 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
         } catch (err: any) {
             console.error('❌ Erro ao mover card:', err);
-            const errorMessage = err.response?.data?.message || err.message || 'Erro ao mover card';
-            console.log('❌ Erro ao mover card:', errorMessage);
-            error('Erro ao mover card', errorMessage);
+            
+            // 🎯 Extrair mensagens específicas do backend
+            const response = err.response?.data;
+            let title = 'Erro ao mover card';
+            let description = 'Ocorreu um erro inesperado';
+
+            if (response) {
+                // 🎯 Tratar diferentes códigos de status
+                const status = err.response?.status;
+                
+                switch (status) {
+                    case 422: // Validation Error
+                        title = 'Movimentação não permitida';
+                        break;
+                    case 404: // Not Found
+                        title = 'Item não encontrado';
+                        break;
+                    case 403: // Forbidden
+                        title = 'Acesso negado';
+                        break;
+                    case 500: // Server Error
+                        title = 'Erro interno do sistema';
+                        break;
+                    default:
+                        // 🔥 Usar mensagem específica do backend como título
+                        if (response.message) {
+                            title = response.message;
+                        }
+                }
+
+                // 🔥 Extrair detalhes específicos dos erros de validação
+                if (response.errors) {
+                    const errorDetails = [];
+                    
+                    // Verificar erros de transição
+                    if (response.errors.transition) {
+                        errorDetails.push(...response.errors.transition);
+                    }
+                    
+                    // Verificar erros de workflow
+                    if (response.errors.workflow) {
+                        errorDetails.push(...response.errors.workflow);
+                    }
+                    
+                    // Verificar outros erros
+                    Object.entries(response.errors).forEach(([key, messages]) => {
+                        if (key !== 'transition' && key !== 'workflow' && Array.isArray(messages)) {
+                            errorDetails.push(...messages);
+                        }
+                    });
+
+                    // Usar o primeiro erro como descrição detalhada
+                    if (errorDetails.length > 0) {
+                        description = errorDetails[0];
+                    }
+                } else if (response.message) {
+                    // Se não há erros específicos, usar a mensagem como descrição
+                    description = response.message;
+                    title = 'Movimentação não permitida';
+                }
+            } else {
+                // Erro de rede ou outro erro genérico
+                description = err.message || 'Verifique sua conexão e tente novamente';
+                title = 'Erro de conexão';
+            }
+
+            // 🚨 Exibir toast com mensagens contextuais
+            error(title, description);
             return false;
         }
     };

@@ -118,6 +118,7 @@ abstract class AbstractModel extends Model
      */
     public function isPublished(): bool
     {
+        
         return $this->status === BaseStatus::Published;
     }
 
