@@ -1,9 +1,7 @@
 import { useState, useCallback } from 'react';
 import { DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
 import type { 
-    DragDropConfig, 
-    CardMoveData, 
-    MoveCardResponse 
+    DragDropConfig,  
 } from '../types';
 
 /**

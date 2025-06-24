@@ -15,6 +15,11 @@ import { useDragDrop } from '../hooks/useDragDrop';
 import axios from 'axios';
 import type { KanbanBoardProps, DragDropConfig } from '../types';
 
+
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+axios.defaults.withCredentials = true;
+axios.defaults.withXSRFToken = true;
+
 /**
  * Componente principal do Kanban Board
  * 
@@ -47,7 +52,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     // 🎯 Função simples para mover card (se drag & drop estiver habilitado)
     const handleMoveCard = async (cardId: string, fromColumnId: string, toColumnId: string, item: any): Promise<boolean> => {
         try {
-            console.log('🚀 Movendo card:', { cardId, fromColumnId, toColumnId });
+            console.log('🚀 Movendo card:', { cardId, fromColumnId, toColumnId }); 
 
             const response = await axios.post(apiEndpoint, {
                 card_id: cardId,
@@ -55,25 +60,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 to_column_id: toColumnId,
                 workflow_slug: workflowSlug,
                 item: item,
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                }
             });
 
             const result = response.data;
 
             if (result.success) {
                 console.log('✅ Card movido com sucesso:', result.data);
-                
+
                 // Atualizar dados locais se necessário
                 if (onRefresh) {
                     onRefresh();
                 }
-                
+
                 return true;
             } else {
                 throw new Error(result.message || 'Erro ao mover card');
@@ -88,15 +86,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     };
 
     // 🎯 Filtrar dados por coluna usando configurações do backend
-    const filteredDataByColumn = useMemo(() => { 
+    const filteredDataByColumn = useMemo(() => {
 
         return columns.reduce((acc, column) => {
-            const filtered = localData.filter(function(item: any) {
+            const filtered = localData.filter(function (item: any) {
                 // Verificar se o item tem currentWorkflow
                 if (!item.currentWorkflow) {
                     console.log('⚠️ Item sem currentWorkflow:', item.id);
                     return false;
-                } 
+                }
                 // Método 1: Comparar currentTemplate.slug com column.slug (PRINCIPAL)
                 const currentTemplateSlug = item.currentWorkflow.currentTemplate?.slug;
                 if (currentTemplateSlug === column.slug) {
@@ -106,28 +104,28 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
                 // Método 2: Fallback - Comparar current_template_id com column.id (se slug não existir)
                 const currentTemplateId = item.currentWorkflow.current_template_id;
-                if (currentTemplateId === column.id) { 
+                if (currentTemplateId === column.id) {
                     return true;
                 }
 
                 // Método 3: Usar current_step se a coluna tiver sort_order
                 const currentStep = item.currentWorkflow.current_step;
-                if (column.sort_order && currentStep === column.sort_order) { 
+                if (column.sort_order && currentStep === column.sort_order) {
                     return true;
                 }
 
                 // Método 4: Fallback para status (se não houver workflow específico)
-                if (item.status === column.id) { 
+                if (item.status === column.id) {
                     return true;
                 }
 
                 return false;
-            }); 
+            });
             acc[column.id] = filtered;
             return acc;
         }, {} as Record<string, any[]>);
     }, [localData, columns]);
- 
+
 
     // 🎯 Configuração do Drag & Drop (apenas se habilitado)
     const dragConfig: DragDropConfig = {
@@ -180,7 +178,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     className="flex gap-4 overflow-x-auto pb-4 h-full"
                     style={{ height: height }}
                 >
-                    {columns.map((column) => { 
+                    {columns.map((column) => {
                         const columnData = filteredDataByColumn[column.id] || [];
 
                         return (
