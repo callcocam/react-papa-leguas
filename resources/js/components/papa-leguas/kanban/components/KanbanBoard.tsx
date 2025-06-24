@@ -12,6 +12,7 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
 import { useDragDrop } from '../hooks/useDragDrop';
+import { useToast } from '../../../../hooks/use-toast';
 import axios from 'axios';
 import type { KanbanBoardProps, DragDropConfig } from '../types';
 
@@ -38,6 +39,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 }) => {
     // Estados locais 
     const [localData, setLocalData] = useState(data);
+
+    // Hook para toasts
+    const { error, success } = useToast();
 
     // Configurações padrão vindas das props
     const {
@@ -77,10 +81,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 throw new Error(result.message || 'Erro ao mover card');
             }
 
-        } catch (error: any) {
-            console.error('❌ Erro ao mover card:', error);
-            const errorMessage = error.response?.data?.message || error.message || 'Erro ao mover card';
-            alert(`Erro: ${errorMessage}`);
+        } catch (err: any) {
+            console.error('❌ Erro ao mover card:', err);
+            const errorMessage = err.response?.data?.message || err.message || 'Erro ao mover card';
+            error('Erro ao mover card', errorMessage);
             return false;
         }
     };

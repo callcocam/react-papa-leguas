@@ -34,45 +34,92 @@ use Illuminate\Validation\ValidationException;
  */
 trait HasKanbanActions
 {
+    use HasKanbanColumn;
+    use HasKanbanStats;
+
+    protected ?string $workflowMessage = null;
+    
     /**
      * Mover card entre colunas do Kanban
      */
     public function moveCard(Request $request)
     {
         try {
-            // 🎯 Validar dados de entrada
+            // 🎯 Validar dados de entrada - aceitar ambos os formatos para compatibilidade
             $validated = $request->validate([
                 'card_id' => 'required',
-                'from_template_id' => 'required|string',
-                'to_template_id' => 'required|string',
+                // Aceitar tanto column_id quanto template_id (compatibilidade)
+                'from_column_id' => 'required|string',
+                'to_column_id' => 'required|string',
+                'from_template_id' => 'nullable|string',
+                'to_template_id' => 'nullable|string',
                 'workflow_slug' => 'nullable|string',
                 'item' => 'nullable|array',
                 'workflow_data' => 'nullable|array',
             ]);
 
             $cardId = $validated['card_id'];
-            $fromTemplateId = $validated['from_template_id'];
-            $toTemplateId = $validated['to_template_id'];
-            $workflowSlug = $validated['workflow_slug'] ?? $this->detectWorkflowSlug();
-
+            
+            // 🔄 Usar column_id se template_id não estiver presente (compatibilidade)
+            $fromTemplateId = $validated['from_template_id'] ?? $validated['from_column_id'];
+            $toTemplateId = $validated['to_template_id'] ?? $validated['to_column_id'];
+            $workflowSlug = $validated['workflow_slug'] ?? $this->detectWorkflowSlug();     
             // 🔍 Buscar o item
-            $modelClass = $this->resolveModelClass();
+            $modelClass = $this->getModelClass(); // ✅ Corrigido: era resolveModelClass()
+            if (!$modelClass) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Classe do modelo não definida no controller',
+                ], 500);
+            }
+
             $item = $modelClass::find($cardId);
             if (!$item) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Item não encontrado',
+                    'errors' => [
+                        'card_id' => ['Item com ID ' . $cardId . ' não encontrado']
+                    ]
                 ], 404);
             }
 
-            // 🔍 Buscar templates do workflow
-            $fromTemplate = WorkflowTemplate::where('slug', $fromTemplateId)->first();
-            $toTemplate = WorkflowTemplate::where('slug', $toTemplateId)->first();
+            // 🔍 Buscar templates do workflow - primeiro por ID, depois por slug
+            $fromTemplate = WorkflowTemplate::where('id', $fromTemplateId)
+                ->orWhere('slug', $fromTemplateId)
+                ->first();
+                
+            $toTemplate = WorkflowTemplate::where('id', $toTemplateId)
+                ->orWhere('slug', $toTemplateId)
+                ->first();
 
-            if (!$fromTemplate || !$toTemplate) {
+            if (!$fromTemplate) {
+                Log::error('❌ Template de origem não encontrado', [
+                    'from_template_id' => $fromTemplateId,
+                    'available_templates' => WorkflowTemplate::pluck('id', 'slug')->toArray()
+                ]);
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Template de workflow não encontrado',
+                    'message' => 'Template de origem não encontrado',
+                    'errors' => [
+                        'from_template_id' => ['Template com ID/slug ' . $fromTemplateId . ' não encontrado']
+                    ]
+                ], 404);
+            }
+
+            if (!$toTemplate) {
+                Log::error('❌ Template de destino não encontrado', [
+                    'to_template_id' => $toTemplateId,
+                    'available_templates' => WorkflowTemplate::pluck('id', 'slug')->toArray()
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Template de destino não encontrado',
+                    'errors' => [
+                        'to_template_id' => ['Template com ID/slug ' . $toTemplateId . ' não encontrado']
+                    ]
                 ], 404);
             }
 
@@ -82,7 +129,7 @@ trait HasKanbanActions
                     'success' => false,
                     'message' => 'Transição não permitida pelo workflow',
                     'errors' => [
-                        'transition' => ['Movimento não permitido entre estes templates']
+                        'transition' => [$this->workflowMessage ?? 'Movimento não permitido entre estes templates']
                     ]
                 ], 422);
             }
@@ -95,10 +142,18 @@ trait HasKanbanActions
                 $workflowable = $item->currentWorkflow;
                 
                 if (!$workflowable) {
+                    Log::warning('⚠️ Item sem workflowable ativo', [
+                        'card_id' => $cardId,
+                        'card_type' => get_class($item)
+                    ]);
+                    
                     DB::rollback();
                     return response()->json([
                         'success' => false,
                         'message' => 'Item não possui workflow ativo. Workflowable deve ser criado antes da movimentação.',
+                        'errors' => [
+                            'workflow' => ['Item não está associado a nenhum workflow ativo']
+                        ]
                     ], 422);
                 }
 
@@ -130,9 +185,19 @@ trait HasKanbanActions
                 ]);
             } catch (\Exception $e) {
                 DB::rollback();
+                Log::error('❌ Erro durante transação de movimentação', [
+                    'error' => $e->getMessage(),
+                    'card_id' => $cardId,
+                    'trace' => $e->getTraceAsString()
+                ]);
                 throw $e;
             }
         } catch (ValidationException $e) {
+            Log::error('❌ Dados de entrada inválidos', [
+                'errors' => $e->errors(),
+                'request' => $request->all()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Dados inválidos',
@@ -147,195 +212,11 @@ trait HasKanbanActions
 
             return response()->json([
                 'success' => false,
-                'message' => 'Erro interno do servidor ao mover card',
+                'message' => 'Erro interno do servidor ao mover card: ' . $e->getMessage(),
             ], 500);
         }
     }
-
-    /**
-     * Obter estatísticas do Kanban
-     */
-    public function getKanbanStats(Request $request)
-    {
-        try {
-            $workflowSlug = $request->input('workflow_slug', $this->detectWorkflowSlug());
-            $filters = $request->except(['workflow_slug']);
-
-            // Buscar workflow
-            $workflow = Workflow::where('slug', $workflowSlug)->first();
-            if (!$workflow) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Workflow não encontrado',
-                ], 404);
-            }
-
-            // Buscar templates do workflow
-            $templates = WorkflowTemplate::where('workflow_id', $workflow->id)
-                ->orderBy('sort_order')
-                ->get();
-
-            // Contar itens por template
-            $modelClass = $this->resolveModelClass();
-            $query = $modelClass::whereHas('currentWorkflow', function ($q) use ($workflow) {
-                $q->where('workflow_id', $workflow->id);
-            });
-
-            // Aplicar filtros específicos
-            $query = $this->applyKanbanFilters($query, $filters);
-
-            $totalItems = $query->count();
-            $statsByTemplate = [];
-
-            foreach ($templates as $template) {
-                $count = $query->clone()
-                    ->whereHas('currentWorkflow', function ($q) use ($template) {
-                        $q->where('current_template_id', $template->id);
-                    })
-                    ->count();
-
-                $statsByTemplate[] = [
-                    'id' => $template->id,
-                    'slug' => $template->slug,
-                    'name' => $template->name,
-                    'count' => $count,
-                    'percentage' => $totalItems > 0 ? round(($count / $totalItems) * 100, 2) : 0,
-                    'color' => $template->color ?? '#6b7280',
-                    'icon' => $template->icon ?? 'circle',
-                    'order' => $template->sort_order,
-                ];
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'total' => $totalItems,
-                    'workflow' => [
-                        'id' => $workflow->id,
-                        'name' => $workflow->name,
-                        'slug' => $workflow->slug,
-                    ],
-                    'by_template' => $statsByTemplate,
-                    'updated_at' => now()->toISOString(),
-                ]
-            ]);
-        } catch (\Exception $e) {
-            Log::error('❌ Erro ao buscar estatísticas do Kanban', [
-                'error' => $e->getMessage(),
-                'request' => $request->all(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao buscar estatísticas',
-            ], 500);
-        }
-    }
-
-    /**
-     * Obter colunas/templates do workflow
-     */
-    public function getKanbanColumns(Request $request)
-    {
-        try {
-            $workflowSlug = $request->input('workflow_slug', $this->detectWorkflowSlug());
-            $filters = $request->except(['workflow_slug']);
-
-            // Buscar workflow
-            $workflow = Workflow::where('slug', $workflowSlug)->first();
-            if (!$workflow) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Workflow não encontrado',
-                ], 404);
-            }
-
-            // Buscar templates do workflow
-            $templates = WorkflowTemplate::where('workflow_id', $workflow->id)
-                ->orderBy('sort_order')
-                ->get();
-
-            // Contar total de itens
-            $modelClass = $this->resolveModelClass();
-            $totalItems = $modelClass::whereHas('currentWorkflow', function ($q) use ($workflow) {
-                $q->where('workflow_id', $workflow->id);
-            })->count();
-
-            // Mapear templates para formato de resposta
-            $templatesData = $templates->map(function ($template) {
-                return [
-                    'id' => $template->id,
-                    'slug' => $template->slug,
-                    'name' => $template->name,
-                    'color' => $template->color ?? '#6b7280',
-                    'icon' => $template->icon ?? 'circle',
-                    'order' => $template->sort_order,
-                    'max_items' => $template->max_items,
-                    'is_initial' => $template->is_initial ?? false,
-                    'is_final' => $template->is_final ?? false,
-                    'can_transition_to' => $template->getNextTemplateIds(),
-                    'estimated_duration_days' => $template->estimated_duration_days,
-                    'auto_assign' => $template->auto_assign ?? false,
-                    'requires_approval' => $template->requires_approval ?? false,
-                ];
-            });
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'workflow' => [
-                        'id' => $workflow->id,
-                        'name' => $workflow->name,
-                        'slug' => $workflow->slug,
-                        'description' => $workflow->description,
-                    ],
-                    'templates' => $templatesData,
-                    'total_items' => $totalItems,
-                    'updated_at' => now()->toISOString(),
-                ]
-            ]);
-        } catch (\Exception $e) {
-            Log::error('❌ Erro ao buscar colunas do Kanban', [
-                'error' => $e->getMessage(),
-                'request' => $request->all(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao buscar colunas',
-            ], 500);
-        }
-    }
-
-    /**
-     * Buscar workflowable para um card
-     */
-    protected function findWorkflowableForCard($card): ?Workflowable
-    {
-        return Workflowable::where('workflowable_type', get_class($card))
-            ->where('workflowable_id', $card->id)
-            ->first();
-    }
-
-    /**
-     * Detectar workflow ID baseado no tipo de CRUD
-     */
-    protected function detectWorkflowId(string $crudType): ?string
-    {
-        // Mapear tipos de CRUD para slugs de workflow
-        $workflowSlugs = [
-            'tickets' => 'suporte-tecnico',
-            'sales' => 'pipeline-vendas',
-            'orders' => 'processamento-pedidos',
-            'pipeline' => 'desenvolvimento',
-            'generic' => 'processo-generico',
-        ];
-
-        $slug = $workflowSlugs[$crudType] ?? $workflowSlugs['generic'];
-
-        $workflow = Workflow::where('slug', $slug)->first();
-        return $workflow?->id;
-    }
+ 
 
     /**
      * Ações executadas após mover um card (sobrescrever conforme necessário)
@@ -370,21 +251,26 @@ trait HasKanbanActions
      * Validar transição entre templates (sobrescrever conforme necessário)
      */
     protected function validateKanbanTransition($card, $fromTemplate, $toTemplate, string $workflowSlug): bool
-    {
+    { 
         // Validação básica: verificar se a transição é permitida pelo template
         if ($fromTemplate && !$fromTemplate->canTransitionTo($toTemplate)) {
+            if(method_exists($fromTemplate, 'getTransitionMessage')){
+                $this->workflowMessage = $fromTemplate->getTransitionMessage();
+            }
             return false;
-        }
-
+        } 
         // Validação de limite de itens no template de destino
         if ($toTemplate->max_items) {
-            $modelClass = $this->resolveModelClass();
-            $currentCount = $modelClass::whereHas('currentWorkflow', function ($q) use ($toTemplate) {
-                $q->where('current_template_id', $toTemplate->id);
-            })->count();
+            $modelClass = $this->getModelClass();
+            if ($modelClass) {
+                $currentCount = $modelClass::whereHas('currentWorkflow', function ($q) use ($toTemplate) {
+                    $q->where('current_template_id', $toTemplate->id);
+                })->count();
 
-            if ($currentCount >= $toTemplate->max_items) {
-                return false;
+                if ($currentCount >= $toTemplate->max_items) {
+                    $this->workflowMessage = 'Limite de itens atingido no template de destino';
+                    return false;
+                }
             }
         }
 
@@ -415,50 +301,5 @@ trait HasKanbanActions
         return null;
     }
 
-    /**
-     * Criar um novo workflowable para um card
-     * 
-     * @deprecated Este método não deveria ser usado durante movimentação no Kanban.
-     * Workflowables devem ser criados na criação do item (ex: ao criar ticket).
-     * Mantido apenas para compatibilidade, mas será removido em versões futuras.
-     */
-    protected function createWorkflowable($card, string $workflowSlug): Workflowable
-    {
-        Log::warning('⚠️ createWorkflowable() chamado durante movimentação Kanban', [
-            'card_id' => $card->id,
-            'card_type' => get_class($card),
-            'workflow_slug' => $workflowSlug,
-            'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)
-        ]);
 
-        // Buscar workflow pelo slug
-        $workflow = Workflow::where('slug', $workflowSlug)->first();
-        if (!$workflow) {
-            throw new \Exception("Workflow não encontrado: {$workflowSlug}");
-        }
-
-        // Buscar primeiro template do workflow (template inicial)
-        $initialTemplate = WorkflowTemplate::where('workflow_id', $workflow->id)
-            ->orderBy('sort_order')
-            ->first();
-
-        if (!$initialTemplate) {
-            throw new \Exception("Nenhum template encontrado para o workflow: {$workflowSlug}");
-        }
-
-        // Criar workflowable com dados corretos
-        return Workflowable::create([
-            'workflowable_type' => get_class($card),
-            'workflowable_id' => $card->id,
-            'workflow_id' => $workflow->id,
-            'current_template_id' => $initialTemplate->id,
-            'current_step' => 1,
-            'total_steps' => WorkflowTemplate::where('workflow_id', $workflow->id)->count(),
-            'progress_percentage' => 0,
-            'status' => 'active',
-            'started_at' => now(),
-            'assigned_to' => auth()->id(),
-            'assigned_at' => now(),
-        ]);
-    }
 }

@@ -72,6 +72,8 @@ class WorkflowTemplate extends AbstractModel
         'status',
         'user_id',
         'tenant_id',
+        'next_template_id',
+        'previous_template_id',
     ];
 
     /**
@@ -218,18 +220,50 @@ class WorkflowTemplate extends AbstractModel
      */
     public function getNextTemplateIds(): array
     {
-        if (!$this->transition_rules) {
-            // Se não há regras de transição definidas, permitir transição para o próximo template na ordem
+        $allowedTemplates = [];
+
+        // 🎯 Método 1: Usar transition_rules se disponível
+        if ($this->transition_rules) {
+            $allowedTemplates = array_merge($allowedTemplates, $this->transition_rules['allowed_next'] ?? []);
+        }
+
+        // 🎯 Método 2: Usar next_template_id se disponível
+        if ($this->next_template_id) {
+            $allowedTemplates[] = $this->next_template_id;
+        }
+
+        // 🎯 Método 3: Usar previous_template_id se disponível (permitir voltar)
+        if ($this->previous_template_id) {
+            $allowedTemplates[] = $this->previous_template_id;
+        }
+
+        // 🎯 Método 4: Fallback - próximo e anterior na ordem
+        if (empty($allowedTemplates)) {
+            // Próximo template na ordem
             $nextTemplate = $this->workflow->templates()
                 ->where('sort_order', '>', $this->sort_order)
                 ->active()
                 ->ordered()
                 ->first();
                 
-            return $nextTemplate ? [$nextTemplate->id] : [];
+            if ($nextTemplate) {
+                $allowedTemplates[] = $nextTemplate->id;
+            }
+
+            // Template anterior na ordem (para voltar)
+            $previousTemplate = $this->workflow->templates()
+                ->where('sort_order', '<', $this->sort_order)
+                ->active()
+                ->ordered()
+                ->latest('sort_order')
+                ->first();
+                
+            if ($previousTemplate) {
+                $allowedTemplates[] = $previousTemplate->id;
+            }
         }
 
-        return $this->transition_rules['allowed_next'] ?? [];
+        return array_unique($allowedTemplates);
     }
 
     /**
@@ -237,9 +271,42 @@ class WorkflowTemplate extends AbstractModel
      */
     public function canTransitionTo(WorkflowTemplate $target): bool
     {
-        $nextTemplates = $this->getNextTemplates();
+        // 🎯 Método 1: Usar transition_rules se disponível
+        if ($this->transition_rules) {
+            $nextTemplates = $this->getNextTemplates();
+            return collect($nextTemplates)->contains('id', $target->id);
+        }
 
-        return collect($nextTemplates)->contains('id', $target->id);
+        // 🎯 Método 2: Usar next_template_id se disponível
+        if ($this->next_template_id) {
+            return $this->next_template_id === $target->id;
+        }
+
+        // 🎯 Método 3: Fallback - permitir transição para próximo na ordem
+        $nextTemplate = $this->workflow->templates()
+            ->where('sort_order', '>', $this->sort_order)
+            ->active()
+            ->ordered()
+            ->first();
+
+        if ($nextTemplate && $nextTemplate->id === $target->id) {
+            return true;
+        }
+
+        // 🎯 Método 4: Permitir transição para template anterior (para voltar)
+        if ($this->previous_template_id) {
+            return $this->previous_template_id === $target->id;
+        }
+
+        // 🎯 Método 5: Fallback - permitir transição para anterior na ordem
+        $previousTemplate = $this->workflow->templates()
+            ->where('sort_order', '<', $this->sort_order)
+            ->active()
+            ->ordered()
+            ->latest('sort_order')
+            ->first();
+
+        return $previousTemplate && $previousTemplate->id === $target->id;
     }
 
     /**
@@ -257,6 +324,8 @@ class WorkflowTemplate extends AbstractModel
             'icon' => $this->icon ?? 'circle',
             'limit' => $this->max_items,
             'order' => $this->sort_order ?? 0,
+            'next_template_id' => $this->next_template_id ?? null,
+            'previous_template_id' => $this->previous_template_id ?? null,
             'description' => $this->description, 
             'auto_assign' => $this->auto_assign ?? false,
             'requires_approval' => $this->requires_approval ?? false,
