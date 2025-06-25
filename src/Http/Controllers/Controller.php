@@ -143,10 +143,20 @@ class Controller extends BaseController
 
     protected function getTable(): Table
     { 
-        $tableClass = ReactPapaLeguas::getTableClass($this->getTableKeyName());
-        if(!$tableClass){
-            throw new \Exception("Table class not found for controller: {$this->getTableKeyName()}");
+        // Primeiro tentar getTableClass() se existir no controller
+        if (method_exists($this, 'getTableClass')) {
+            $tableClass = $this->getTableClass();
+            if ($tableClass && class_exists($tableClass)) {
+                return new $tableClass();
+            }
         }
-        return new $tableClass();
+        
+        // Fallback para sistema de registro (se existir)
+        $tableClass = ReactPapaLeguas::getTableClass($this->getTableKeyName());
+        if ($tableClass && class_exists($tableClass)) {
+            return new $tableClass();
+        }
+        
+        throw new \Exception("Table class not found for controller: {$this->getTableKeyName()}. Implement getTableClass() method or register the table.");
     }
 }

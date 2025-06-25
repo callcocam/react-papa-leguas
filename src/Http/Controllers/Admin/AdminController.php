@@ -164,12 +164,21 @@ class AdminController extends Controller
         // Configurar eager loading para o contexto index
         $this->configureEagerLoadingForController();
         
-        // Processar dados da tabela com eager loading contextual
+        // 🎯 SIMPLIFICADO: Usar apenas toArray() da Table que já faz TUDO
         $table = $this->getTable();
-        $tableData = $table->toArray(); 
-        // Processar requisição com contexto 'index'
+        
+        // Configurar eager loading na Table baseado no controller
         $customRelations = $this->getCustomRelationsForContext('index');
-        $tableData['data'] = $this->processRequest($request, $customRelations, 'index');
+        if (!empty($customRelations)) {
+            $table->getDataSource()->with($customRelations);
+        }
+        
+        // O trait InteractsWithTable já processa automaticamente:
+        // - request('search')
+        // - request('filters') 
+        // - request('sort_column') e request('sort_direction')
+        // - paginação
+        $tableData = $table->toArray();
         
         // Adicionar informações de relacionamentos para debugging
         if (config('app.debug')) {
@@ -177,6 +186,7 @@ class AdminController extends Controller
                 'detected' => $this->getDetectedRelationsInfo(),
                 'loaded_for_index' => $this->getRelationsForContext('index'),
                 'custom_config' => $customRelations,
+                'table_data_source' => $table->getDataSource()->getType(),
             ];
         }
         
@@ -292,6 +302,8 @@ class AdminController extends Controller
         // Pode ser sobrescrito nas classes filhas para dados específicos
         return [];
     }
+
+
 
     /**
      * Find a record by ID using the resolved model.
