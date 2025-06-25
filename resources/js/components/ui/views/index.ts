@@ -7,9 +7,10 @@ import KanbanRenderer from './renderes/kanban-renderer';
 // O tipo real é React.FC<RendererProps>, mas EditableCell tem um tipo diferente.
 const viewsRenderers: { [key: string]: React.FC<any> } = {
     // Renderers de texto
-    table: TableRenderer,
-    card: CardRenderer,
-    kanban: KanbanRenderer
+    list: TableRenderer,
+    cards: CardRenderer,
+    kanban: KanbanRenderer,
+    default: TableRenderer
 };
 
 // Armazenamento mutável para permitir a injeção de novos renderers

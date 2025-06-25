@@ -1,4 +1,7 @@
-import React from 'react'; 
+import React from 'react';
+import { KanbanColumn, KanbanRendererProps } from '../../../papa-leguas/kanban/types';
+import { KanbanBoard } from '../../../papa-leguas/kanban';
+import { router } from '@inertiajs/react';
 // Tipo mais flexível para configuração Kanban
 interface KanbanConfig extends Record<string, any> {
     searchable?: boolean;
@@ -20,6 +23,8 @@ interface KanbanViewProps {
     config: KanbanConfig;
     actions?: any;
     className?: string;
+    viewConfig?: any;
+    meta?: any;
 }
 
 /**
@@ -33,21 +38,35 @@ interface KanbanViewProps {
  * ✅ Papa Leguas Kanban direto
  * ✅ Debug para acompanhar dados recebidos
  */
-export default function KanbanView({
+export default function KanbanRenderer({
     data = [],
     columns = [],
     config = {},
-    actions = {},
-    className = ''
-}: KanbanViewProps) {
+    actions = [], 
+    meta
+}: KanbanRendererProps) {
 
-     
+    // Usar configurações que vêm do backend nas views
+    const kanbanColumns: KanbanColumn[] = Array.isArray(config?.columns)
+        ? config.columns
+        : [];
+ 
     return (
-        <div className={className}>
-            Vamos renderizar um kanban aqui
-        </div>
+        <KanbanBoard
+            data={data}
+            columns={kanbanColumns}
+            tableColumns={columns}
+            actions={actions}
+            config={config || {}}
+            meta={meta}
+            onAction={(actionId, item, extra) => {
+                console.log('🎯 Kanban Action:', { actionId, item, extra });
+                // TODO: Implementar ações do Kanban
+            }}
+            onRefresh={() => {
+                console.log('🔄 Refreshing Kanban');
+                router.reload(); 
+            }}
+        />
     );
-}
-
-// ⚠️ FUNÇÃO REMOVIDA: generateFallbackKanbanColumns
-// Frontend confia que backend já validou tudo 
+} 

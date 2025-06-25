@@ -1,16 +1,11 @@
 import React from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import AppLayout from '../../layouts/react-app-layout';
-import { type BreadcrumbItem } from '../../types';
-import { DataTable } from '../../components/papa-leguas';
+import { type BreadcrumbItem } from '../../types'; 
 import TabbedInterface from '../../components/ui/tabbed-interface';
-import ViewSelector from '../../components/ui/view-selector';
-import CardView from '../../components/ui/card-view';
-import KanbanView from '../../components/ui/kanban-view';
-import { KanbanBoard } from '../../components/papa-leguas/kanban';
-import type { KanbanColumn } from '../../components/papa-leguas/kanban/types';
-import { TabConfig, TabsConfig, TabbedTableData, ViewConfig, ViewsConfig } from '../../types';
-import { KanbanBoardProps } from '../../components/papa-leguas/kanban';
+import ViewSelector from '../../components/ui/view-selector'; 
+import {   TabbedTableData } from '../../types';
+import RendererView from '../../components/ui/views/renderer-view';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -72,80 +67,32 @@ interface CrudIndexProps extends TabbedTableData {
     error?: string;
 }
 
-export default function CrudIndex({ table, routes, config, capabilities, error, tabs, tabsConfig, views, viewsConfig, activeView }: CrudIndexProps) {
-    console.log('views', views);
-    
+export default function CrudIndex({ table, routes, config, capabilities, error, tabs, tabsConfig, views, viewsConfig, activeView }: CrudIndexProps) { 
+
     // 🎨 Renderizar view baseada na view ativa
-    const renderView = (tabData?: any, viewId?: string) => {
+    const renderView = (viewId?: string) => {
         const currentView = viewId || activeView || 'list';
-        const data = table?.data || [];
-        const columns = table?.columns || [];
-        const actions = table?.actions || [];
+        const viewConfig = views?.find(v => v.id === currentView); 
         
-        // Encontrar configuração da view ativa
-        const viewConfig = views?.find(v => v.id === currentView);
-        
-        switch (currentView) {
-            case 'cards':
-                return (
-                    <CardView
-                        data={data}
-                        columns={columns}
-                        config={viewConfig?.config || {}}
-                        actions={actions}
-                    />
-                );
-                
-            case 'kanban':
-                // Usar configurações que vêm do backend nas views
-                const kanbanColumns: KanbanColumn[] = Array.isArray(viewConfig?.config?.columns) 
-                    ? viewConfig.config.columns 
-                    : [];
-                
-                return (
-                    <KanbanBoard
-                        data={data}
-                        columns={kanbanColumns}
-                        tableColumns={columns}
-                        actions={actions}
-                        config={viewConfig?.config || {}}
-                        meta={table?.meta}
-                        onAction={(actionId, item, extra) => {
-                            console.log('🎯 Kanban Action:', { actionId, item, extra });
-                            // TODO: Implementar ações do Kanban
-                        }}
-                        onRefresh={() => {
-                            console.log('🔄 Refreshing Kanban');
-                            router.reload();
-                            // window.location.reload();
-                        }}
-                    />
-                );
-                
-            case 'list':
-            default:
-                return (
-                    <DataTable
-                        data={data}
-                        columns={columns}
-                        filters={tabData?.filters || table?.filters || []}
-                        actions={actions}
-                        loading={false}
-                        error={error}
-                        meta={tabData?.meta || table?.meta}
-                    />
-                );
-        }
-    };
+        return <RendererView 
+            view={currentView} 
+            data={table?.data} 
+            columns={table?.columns} 
+            config={viewConfig?.config} 
+            actions={table?.actions} 
+            className={''} 
+            meta={table?.meta}
+        />;
+    }
 
     return (
-        <AppLayout 
+        <AppLayout
             breadcrumbs={breadcrumbs}
             title={config?.page_title || 'CRUD'}
             fullWidth={true}
         >
             <Head title={`${config?.page_title || 'CRUD'} - ${activeView === 'kanban' ? 'Kanban' : activeView === 'cards' ? 'Cards' : 'Lista'}`} />
-            
+
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -157,7 +104,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                             {table?.meta?.description || config?.page_description || 'Gerencie seus dados'}
                         </p>
                     </div>
-                    
+
                     {/* Seletor de Views */}
                     {views && views.length > 0 && (
                         <ViewSelector
@@ -169,18 +116,17 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
                 </div>
 
                 {/* Sistema de Tabs ou View Direta */}
+
                 <TabbedInterface
                     tabs={tabs || []}
                     config={tabsConfig}
                     defaultContent={renderView()}
                 >
                     {(activeTab, tabContent) => {
-                        // Se a tab tem conteúdo próprio, renderizar ele
-                        if (tabContent) {
-                            return renderView(tabContent);
-                        }
+                        console.log('Tab ativa:', activeTab);
+                        console.log('Tab content:', tabContent);
                         
-                        // Se a tab não tem conteúdo, renderizar view padrão
+                        // Sempre renderizar a view baseada no activeView, não no tabContent
                         return renderView();
                     }}
                 </TabbedInterface>

@@ -3,9 +3,10 @@ import {
     Construction,
     LayoutGrid
 } from 'lucide-react';
-import { ViewConfig } from '../../../../types';
+import { ViewConfig } from '../../../../types'; 
+import Cards from '../../../papa-leguas/cards/cards';
 
-interface CardViewProps {
+interface CardRendererProps {
     data: any[];
     columns: any[];
     config: ViewConfig['config'];
@@ -13,16 +14,14 @@ interface CardViewProps {
     className?: string;
 }
 
-export default function CardView({
+export default function CardRenderer({
     data = [],
     columns = [],
     config = {},
     actions = {},
     className = ''
-}: CardViewProps) {
+}: CardRendererProps) {
     return (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-            Vamos renderizar um card aqui
-        </div>
+         <Cards data={data} columns={columns} config={config} actions={actions} className={className} />
     );
 } 
