@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { router } from '@inertiajs/react';   
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Search, X } from 'lucide-react';
+import SearchField from './SearchField';
 import Filters from './table/components/Filters';
 import Table from './table/components/Table';
+import PaginationWrapper from './PaginationWrapper';
 import Resume from './table/components/Resume';
 import { type PapaLeguasTableProps } from './types';
 import { TableProvider } from './table/contexts/TableContext';
@@ -274,65 +273,14 @@ export default function DataTable({
                 <ModalProvider>
                     <div className="space-y-6">
                         {/* Campo de Busca */}
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="relative flex-1">
-                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            placeholder="Buscar registros..."
-                                            value={searchTerm}
-                                            onChange={(e) => handleSearchChange(e.target.value)}
-                                            onKeyPress={handleSearchKeyPress}
-                                            className="pl-10"
-                                            disabled={isSearching}
-                                        />
-                                        {searchTerm && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={clearSearch}
-                                                disabled={isSearching}
-                                                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-muted"
-                                            >
-                                                <X className="h-3 w-3" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                    <Button
-                                        onClick={() => applySearch(searchTerm)}
-                                        disabled={isSearching}
-                                        className="min-w-[100px]"
-                                    >
-                                        {isSearching ? (
-                                            <>
-                                                <span className="animate-spin mr-2">⚪</span>
-                                                Buscando...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Search className="h-4 w-4 mr-2" />
-                                                Buscar
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
-                                {searchTerm && (
-                                    <div className="mt-2 text-sm text-muted-foreground">
-                                        Buscando por: <span className="font-medium">"{searchTerm}"</span>
-                                        <Button
-                                            variant="link"
-                                            size="sm"
-                                            onClick={clearSearch}
-                                            disabled={isSearching}
-                                            className="ml-2 h-auto p-0 text-xs underline"
-                                        >
-                                            Limpar busca
-                                        </Button>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                        <SearchField
+                            searchTerm={searchTerm}
+                            isSearching={isSearching}
+                            onSearchChange={handleSearchChange}
+                            onSearch={applySearch}
+                            onClear={clearSearch}
+                            onKeyPress={handleSearchKeyPress}
+                        />
 
                         {/* Filtros */}
                         <Filters
@@ -351,11 +299,15 @@ export default function DataTable({
                             columns={columns}
                             actions={actions}
                             loading={loading}
-                            pagination={(meta as any)?.pagination}
                             onSort={handleSort}
-                            onPageChange={handlePageChange}
                             sortColumn={sortColumn}
                             sortDirection={sortDirection}
+                        />
+
+                        {/* Paginação */}
+                        <PaginationWrapper
+                            pagination={(meta as any)?.pagination}
+                            onPageChange={handlePageChange}
                         />
 
                         {/* Resumo/Estatísticas */}

@@ -1,13 +1,17 @@
 // Componente principal da tabela
 export { default as DataTable } from './DataTable';
 
-// Componentes da tabela separados
+// Componentes individuais para uso separado
+export { default as SearchField, useSearchField } from './SearchField';
 export { default as Filters } from './table/components/Filters';
-export { default as Headers } from './table/components/Headers';
 export { default as Table } from './table/components/Table';
+export { default as PaginationWrapper, usePagination } from './PaginationWrapper';
+export { default as Resume } from './table/components/Resume';
+
+// Componentes internos da tabela (para uso avançado)
+export { default as Headers } from './table/components/Headers';
 export { default as TableBody } from './table/components/TableBody';
 export { default as Pagination } from './table/components/Pagination';
-export { default as Resume } from './table/components/Resume';
 
 // Column Renderers
 export { default as ColumnRenderer } from './table/columns/ColumnRenderer';
