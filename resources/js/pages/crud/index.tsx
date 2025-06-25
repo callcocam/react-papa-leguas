@@ -142,6 +142,7 @@ export default function CrudIndex({ table, routes, config, capabilities, error, 
         <AppLayout 
             breadcrumbs={breadcrumbs}
             title={config?.page_title || 'CRUD'}
+            fullWidth={true}
         >
             <Head title={`${config?.page_title || 'CRUD'} - ${activeView === 'kanban' ? 'Kanban' : activeView === 'cards' ? 'Cards' : 'Lista'}`} />
             
