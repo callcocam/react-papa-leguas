@@ -239,15 +239,16 @@ trait HasDataSource
             }
 
             if ($this->isFilterable) {
-                $filters = request('filters', []);
+                $filters = request('filters', []); 
                 if (!empty($filters)) {
                     $this->dataSource->applyFilters($filters);
                 }
             }
 
             if ($this->isSortable) {
-                $sortColumn = request('sort_column');
-                $sortDirection = request('sort_direction', 'asc');
+                // Suportar ambos os formatos: sort_column/sort_direction e sort/direction
+                $sortColumn = request('sort_column') ?? request('sort');
+                $sortDirection = request('sort_direction') ?? request('direction', 'asc');
                 if ($sortColumn) {
                     $this->dataSource->applySorting($sortColumn, $sortDirection);
                 }

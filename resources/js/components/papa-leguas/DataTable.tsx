@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { router } from '@inertiajs/react';   
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, X } from 'lucide-react';
 import Filters from './table/components/Filters';
 import Table from './table/components/Table';
 import Resume from './table/components/Resume';
@@ -23,6 +26,8 @@ export default function DataTable({
     const [isApplyingFilters, setIsApplyingFilters] = useState(false);
     const [sortColumn, setSortColumn] = useState<string>('');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [isSearching, setIsSearching] = useState(false);
 
     // Inicializar filtros com valores da URL (se existirem)
     useEffect(() => {
@@ -30,8 +35,15 @@ export default function DataTable({
         const urlFilters: Record<string, any> = {};
         
         urlParams.forEach((value, key) => {
-            if (key.startsWith('filter_')) {
-                const filterKey = key.replace('filter_', '');
+            // Suportar tanto filters[key] quanto filter_key (retrocompatibilidade)
+            let filterKey = '';
+            if (key.match(/^filters\[(.+)\]$/)) {
+                filterKey = key.match(/^filters\[(.+)\]$/)![1];
+            } else if (key.startsWith('filter_')) {
+                filterKey = key.replace('filter_', '');
+            }
+            
+            if (filterKey) {
                 // Parse valores especiais
                 if (value === 'true') urlFilters[filterKey] = true;
                 else if (value === 'false') urlFilters[filterKey] = false;
@@ -52,12 +64,18 @@ export default function DataTable({
             setShowFilters(true);
         }
 
-        // Verificar ordenação na URL
-        const sortParam = urlParams.get('sort');
-        const directionParam = urlParams.get('direction');
+        // Verificar ordenação na URL (suportar ambos os formatos)
+        const sortParam = urlParams.get('sort_column') || urlParams.get('sort');
+        const directionParam = urlParams.get('sort_direction') || urlParams.get('direction');
         if (sortParam) {
             setSortColumn(sortParam);
             setSortDirection((directionParam as 'asc' | 'desc') || 'asc');
+        }
+
+        // Verificar busca na URL
+        const searchParam = urlParams.get('search');
+        if (searchParam) {
+            setSearchTerm(searchParam);
         }
     }, []);
 
@@ -74,9 +92,9 @@ export default function DataTable({
         Object.entries(filterValues).forEach(([key, value]) => {
             if (value !== null && value !== undefined && value !== '') {
                 if (typeof value === 'object' && value !== null) {
-                    params[`filter_${key}`] = JSON.stringify(value);
+                    params[`filters[${key}]`] = JSON.stringify(value);
                 } else {
-                    params[`filter_${key}`] = value;
+                    params[`filters[${key}]`] = value;
                 }
             }
         });
@@ -144,10 +162,10 @@ export default function DataTable({
         setSortColumn(column);
         setSortDirection(direction);
         
-        // Aplicar ordenação via URL
+        // Aplicar ordenação via URL usando padrão sort_column e sort_direction
         const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('sort', column);
-        currentUrl.searchParams.set('direction', direction);
+        currentUrl.searchParams.set('sort_column', column);
+        currentUrl.searchParams.set('sort_direction', direction);
         
         router.visit(currentUrl.toString(), {
             preserveState: true,
@@ -163,6 +181,61 @@ export default function DataTable({
             preserveState: true,
             preserveScroll: true
         });
+    };
+
+    // Handler para aplicar busca
+    const applySearch = useCallback(async (term: string) => {
+        if (isSearching) return;
+        
+        setIsSearching(true);
+        
+        try {
+            const currentUrl = new URL(window.location.href);
+            
+            if (term.trim()) {
+                currentUrl.searchParams.set('search', term.trim());
+            } else {
+                currentUrl.searchParams.delete('search');
+            }
+            
+            // Resetar para primeira página ao fazer busca
+            currentUrl.searchParams.delete('page');
+            
+            router.visit(currentUrl.toString(), {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    console.log('✅ Busca aplicada com sucesso');
+                },
+                onError: (errors) => {
+                    console.error('❌ Erro ao aplicar busca:', errors);
+                },
+                onFinish: () => {
+                    setIsSearching(false);
+                }
+            });
+        } catch (error) {
+            console.error('❌ Erro inesperado ao aplicar busca:', error);
+            setIsSearching(false);
+        }
+    }, [isSearching]);
+
+    // Handler para limpar busca
+    const clearSearch = useCallback(() => {
+        setSearchTerm('');
+        applySearch('');
+    }, [applySearch]);
+
+    // Handler para mudança no campo de busca
+    const handleSearchChange = (value: string) => {
+        setSearchTerm(value);
+    };
+
+    // Handler para pressionar Enter no campo de busca
+    const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            applySearch(searchTerm);
+        }
     };
 
     // Contar quantos filtros estão ativos
@@ -200,6 +273,67 @@ export default function DataTable({
             <ConfirmationDialogProvider>
                 <ModalProvider>
                     <div className="space-y-6">
+                        {/* Campo de Busca */}
+                        <Card>
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Buscar registros..."
+                                            value={searchTerm}
+                                            onChange={(e) => handleSearchChange(e.target.value)}
+                                            onKeyPress={handleSearchKeyPress}
+                                            className="pl-10"
+                                            disabled={isSearching}
+                                        />
+                                        {searchTerm && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={clearSearch}
+                                                disabled={isSearching}
+                                                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-muted"
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <Button
+                                        onClick={() => applySearch(searchTerm)}
+                                        disabled={isSearching}
+                                        className="min-w-[100px]"
+                                    >
+                                        {isSearching ? (
+                                            <>
+                                                <span className="animate-spin mr-2">⚪</span>
+                                                Buscando...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Search className="h-4 w-4 mr-2" />
+                                                Buscar
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                                {searchTerm && (
+                                    <div className="mt-2 text-sm text-muted-foreground">
+                                        Buscando por: <span className="font-medium">"{searchTerm}"</span>
+                                        <Button
+                                            variant="link"
+                                            size="sm"
+                                            onClick={clearSearch}
+                                            disabled={isSearching}
+                                            className="ml-2 h-auto p-0 text-xs underline"
+                                        >
+                                            Limpar busca
+                                        </Button>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
                         {/* Filtros */}
                         <Filters
                             filters={filters}
