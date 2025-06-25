@@ -37,26 +37,66 @@ export function AppSidebar({
   toggleDarkMode
 }: AppSidebarProps) {
   const { user, isAuthenticated, hasPermission } = usePermissions()
-  const { props } = usePage()
+  const { props, url } = usePage()
   const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set())
   
   // Obter navegação do Inertia
   const navigation = props.navigation as any[] || []
   
   // Debug: mostrar estrutura da navegação
+  // React.useEffect(() => {
+  //   console.log('Navegação recebida:', JSON.stringify(navigation, null, 2))
+  //   console.log('URL atual:', url)
+  // }, [navigation, url])
+
+  // Auto-expandir submenu baseado na rota atual
   React.useEffect(() => {
-    console.log('Navegação recebida:', JSON.stringify(navigation, null, 2))
-  }, [navigation])
+    const currentUrl = url
+    const newExpanded = new Set<string>()
+     
+    
+    // Verificar cada item de navegação
+    navigation.forEach((item: any) => {
+      if (item.subitems && item.subitems.length > 0) {
+        // Verificar se algum subitem está ativo usando a função específica
+        const hasActiveSubitem = item.subitems.some((subitem: any) => {
+          const isActive = isSubitemActive(subitem)
+          
+          if (isActive) {
+            // console.log(`✅ Match encontrado: ${subitem.title} -> expandir ${item.title}`)
+          }
+          
+          return isActive
+        })
+        
+        if (hasActiveSubitem) {
+          newExpanded.add(item.key)
+          // console.log(`🔓 Auto-expandindo submenu: ${item.title} (${item.key})`)
+        }
+      }
+    })
+    
+    // Atualizar apenas se houver mudanças
+    if (newExpanded.size > 0) {
+      setExpandedItems(prev => {
+        const combined = new Set([...prev, ...newExpanded])
+        // console.log('📂 Submenus expandidos:', Array.from(combined))
+        return combined
+      })
+    }
+  }, [navigation, url])
 
   // Toggle submenu
   const toggleSubmenu = (key: string) => {
-    const newExpanded = new Set(expandedItems)
-    if (newExpanded.has(key)) {
-      newExpanded.delete(key)
-    } else {
-      newExpanded.add(key)
-    }
-    setExpandedItems(newExpanded)
+    setExpandedItems(prev => {
+      const newExpanded = new Set(prev)
+      if (newExpanded.has(key)) {
+        newExpanded.delete(key)
+      } else {
+        newExpanded.add(key)
+      }
+      return newExpanded
+    })
   }
 
   // Renderizar ícone dinâmico
@@ -72,10 +112,66 @@ export function AppSidebar({
     return <IconComponent className={className} />
   }
 
+  // Verificar se um subitem específico está ativo
+  const isSubitemActive = (subitem: any): boolean => {
+    if (!subitem.href) return false
+    
+    try {
+      const subitemPath = new URL(subitem.href, window.location.origin).pathname
+      const currentPath = new URL(url, window.location.origin).pathname
+      
+      // Comparação mais precisa - exata ou com parâmetros
+      const isExactMatch = currentPath === subitemPath
+      const isWithParams = currentPath.startsWith(subitemPath + '/') || 
+                          currentPath.startsWith(subitemPath + '?')
+      
+      const isActive = isExactMatch || isWithParams
+      
+      if (isActive) {
+        // console.log(`🎯 Subitem ativo: ${subitem.title} (${subitemPath})`)
+      }
+      
+      return isActive
+    } catch (error) {
+      return false
+    }
+  }
+
+  // Verificar se item principal está ativo (apenas para itens com href direto)
+  const isItemActive = (item: any): boolean => {
+    try {
+      if (item.href) {
+        const itemPath = new URL(item.href, window.location.origin).pathname
+        const currentPath = new URL(url, window.location.origin).pathname
+        const isActive = currentPath === itemPath || currentPath.startsWith(itemPath + '/')
+        
+        if (isActive) {
+          // console.log(`🎯 Item ativo direto: ${item.title} (${itemPath})`)
+        }
+        
+        return isActive
+      }
+      
+      return false
+    } catch (error) {
+      console.warn('Erro ao verificar item ativo:', error, item)
+      return false
+    }
+  }
+
+  // Verificar se submenu deve estar destacado (tem subitem ativo)
+  const hasActiveSubitem = (item: any): boolean => {
+    if (!item.subitems || item.subitems.length === 0) return false
+    
+    return item.subitems.some((subitem: any) => isSubitemActive(subitem))
+  }
+
   // Renderizar item de navegação
   const renderNavigationItem = (item: any) => {
     const hasSubitems = item.subitems && item.subitems.length > 0
     const isExpanded = expandedItems.has(item.key)
+    const isDirectlyActive = isItemActive(item) // Item tem href e está ativo
+    const hasActiveSub = hasActiveSubitem(item) // Item tem subitem ativo
 
 
     // Se item tem href, renderizar como link
@@ -84,8 +180,10 @@ export function AppSidebar({
         <PermissionLink
           key={item.key}
           href={item.href}
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full"
-          activeClassName="bg-accent text-accent-foreground"
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full",
+            isDirectlyActive && "bg-accent text-accent-foreground font-medium"
+          )}
           validatePermissions={false}
         >
           {renderIcon(item.icon)}
@@ -105,7 +203,10 @@ export function AppSidebar({
         <div key={item.key} className="space-y-1">
           <button
             onClick={() => toggleSubmenu(item.key)}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full text-left"
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full text-left",
+              hasActiveSub && "bg-accent/50 text-accent-foreground font-medium"
+            )}
           >
             {renderIcon(item.icon)}
             <span className="flex-1">{item.title}</span>
@@ -126,12 +227,16 @@ export function AppSidebar({
               {item.subitems.map((subitem: any) => {
                 // Se subitem tem href, renderizar como link
                 if (subitem.href) {
+                  const isSubActive = isSubitemActive(subitem)
+                  
                   return (
                     <PermissionLink
                       key={subitem.key}
                       href={subitem.href}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full"
-                      activeClassName="bg-accent text-accent-foreground"
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full",
+                        isSubActive && "bg-accent text-accent-foreground font-medium"
+                      )}
                       validatePermissions={false}
                     >
                       {renderIcon(subitem.icon)}
