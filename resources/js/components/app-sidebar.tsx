@@ -1,24 +1,21 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { 
-  Home, 
-  Users, 
-  Settings, 
-  Database, 
-  BarChart3, 
-  FileText, 
-  Shield,
   Sun,
   Moon,
   User,
   LogOut,
   X,
-  TestTube
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react'
 import { usePermissions } from '../hooks/usePermissions' 
 import { PermissionLink } from './PermissionLink'
 import { router } from '@inertiajs/react'
+import { usePage } from '@inertiajs/react'
+import * as LucideIcons from 'lucide-react'
 
 interface AppSidebarProps {
   sidebarOpen: boolean
@@ -40,58 +37,33 @@ export function AppSidebar({
   toggleDarkMode
 }: AppSidebarProps) {
   const { user, isAuthenticated } = usePermissions()
+  const { props } = usePage()
+  const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set())
   
-  // Itens de navegação com permissões
-  const navigationItems = [
-    {
-      title: 'Dashboard',
-      href: '/dashboard',
-      icon: Home,
-      permission: 'dashboard.view'
-    },
-    {
-      title: 'CRUD',
-      href: '/crud',
-      icon: Database,
-      permission: 'crud.view'
-    },
-    {
-      title: 'Usuários',
-      href: '/users',
-      icon: Users,
-      permission: 'users.view'
-    },
-    {
-      title: 'Relatórios',
-      href: '/reports',
-      icon: BarChart3,
-      permission: 'reports.view'
-    },
-    {
-      title: 'Documentos',
-      href: '/documents',
-      icon: FileText,
-      permission: 'documents.view'
-    },
-    {
-      title: 'Permissões',
-      href: '/permissions',
-      icon: Shield,
-      permission: 'permissions.view'
-    },
-    {
-      title: 'Testes',
-      href: '/tests',
-      icon: TestTube,
-      permission: 'tests.view'
-    },
-    {
-      title: 'Configurações',
-      href: '/settings',
-      icon: Settings,
-      permission: 'settings.view'
+  // Obter navegação do Inertia
+  const navigation = props.navigation as any[] || []
+  console.log(navigation)
+
+  // Toggle submenu
+  const toggleSubmenu = (key: string) => {
+    const newExpanded = new Set(expandedItems)
+    if (newExpanded.has(key)) {
+      newExpanded.delete(key)
+    } else {
+      newExpanded.add(key)
     }
-  ]
+    setExpandedItems(newExpanded)
+  }
+
+  // Renderizar ícone dinâmico
+  const renderIcon = (iconName: string, className: string = "w-4 h-4") => {
+    if (!iconName) return null
+    
+    const IconComponent = (LucideIcons as any)[iconName]
+    if (!IconComponent) return null
+    
+    return <IconComponent className={className} />
+  }
 
   // Logout
   const handleLogout = () => {
@@ -133,18 +105,69 @@ export function AppSidebar({
       {/* Sidebar Content */}
       <div className="flex-1 overflow-y-auto">
         <nav className="p-2 space-y-1">
-          {navigationItems.map((item) => (
-            <PermissionLink
-              key={item.href}
-              permission={item.permission}
-              href={item.href}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full"
-              activeClassName="bg-accent text-accent-foreground"
-              fallbackBehavior="hide"
-            >
-              <item.icon className="w-4 h-4" />
-              {item.title}
-            </PermissionLink>
+          {navigation.map((item: any) => (
+            <div key={item.key}>
+              {/* Item Principal */}
+              {item.href ? (
+                <PermissionLink
+                  permission={item.permission}
+                  href={item.href}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full"
+                  activeClassName="bg-accent text-accent-foreground"
+                  fallbackBehavior="hide"
+                >
+                  {renderIcon(item.icon)}
+                  <span className="flex-1">{item.title}</span>
+                  {item.badge && (
+                    <Badge variant={item.badge.variant} className="text-xs">
+                      {item.badge.text}
+                    </Badge>
+                  )}
+                </PermissionLink>
+              ) : (
+                <button
+                  onClick={() => toggleSubmenu(item.key)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full text-left"
+                >
+                  {renderIcon(item.icon)}
+                  <span className="flex-1">{item.title}</span>
+                  {item.subitems && (
+                    expandedItems.has(item.key) ? 
+                      <ChevronDown className="w-4 h-4" /> : 
+                      <ChevronRight className="w-4 h-4" />
+                  )}
+                  {item.badge && (
+                    <Badge variant={item.badge.variant} className="text-xs">
+                      {item.badge.text}
+                    </Badge>
+                  )}
+                </button>
+              )}
+
+              {/* Subitems */}
+              {item.subitems && expandedItems.has(item.key) && (
+                <div className="ml-6 mt-1 space-y-1">
+                  {item.subitems.map((subitem: any) => (
+                    <PermissionLink
+                      key={subitem.key}
+                      permission={subitem.permission}
+                      href={subitem.href}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full"
+                      activeClassName="bg-accent text-accent-foreground"
+                      fallbackBehavior="hide"
+                    >
+                      {renderIcon(subitem.icon)}
+                      <span className="flex-1">{subitem.title}</span>
+                      {subitem.badge && (
+                        <Badge variant={subitem.badge.variant} className="text-xs">
+                          {subitem.badge.text}
+                        </Badge>
+                      )}
+                    </PermissionLink>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
       </div>
