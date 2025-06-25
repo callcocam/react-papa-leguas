@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Claudio Campos.
  * User: callcocam@gmail.com, contato@sigasmart.com.br
@@ -136,5 +137,11 @@ return [
         'role' => \Callcocam\ReactPapaLeguas\Shinobi\Models\Role::class,
         'permission' => \Callcocam\ReactPapaLeguas\Shinobi\Models\Permission::class,
     ],
-
+    'navigation' => [
+        'validate_permissions' => env('VALIDATE_NAVIGATION_PERMISSIONS', false),
+        'navigation_builder' => \Callcocam\ReactPapaLeguas\Navigation\NavigationBuilder::class,
+        'admin_navigation' => \Callcocam\ReactPapaLeguas\Navigation\AdminNavigation::class,
+        'landlord_navigation' => \Callcocam\ReactPapaLeguas\Navigation\LandlordNavigation::class,
+        'navigation_type' => 'admin', // admin, landlord, tenant
+    ],
 ];

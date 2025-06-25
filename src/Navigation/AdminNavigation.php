@@ -15,8 +15,18 @@ class AdminNavigation
     /**
      * Construir navegação administrativa
      */
-    public static function build(): array
+    public static function build(bool $validatePermissions = true): array
     {
-        return NavigationAdminNavigation::build()->build();
+        $navigation = app(config('react-papa-leguas.navigation.navigation_builder'));
+        return $navigation
+
+            // Dashboard
+            ->item('dashboard')
+            ->label('Dashboard')
+            ->route('dashboard')
+            ->icon('Home')
+            ->permission('dashboard.view')
+            ->order(1)
+            ->build($validatePermissions);
     }
 }

@@ -46,16 +46,19 @@ class LandlordServiceProvider extends ServiceProvider
         // Always skip tenant resolution for landlord routes
         $landlordPrefix = config('react-papa-leguas.landlord.routes.prefix', 'landlord'); 
         if (request()->is($landlordPrefix)) {
+            config(['react-papa-leguas.navigation.navigation_type' => 'landlord']);
             return false;
         }
         
         // Skip tenant resolution if landlord guard is active
         if ($this->shouldSkipTenantResolution()) {
+            config(['react-papa-leguas.navigation.navigation_type' => 'tenant']);
             return false;
         }
 
         // Skip tenant resolution if explicitly disabled
         if (config('tenant.skip_resolution', false)) {
+            config(['react-papa-leguas.navigation.navigation_type' => 'tenant']);
             return false;
         }
 
