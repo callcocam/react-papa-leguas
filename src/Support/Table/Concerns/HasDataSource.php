@@ -420,46 +420,228 @@ trait HasDataSource
     }
 
     /**
-     * 🎯 SISTEMA DE FILTROS POR TAB
+     * 🎯 SISTEMA DE FILTROS POR TAB GENÉRICO
      * Detecta parâmetro 'tab' na URL e aplica filtros configurados automaticamente
      */
     protected function applyTabFiltersToDataSource(): void
     {
         // Verificar se há parâmetro 'tab' na request
-        $activeTab = request('tab');
-        if (!$activeTab) {
+        $activeTabId = request('tab');
+        
+        if (!$activeTabId) {
             return; // Sem tab ativa, não aplicar filtros
         }
 
-        // Verificar se a classe tem método applyTabFilters
-        if (!method_exists($this, 'applyTabFilters')) {
-            return; // Método não implementado, ignorar
-        }
-
-        // Verificar se a fonte de dados é ModelSource (suporta query customizada)
-        if (!($this->dataSource instanceof \Callcocam\ReactPapaLeguas\Support\Table\DataSources\ModelSource)) {
-            return; // Só funciona com ModelSource por enquanto
-        }
-
         try {
+            // 🎯 Encontrar a Tab ativa nas tabs configuradas
+            $activeTab = $this->findActiveTab($activeTabId);
+            if (!$activeTab) {
+                // Se não encontrou Tab configurada, usar método legado
+                if (method_exists($this, 'applyTabFilters')) {
+                    $this->applyLegacyTabFilters($activeTabId);
+                }
+                return;
+            }
+
+            // Verificar se a fonte de dados é ModelSource (suporta query customizada)
+            if (!($this->dataSource instanceof \Callcocam\ReactPapaLeguas\Support\Table\DataSources\ModelSource)) {
+                return; // Só funciona com ModelSource por enquanto
+            }
+
+            // 🐛 CORREÇÃO: Limpar cache da query antes de aplicar filtros de tab
+            // Isso força a reconstrução da query com os filtros de tab
+            if (method_exists($this->dataSource, 'clearQueryCache')) {
+                $this->dataSource->clearQueryCache();
+            }
+
             // Obter query atual da fonte de dados
             $query = $this->dataSource->getBuilder();
 
-            // Aplicar filtros da tab usando o método da classe
-            $this->applyTabFilters($query, $activeTab);
+            // 🎯 Aplicar filtros da Tab de forma genérica
+            $this->applyGenericTabFilters($query, $activeTab);
+
+            // 🎯 Aplicar método customizado se existir (compatibilidade)
+            if (method_exists($this, 'applyTabFilters')) {
+                $this->applyTabFilters($query, $activeTabId, $activeTab);
+            }
 
             // Log para debug
-            Log::info("Filtros de tab aplicados", [
-                'tab' => $activeTab,
+            Log::info("🎯 Filtros de tab aplicados", [
+                'tab_id' => $activeTabId,
+                'tab_label' => $activeTab->getLabel(),
+                'tab_source' => $this->getTabSource($activeTab),
+                'params' => $activeTab->getParams(),
+                'tabFilters' => $activeTab->getTabFilters(),
+                'whereConditions' => $activeTab->getWhereConditions(),
+                'scopeParams' => $activeTab->getScopeParams(),
+                'hasFilters' => $activeTab->hasFilters(),
                 'table_class' => get_class($this),
                 'model' => $this->getModelClass()
             ]);
         } catch (\Exception $e) {
-            Log::warning("Erro ao aplicar filtros de tab", [
-                'tab' => $activeTab,
+            Log::warning("❌ Erro ao aplicar filtros de tab", [
+                'tab' => $activeTabId,
                 'table_class' => get_class($this),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
         }
+    }
+
+    /**
+     * 🎯 Encontra a Tab ativa baseada no ID
+     */
+    protected function findActiveTab(string $tabId): ?\Callcocam\ReactPapaLeguas\Support\Table\Tabs\Tab
+    {
+        $allTabs = [];
+
+        // 1. 🎯 Verificar método getTabs() (para compatibilidade)
+        if (method_exists($this, 'getTabs')) {
+            $getTabs = $this->getTabs();
+            if (is_array($getTabs)) {
+                $allTabs = array_merge($allTabs, $getTabs);
+            }
+        }
+
+        // 2. 🎯 Verificar método tabs() da própria Table (como TicketTable)
+        if (method_exists($this, 'tabs')) {
+            $tableTabs = $this->tabs();
+            if (is_array($tableTabs)) {
+                $allTabs = array_merge($allTabs, $tableTabs);
+            }
+        }
+
+        // 3. 🎯 Verificar se há classe de Tabs externa (app/Tabs/)
+        $tabsClass = $this->getTabsClass();
+        if ($tabsClass && class_exists($tabsClass) && method_exists($tabsClass, 'getTabs')) {
+            $externalTabs = $tabsClass::getTabs();
+            if (is_array($externalTabs)) {
+                $allTabs = array_merge($allTabs, $externalTabs);
+            }
+        }
+
+        if (empty($allTabs)) {
+            return null;
+        }
+
+        // Procurar a tab pelo ID em todas as fontes
+        foreach ($allTabs as $tab) {
+            if ($tab instanceof \Callcocam\ReactPapaLeguas\Support\Table\Tabs\Tab && $tab->getId() === $tabId) {
+                return $tab;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 🎯 Obter classe de Tabs externa (app/Tabs/)
+     */
+    protected function getTabsClass(): ?string
+    {
+        // Detectar automaticamente baseado no nome da Table
+        $tableClass = get_class($this);
+        $baseName = class_basename($tableClass);
+        
+        // TicketTable -> TicketTabs
+        $tabsClassName = str_replace('Table', 'Tabs', $baseName);
+        
+        // Verificar em app/Tabs/
+        $tabsClass = "App\\Tabs\\{$tabsClassName}";
+        
+        return class_exists($tabsClass) ? $tabsClass : null;
+    }
+
+    /**
+     * 🎯 Identificar fonte da Tab para debug
+     */
+    protected function getTabSource(\Callcocam\ReactPapaLeguas\Support\Table\Tabs\Tab $tab): string
+    {
+        $tabId = $tab->getId();
+
+        // Verificar se vem do método tabs() da Table
+        if (method_exists($this, 'tabs')) {
+            $tableTabs = $this->tabs();
+            if (is_array($tableTabs)) {
+                foreach ($tableTabs as $tableTab) {
+                    if ($tableTab instanceof \Callcocam\ReactPapaLeguas\Support\Table\Tabs\Tab && 
+                        $tableTab->getId() === $tabId) {
+                        return 'Table::tabs()';
+                    }
+                }
+            }
+        }
+
+        // Verificar se vem do método getTabs()
+        if (method_exists($this, 'getTabs')) {
+            $getTabs = $this->getTabs();
+            if (is_array($getTabs)) {
+                foreach ($getTabs as $getTab) {
+                    if ($getTab instanceof \Callcocam\ReactPapaLeguas\Support\Table\Tabs\Tab && 
+                        $getTab->getId() === $tabId) {
+                        return 'Table::getTabs()';
+                    }
+                }
+            }
+        }
+
+        // Verificar se vem de classe externa
+        $tabsClass = $this->getTabsClass();
+        if ($tabsClass) {
+            return $tabsClass . '::getTabs()';
+        }
+
+        return 'unknown';
+    }
+
+    /**
+     * 🎯 Aplica filtros genéricos da Tab
+     */
+    protected function applyGenericTabFilters($query, \Callcocam\ReactPapaLeguas\Support\Table\Tabs\Tab $tab): void
+    { 
+        // 1. Aplicar condições WHERE
+        foreach ($tab->getWhereConditions() as $column => $value) {
+            if (is_array($value)) {
+                $query->whereIn($column, $value);
+            } else {
+                $query->where($column, $value);
+            }
+        }
+
+        // 2. Aplicar parâmetros via scopes (se o modelo tiver)
+        foreach ($tab->getScopeParams() as $scope => $params) {
+            $scopeMethod = 'scope' . ucfirst($scope);
+            if (method_exists($query->getModel(), $scopeMethod)) {
+                if (is_array($params)) {
+                    $query->$scope(...$params);
+                } else {
+                    $query->$scope($params);
+                }
+            }
+        }
+
+        // 3. Aplicar callback customizado
+        $queryCallback = $tab->getQueryCallback();
+        if ($queryCallback) {
+            $queryCallback($query, $tab->getParams(), $tab->getTabFilters());
+        }
+    }
+
+    /**
+     * 🎯 Aplica filtros usando método legado (compatibilidade)
+     */
+    protected function applyLegacyTabFilters(string $activeTabId): void
+    {
+        if (!($this->dataSource instanceof \Callcocam\ReactPapaLeguas\Support\Table\DataSources\ModelSource)) {
+            return;
+        }
+
+        $query = $this->dataSource->getBuilder();
+        $this->applyTabFilters($query, $activeTabId);
+        
+        Log::info("🔄 Filtros de tab legados aplicados", [
+            'tab' => $activeTabId,
+            'table_class' => get_class($this)
+        ]);
     }
 }

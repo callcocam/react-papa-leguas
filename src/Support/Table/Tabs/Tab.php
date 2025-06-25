@@ -34,6 +34,13 @@ class Tab
     protected array $tableConfig = [];
     protected ?Closure $dataCallback = null;
     protected array $config = [];
+    
+    // 🎯 Novos atributos para sistema genérico
+    protected array $params = [];
+    protected array $tabFilters = [];
+    protected array $whereConditions = [];
+    protected array $scopeParams = [];
+    protected ?Closure $queryCallback = null;
 
     public function __construct(string $id, string $label)
     {
@@ -111,6 +118,51 @@ class Tab
     public function config(string $key, mixed $value): self
     {
         $this->config[$key] = $value;
+        return $this;
+    }
+
+    /**
+     * 🎯 Define parâmetros gerais da tab
+     */
+    public function params(array $params): self
+    {
+        $this->params = array_merge($this->params, $params);
+        return $this;
+    }
+
+    /**
+     * 🎯 Define filtros específicos da tab (não conflita com filters do sistema)
+     */
+    public function tabFilters(array $filters): self
+    {
+        $this->tabFilters = array_merge($this->tabFilters, $filters);
+        return $this;
+    }
+
+    /**
+     * 🎯 Define condições WHERE para a query
+     */
+    public function whereConditions(array $conditions): self
+    {
+        $this->whereConditions = array_merge($this->whereConditions, $conditions);
+        return $this;
+    }
+
+    /**
+     * 🎯 Define parâmetros para model scopes
+     */
+    public function scopeParams(array $params): self
+    {
+        $this->scopeParams = array_merge($this->scopeParams, $params);
+        return $this;
+    }
+
+    /**
+     * 🎯 Define callback customizado para modificar query
+     */
+    public function queryUsing(Closure $callback): self
+    {
+        $this->queryCallback = $callback;
         return $this;
     }
 
@@ -235,6 +287,58 @@ class Tab
     }
 
     /**
+     * 🎯 Obtém parâmetros gerais da tab
+     */
+    public function getParams(): array
+    {
+        return $this->params;
+    }
+
+    /**
+     * 🎯 Obtém filtros específicos da tab
+     */
+    public function getTabFilters(): array
+    {
+        return $this->tabFilters;
+    }
+
+    /**
+     * 🎯 Obtém condições WHERE
+     */
+    public function getWhereConditions(): array
+    {
+        return $this->whereConditions;
+    }
+
+    /**
+     * 🎯 Obtém parâmetros para scopes
+     */
+    public function getScopeParams(): array
+    {
+        return $this->scopeParams;
+    }
+
+    /**
+     * 🎯 Obtém callback de query
+     */
+    public function getQueryCallback(): ?Closure
+    {
+        return $this->queryCallback;
+    }
+
+    /**
+     * 🎯 Verifica se tem parâmetros de filtro
+     */
+    public function hasFilters(): bool
+    {
+        return !empty($this->params) || 
+               !empty($this->tabFilters) || 
+               !empty($this->whereConditions) || 
+               !empty($this->scopeParams) || 
+               $this->queryCallback !== null;
+    }
+
+    /**
      * Serializa para array
      */
     public function toArray(): array
@@ -251,6 +355,12 @@ class Tab
             'content' => $this->getContent(),
             'tableConfig' => $this->getTableConfig(),
             'config' => $this->getConfig(),
+            // 🎯 Novos parâmetros para sistema genérico
+            'params' => $this->getParams(),
+            'tabFilters' => $this->getTabFilters(),
+            'whereConditions' => $this->getWhereConditions(),
+            'scopeParams' => $this->getScopeParams(),
+            'hasFilters' => $this->hasFilters(),
         ];
     }
 } 

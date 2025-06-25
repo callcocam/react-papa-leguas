@@ -269,4 +269,15 @@ class ModelSource extends DataSource
     {
         return $this->buildQuery();
     }
+
+    /**
+     * Limpar cache da query para forçar reconstrução
+     * Útil quando filtros externos (como tabs) são aplicados
+     */
+    public function clearQueryCache(): static
+    {
+        $this->baseQuery = null;
+        $this->clearCache(); // Limpar cache de dados também
+        return $this;
+    }
 }

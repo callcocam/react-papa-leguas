@@ -13,12 +13,9 @@ export default function RendererView({
     meta
 }: any) {
 
-    const renderers = getViewsRenderers();
-    console.log('🎯 RendererView - view recebida:', view);
-    console.log('🎯 RendererView - renderers disponíveis:', Object.keys(renderers));
+    const renderers = getViewsRenderers(); 
 
-    const Renderer = renderers[view] || renderers.default;
-    console.log('🎯 RendererView - Renderer selecionado:', Renderer?.name || 'default');
+    const Renderer = renderers[view] || renderers.default; 
   
 
     return (
