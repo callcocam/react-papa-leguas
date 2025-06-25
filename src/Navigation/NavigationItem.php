@@ -184,9 +184,9 @@ class NavigationItem
     {
         $user = Auth::user();
         
-        // Verificar se user tem método hasPermission (Shinobi)
-        if (method_exists($user, 'hasPermission')) {
-            return $user->hasPermission($permission);
+        // Verificar se user tem método hasPermissionTo (Shinobi)
+        if (method_exists($user, 'hasPermissionTo')) {
+            return $user->hasPermissionTo($permission);
         }
         
         // Fallback para gates/policies do Laravel

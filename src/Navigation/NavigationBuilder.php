@@ -218,12 +218,25 @@ class NavigationBuilder
     /**
      * Construir e retornar navegação filtrada por permissões
      */
-    public function build(): array
+    public function build(bool $validatePermissions = true): array
     {
         $navigation = [];
         
         foreach ($this->items as $key => $item) {
-            // Verificar permissões do item principal
+            // Se validação está desabilitada, incluir todos os itens
+            if (!$validatePermissions) {
+                $itemData = $item->toArray();
+                
+                // Para subitems, também incluir todos se validação desabilitada
+                if (!empty($itemData['subitems'])) {
+                    // Manter todos os subitems
+                }
+                
+                $navigation[] = $itemData;
+                continue;
+            }
+            
+            // Verificar permissões do item principal (validação habilitada)
             if (!$item->hasPermission()) {
                 continue;
             }
@@ -253,6 +266,15 @@ class NavigationBuilder
     }
 
     /**
+     * Construir navegação sem validação de permissões
+     * Útil para desenvolvimento ou casos especiais
+     */
+    public function buildWithoutPermissions(): array
+    {
+        return $this->build(false);
+    }
+
+    /**
      * Verificar se usuário tem permissão
      */
     protected function hasPermission(?string $permission): bool
@@ -267,9 +289,9 @@ class NavigationBuilder
             return false;
         }
         
-        // Verificar se user tem método hasPermission (Shinobi)
-        if (method_exists($user, 'hasPermission')) {
-            return $user->hasPermission($permission);
+        // Verificar se user tem método hasPermissionTo (Shinobi)
+        if (method_exists($user, 'hasPermissionTo')) {
+            return $user->hasPermissionTo($permission);
         }
         
         // Fallback para gates/policies do Laravel

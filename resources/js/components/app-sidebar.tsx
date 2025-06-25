@@ -36,13 +36,17 @@ export function AppSidebar({
   sidebarVisible,
   toggleDarkMode
 }: AppSidebarProps) {
-  const { user, isAuthenticated } = usePermissions()
+  const { user, isAuthenticated, hasPermission } = usePermissions()
   const { props } = usePage()
   const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set())
   
   // Obter navegação do Inertia
   const navigation = props.navigation as any[] || []
-  console.log(navigation)
+  
+  // Debug: mostrar estrutura da navegação
+  React.useEffect(() => {
+    console.log('Navegação recebida:', JSON.stringify(navigation, null, 2))
+  }, [navigation])
 
   // Toggle submenu
   const toggleSubmenu = (key: string) => {
@@ -60,9 +64,123 @@ export function AppSidebar({
     if (!iconName) return null
     
     const IconComponent = (LucideIcons as any)[iconName]
-    if (!IconComponent) return null
+    if (!IconComponent) {
+      console.warn(`Ícone não encontrado: ${iconName}`)
+      return null
+    }
     
     return <IconComponent className={className} />
+  }
+
+  // Renderizar item de navegação
+  const renderNavigationItem = (item: any) => {
+    const hasSubitems = item.subitems && item.subitems.length > 0
+    const isExpanded = expandedItems.has(item.key)
+
+
+    // Se item tem href, renderizar como link
+    if (item.href) {
+      return (
+        <PermissionLink
+          key={item.key}
+          href={item.href}
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full"
+          activeClassName="bg-accent text-accent-foreground"
+          validatePermissions={false}
+        >
+          {renderIcon(item.icon)}
+          <span className="flex-1">{item.title}</span>
+          {item.badge && (
+            <Badge variant={item.badge.variant || 'default'} className="text-xs">
+              {item.badge.text || item.badge}
+            </Badge>
+          )}
+        </PermissionLink>
+      )
+    }
+
+    // Se item tem subitems, renderizar como expansível
+    if (hasSubitems) {
+      return (
+        <div key={item.key} className="space-y-1">
+          <button
+            onClick={() => toggleSubmenu(item.key)}
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full text-left"
+          >
+            {renderIcon(item.icon)}
+            <span className="flex-1">{item.title}</span>
+            {item.badge && (
+              <Badge variant={item.badge.variant || 'default'} className="text-xs">
+                {item.badge.text || item.badge}
+              </Badge>
+            )}
+            {isExpanded ? 
+              <ChevronDown className="w-4 h-4" /> : 
+              <ChevronRight className="w-4 h-4" />
+            }
+          </button>
+
+          {/* Subitems */}
+          {isExpanded && (
+            <div className="ml-6 space-y-1">
+              {item.subitems.map((subitem: any) => {
+                // Se subitem tem href, renderizar como link
+                if (subitem.href) {
+                  return (
+                    <PermissionLink
+                      key={subitem.key}
+                      href={subitem.href}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full"
+                      activeClassName="bg-accent text-accent-foreground"
+                      validatePermissions={false}
+                    >
+                      {renderIcon(subitem.icon)}
+                      <span className="flex-1">{subitem.title}</span>
+                      {subitem.badge && (
+                        <Badge variant={subitem.badge.variant || 'default'} className="text-xs">
+                          {subitem.badge.text || subitem.badge}
+                        </Badge>
+                      )}
+                    </PermissionLink>
+                  )
+                }
+                
+                // Se subitem não tem href, renderizar como texto desabilitado
+                return (
+                  <div 
+                    key={subitem.key}
+                    className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground/60 cursor-not-allowed"
+                    title={`Rota não implementada: ${subitem.title}`}
+                  >
+                    {renderIcon(subitem.icon)}
+                    <span className="flex-1">{subitem.title}</span>
+                    <span className="text-xs bg-muted px-1 rounded">Em breve</span>
+                    {subitem.badge && (
+                      <Badge variant={subitem.badge.variant || 'default'} className="text-xs">
+                        {subitem.badge.text || subitem.badge}
+                      </Badge>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    // Item sem href nem subitems - renderizar como texto
+    return (
+      <div key={item.key} className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
+        {renderIcon(item.icon)}
+        <span className="flex-1">{item.title}</span>
+        {item.badge && (
+          <Badge variant={item.badge.variant || 'default'} className="text-xs">
+            {item.badge.text || item.badge}
+          </Badge>
+        )}
+      </div>
+    )
   }
 
   // Logout
@@ -105,70 +223,13 @@ export function AppSidebar({
       {/* Sidebar Content */}
       <div className="flex-1 overflow-y-auto">
         <nav className="p-2 space-y-1">
-          {navigation.map((item: any) => (
-            <div key={item.key}>
-              {/* Item Principal */}
-              {item.href ? (
-                <PermissionLink
-                  permission={item.permission}
-                  href={item.href}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full"
-                  activeClassName="bg-accent text-accent-foreground"
-                  fallbackBehavior="hide"
-                >
-                  {renderIcon(item.icon)}
-                  <span className="flex-1">{item.title}</span>
-                  {item.badge && (
-                    <Badge variant={item.badge.variant} className="text-xs">
-                      {item.badge.text}
-                    </Badge>
-                  )}
-                </PermissionLink>
-              ) : (
-                <button
-                  onClick={() => toggleSubmenu(item.key)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full text-left"
-                >
-                  {renderIcon(item.icon)}
-                  <span className="flex-1">{item.title}</span>
-                  {item.subitems && (
-                    expandedItems.has(item.key) ? 
-                      <ChevronDown className="w-4 h-4" /> : 
-                      <ChevronRight className="w-4 h-4" />
-                  )}
-                  {item.badge && (
-                    <Badge variant={item.badge.variant} className="text-xs">
-                      {item.badge.text}
-                    </Badge>
-                  )}
-                </button>
-              )}
-
-              {/* Subitems */}
-              {item.subitems && expandedItems.has(item.key) && (
-                <div className="ml-6 mt-1 space-y-1">
-                  {item.subitems.map((subitem: any) => (
-                    <PermissionLink
-                      key={subitem.key}
-                      permission={subitem.permission}
-                      href={subitem.href}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground w-full"
-                      activeClassName="bg-accent text-accent-foreground"
-                      fallbackBehavior="hide"
-                    >
-                      {renderIcon(subitem.icon)}
-                      <span className="flex-1">{subitem.title}</span>
-                      {subitem.badge && (
-                        <Badge variant={subitem.badge.variant} className="text-xs">
-                          {subitem.badge.text}
-                        </Badge>
-                      )}
-                    </PermissionLink>
-                  ))}
-                </div>
-              )}
+          {navigation.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">
+              Nenhum item de navegação disponível
             </div>
-          ))}
+          ) : (
+            navigation.map(renderNavigationItem)
+          )}
         </nav>
       </div>
 

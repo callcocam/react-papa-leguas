@@ -17,15 +17,6 @@ class AdminNavigation
      */
     public static function build(): array
     {
-        $navigation = NavigationAdminNavigation::build();
-        return $navigation
-            // Dashboard
-            ->item('dashboard')
-            ->label('Dashboard')
-            ->route('dashboard')
-            ->icon('Home')
-            ->permission('dashboard.view')
-            ->order(1)
-            ->build();
+        return NavigationAdminNavigation::build()->build();
     }
 }
