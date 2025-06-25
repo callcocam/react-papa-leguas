@@ -44,8 +44,8 @@ class CallbackAction extends Action
      * Define dados extras
      */
     public function data(array $data): static
-    {
-        $this->data = array_merge($this->data, $data);
+    { 
+        $this->data = $data;
         return $this;
     }
 

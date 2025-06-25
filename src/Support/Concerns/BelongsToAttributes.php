@@ -72,7 +72,7 @@ trait BelongsToAttributes
     /**
      * Define atributo data-*
      */
-    public function data(string $key, mixed $value): self
+    public function dataAttribute(string $key, mixed $value): self
     {
         return $this->attribute("data-{$key}", $value);
     }
